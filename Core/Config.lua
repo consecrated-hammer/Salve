@@ -38,6 +38,13 @@ ns.defaults = {
     visibilityMode = "ALWAYS",
     visibility     = {},
 
+    -- Alert sound. Spell IDs come from a companion addon (Salve_SeasonData);
+    -- see Features/Sound.lua for why this cannot be driven by a filter.
+    soundEnabled  = false,
+    soundChannel  = "Master",
+    soundFile     = nil,
+    learnMode     = false,
+
     -- Minimap button
     showMinimap   = true,
     minimapAngle  = 225,

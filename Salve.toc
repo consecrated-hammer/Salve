@@ -44,6 +44,9 @@ Features\Visibility.lua
 # Which mouse button casts what.
 Features\Bindings.lua
 
+# Alert sounds. Spell IDs are supplied by the Salve_SeasonData companion.
+Features\Sound.lua
+
 # ☠ Box.lua and Handle.lua before Panel.lua: Panel builds both from Create().
 UI\Box.lua
 UI\Handle.lua

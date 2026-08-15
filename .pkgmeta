@@ -1,7 +1,13 @@
 # CurseForge / WoWInterface packaging, for BigWigsMods/packager.
-# The repo root IS the addon folder, so there is nothing to move-folders.
+# The repo root IS the main addon folder; the companion below is moved out
+# beside it so the package contains two addons.
 
 package-as: Salve
+
+# The companion ships alongside as its own addon folder, so a season's debuff
+# list can be updated without touching Salve itself.
+move-folders:
+  Salve/Salve_SeasonData: Salve_SeasonData
 
 # No embedded libraries, so there is no no-lib variant worth building.
 enable-nolib-creation: no

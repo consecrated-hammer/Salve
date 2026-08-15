@@ -3,10 +3,13 @@ local addonName, ns = ...
 -- ============================================================
 -- Event routing
 -- ============================================================
--- Note what is NOT here: UNIT_AURA. Salve does not listen for aura changes,
--- because it never reacts to them -- the engine drives every lit box directly.
--- The only things that move us are the roster changing, the spec changing, and
--- combat ending with work queued.
+-- Note what is NOT here in normal operation: UNIT_AURA. Salve does not react to
+-- aura changes -- the engine drives every lit box directly -- so nothing of ours
+-- runs during a fight. The only things that move us are the roster changing, the
+-- spec changing, and combat ending with work queued.
+--
+-- UNIT_AURA is registered ONLY while learn mode is on, purely to harvest spell
+-- IDs for the companion addon. ns.Sound:ToggleLearn owns that registration.
 
 local frame = CreateFrame("Frame", "SalveEventFrame")
 
@@ -20,6 +23,7 @@ frame:SetScript("OnEvent", function(_, event, arg1)
         frame:UnregisterEvent("ADDON_LOADED")
 
     elseif event == "PLAYER_LOGIN" then
+        ns.Sound:Apply()
         ns.UpdateDispelSpell()
         ns.Panel:Create()
         -- Broker first: it is a no-op without LibStub, and it never affects the
@@ -39,6 +43,12 @@ frame:SetScript("OnEvent", function(_, event, arg1)
         if ns.UpdateDispelSpell() then
             ns.RequestRebuild()
         end
+
+    elseif event == "UNIT_AURA" then
+        -- ☠ Only ever registered while learn mode is on. Salve's normal
+        --   operation has NO aura event handler, and that must stay true --
+        --   it is why nothing of ours runs during a fight.
+        ns.Sound:Learn(arg1)
 
     elseif event == "PLAYER_REGEN_ENABLED" then
         -- ☠ Release a drag that crossed into combat FIRST. Until this runs the

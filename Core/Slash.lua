@@ -14,6 +14,12 @@ SlashCmdList.SALVE = function(msg)
     if cmd == "options" or cmd == "config" or cmd == "opt" then
         ns.OpenOptions()
 
+    elseif cmd == "learn" then
+        ns.Sound:ToggleLearn(not ns.db.learnMode)
+
+    elseif cmd == "learned" then
+        ns.Sound:DumpLearned()
+
     elseif cmd == "probe" then
         ns.Binding:Report()
 
@@ -35,6 +41,8 @@ SlashCmdList.SALVE = function(msg)
         ns.Print("|cffffd100/salve lock|r | |cffffd100unlock|r — hide or show the drag handle")
         ns.Print("|cffffd100/salve reset|r — put the panel back in the middle")
         ns.Print("|cffffd100/salve probe|r — engine diagnostics")
+        ns.Print("|cffffd100/salve learn|r — harvest dispellable debuff spell IDs")
+        ns.Print("|cffffd100/salve learned|r — print what was harvested")
 
     else
         ns.OpenOptions()
