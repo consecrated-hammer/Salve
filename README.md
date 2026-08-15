@@ -1,25 +1,11 @@
-<div align="center">
-
 # Salve
 
-**A compact dispel panel for World of Warcraft.**
-One click removes Curse, Disease, Poison or Magic from anyone in your group.
+**A compact dispel panel for World of Warcraft.** One click removes Curse,
+Disease, Poison or Magic from anyone in your group.
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-4c9a7a?style=flat-square)](LICENSE.txt)
 [![Release](https://img.shields.io/github/v/release/consecrated-hammer/Salve?style=flat-square&color=4c9a7a&label=release)](https://github.com/consecrated-hammer/Salve/releases)
 [![Client](https://img.shields.io/badge/client-retail-4c9a7a?style=flat-square)](https://worldofwarcraft.blizzard.com/)
-
-</div>
-
-<!--
-  SCREENSHOT: drop a PNG at media/panel.png and uncomment the block below.
-  A 5-box party strip with two or three boxes lit reads best -- crop tight,
-  and include a little of the surrounding UI so the scale is obvious.
-
-<div align="center">
-  <img src="media/panel.png" alt="The Salve panel in a five-player group" width="420">
-</div>
--->
 
 ---
 
