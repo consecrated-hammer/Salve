@@ -26,9 +26,14 @@ jobs:
       # list comes from the TOC. Letting those drift ships "0.1.0" inside a file
       # called 0.2.0, which is confusing to diagnose and impossible to fix after
       # upload. Fail before publishing anything instead.
+      # ☠ Strip any -alpha/-beta suffix before comparing. The packager reads the
+      #   release TYPE from the tag (a tag containing "beta" uploads as a beta),
+      #   so v0.1.0-beta is a normal thing to push -- but the TOC version stays
+      #   0.1.0, and a naive comparison would reject every pre-release.
       - name: Tag must match the TOC version
         run: |
           tag="${GITHUB_REF_NAME#v}"
+          tag="${tag%%-*}"
           toc=$(grep -oP '(?<=^## Version:\s).*' Salve.toc | tr -d '[:space:]')
           echo "tag=$tag  toc=$toc"
           if [ "$tag" != "$toc" ]; then
@@ -39,6 +44,7 @@ jobs:
       - name: Check the changelog mentions this version
         run: |
           tag="${GITHUB_REF_NAME#v}"
+          tag="${tag%%-*}"
           if ! grep -q "\[$tag\]" CHANGELOG.md; then
             echo "::error::CHANGELOG.md has no [$tag] section — CurseForge would show an empty changelog."
             exit 1

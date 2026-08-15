@@ -18,3 +18,8 @@ ignore:
   - .gitignore
   - Build-CurseForgeZip.local.ps1
   - Copy-ToWoWAddons.local.ps1
+  # Source art for the CurseForge project icon, uploaded through their site.
+  # The game cannot load a PNG, so shipping it would be dead weight in every
+  # download. Textures/Salve.tga is the in-game version.
+  - Textures/Salve.png
+  - Textures/Salve-curseforge-400.png

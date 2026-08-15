@@ -7,8 +7,11 @@ local addonName, ns = ...
 ns.Minimap = {}
 local Minimap_ = ns.Minimap
 
-local RADIUS    = 80
-local ICON      = "Interface\\Icons\\Spell_Holy_Renew"
+local RADIUS = 80
+
+-- ☠ TGA or BLP only, and referenced WITHOUT the extension. WoW cannot load a
+--   PNG: it fails silently and you get an empty button rather than an error.
+local ICON = "Interface\\AddOns\\Salve\\Textures\\Salve"
 
 -- ☠ Salve always owns its own button, even when LibDBIcon happens to be loaded
 --   by some other addon. Handing the job over would make the icon's position

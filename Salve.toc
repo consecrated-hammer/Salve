@@ -6,7 +6,8 @@
 ## Category-enUS: Raid
 ## SavedVariables: SalveDB
 ## AllowAddOnTableAccess: 1
-## IconTexture: Interface\Icons\Spell_Holy_Renew
+# ☠ No extension, and it must be a TGA or BLP. WoW does not load PNG.
+## IconTexture: Interface\AddOns\Salve\Textures\Salve
 ## X-License: GPL-3.0
 ## X-Website: https://github.com/consecrated-hammer/Salve
 # Uncomment and fill in once the CurseForge project exists — the release
