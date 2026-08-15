@@ -24,6 +24,9 @@ frame:SetScript("OnEvent", function(_, event, arg1)
 
     elseif event == "PLAYER_LOGIN" then
         ns.Sound:Apply()
+        -- Learn mode defaults ON, so the listener has to be installed here as
+        -- well as by the slash command.
+        if ns.db.learnMode then frame:RegisterEvent("UNIT_AURA") end
         ns.UpdateDispelSpell()
         ns.Panel:Create()
         -- Broker first: it is a no-op without LibStub, and it never affects the

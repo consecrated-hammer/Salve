@@ -63,14 +63,25 @@ function Sound:UnregisterSource(source)
     self:Apply()
 end
 
--- Every spell ID across every source, de-duplicated.
+-- Every spell ID across every source, plus everything learn mode has found,
+-- de-duplicated. Learned IDs are ADDITIVE -- the curated list is the floor, not
+-- the ceiling, so a debuff the season data missed still gets an alert once you
+-- have met it.
 function Sound:AllSpellIDs()
     local seen, list = {}, {}
-    for _, set in pairs(self.sources) do
-        for id in pairs(set) do
-            if not seen[id] then seen[id] = true list[#list + 1] = id end
+
+    local function add(id)
+        if type(id) == "number" and not seen[id] then
+            seen[id] = true
+            list[#list + 1] = id
         end
     end
+
+    for _, set in pairs(self.sources) do
+        for id in pairs(set) do add(id) end
+    end
+    for id in pairs((ns.db and ns.db.learned) or {}) do add(id) end
+
     return list
 end
 
@@ -162,8 +173,6 @@ end
 -- ⚠ It will therefore learn nothing from current raid encounters, whose
 --   debuffs are private. That is the whole reason the curated list exists.
 
-Sound.learned = {}
-
 local function plain(v)
     if issecretvalue and issecretvalue(v) then return nil end
     return v
@@ -179,9 +188,12 @@ function Sound:Learn(unit)
 
         local id   = plain(aura.spellId)
         local name = plain(aura.name)
-        if id and not self.learned[id] then
-            self.learned[id] = name or true
+        if id and not ns.db.learned[id] then
+            ns.db.learned[id] = name or true
             ns.Print(("learned |cffffd100%d|r  %s"):format(id, tostring(name or "?")))
+            -- ☠ Debounced. Re-registering is 45 unit tokens times every known
+            --   spell; doing that per aura seen would stall on a pull.
+            self:ScheduleApply()
         end
     end
 end
@@ -189,7 +201,7 @@ end
 -- Prints the harvest in a form that can be pasted straight into the companion.
 function Sound:DumpLearned()
     local ids = {}
-    for id in pairs(self.learned) do ids[#ids + 1] = id end
+    for id in pairs((ns.db and ns.db.learned) or {}) do ids[#ids + 1] = id end
     table.sort(ids)
 
     if #ids == 0 then
@@ -198,10 +210,22 @@ function Sound:DumpLearned()
         return
     end
 
-    ns.Print("paste into Salve_SeasonData/Data.lua:")
+    ns.Print(("%d learned — these are already active; paste into "
+        .. "Salve_SeasonData/Data.lua to share them:"):format(#ids))
     for _, id in ipairs(ids) do
-        print(("    %d, -- %s"):format(id, tostring(self.learned[id])))
+        print(("    %d, -- %s"):format(id, tostring(ns.db.learned[id])))
     end
+end
+
+-- Coalesces a burst of discoveries into one re-registration.
+local applyPending
+function Sound:ScheduleApply()
+    if applyPending then return end
+    applyPending = true
+    C_Timer.After(2, function()
+        applyPending = false
+        Sound:Apply()
+    end)
 end
 
 -- ☠ UNIT_AURA is registered ONLY while learning. Salve's whole claim is that it

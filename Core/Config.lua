@@ -43,7 +43,11 @@ ns.defaults = {
     soundEnabled  = false,
     soundChannel  = "Master",
     soundFile     = nil,
-    learnMode     = false,
+
+    -- Learn mode is ADDITIVE and on by default: anything the season data misses
+    -- gets picked up by playing, and what it finds persists here.
+    learnMode     = true,
+    learned       = {},
 
     -- Minimap button
     showMinimap   = true,

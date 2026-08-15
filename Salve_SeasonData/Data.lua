@@ -1,39 +1,70 @@
 -- ============================================================
 -- Dispellable debuffs — current season
 -- ============================================================
--- Spell IDs of debuffs worth an audible alert. Salve registers each with
--- C_UnitAuras.AddAuraSound, which is the only route that works on the private
--- auras most encounter debuffs became in 12.1.
+-- Spell IDs of debuffs Salve should sound an alert for. Salve registers each
+-- with C_UnitAuras.AddAuraSound, the only route that works on the private auras
+-- most encounter debuffs became in 12.1.
 --
--- ☠ ONLY LIST DEBUFFS YOU CAN ACTUALLY DISPEL. A wrong or undispellable ID is
---   not a harmless extra: it is a sound that fires when you can do nothing
---   about it, or one that never fires with nothing to say why.
+-- GENERATED, NOT HAND-WRITTEN. Source: wago.tools DB2, joining
+-- JournalEncounterSection (encounter abilities) against SpellCategories
+-- (DispelType), keeping only DispelType 1-4 -- Magic, Curse, Disease, Poison.
+-- Every entry below is therefore a debuff the game itself classifies as
+-- removable, not a guess about what looks dispellable.
 --
--- HOW TO FIND IDS
---   1. /salve learn        turn harvesting on
---   2. play                Salve records dispellable debuffs it can read
---   3. /salve learned      prints them ready to paste below
+-- ☠ NOTHING HERE IS INVENTED. If an ID is wrong the sound simply never fires,
+--   which is indistinguishable from a broken addon -- so add IDs only from DB2
+--   or from /salve learn, never from memory.
 --
---   Learn mode reads auras only where the game permits it, so it will find
---   nothing in a current raid -- those debuffs are private, which is precisely
---   why this file exists. For those, take the ID from Wowhead's journal entry
---   for the ability and confirm the debuff type is one you can remove.
+-- TO REFRESH FOR A NEW SEASON
+--   Re-run the join with the new JournalInstance IDs. Salve itself does not
+--   change; this file is the whole update, which is why it is its own addon.
 --
--- The list is deliberately EMPTY rather than seeded with guesses. An invented
--- ID is worse than a missing one: it fails silently and looks like a bug in the
--- addon rather than a gap in the data.
+-- Learn mode adds to this list at runtime and persists what it finds, so
+-- anything missed here is picked up by playing.
 
 local SPELL_IDS = {
-    -- ── Dungeons ───────────────────────────────────────────────────────────
-    -- 1257085, -- Consuming Miasma (stage 1) — UNVERIFIED, from a BigWigs
-    -- 1257087, -- Consuming Miasma (stage 2) — comment marked "(Dispels)".
-    --             Confirm the school is one you can remove before enabling.
+    -- ── Altar of Fangs ──────────────────────────────────────
+    -- Rav'i
+    1296069, -- Regurgitate (Disease)
 
-    -- ── Raid ───────────────────────────────────────────────────────────────
+    -- ── Sporefall ───────────────────────────────────────────
+    -- Rotmire
+    1221714, -- Poison Burst (Poison)
+
+    -- ── The Dreamrift ───────────────────────────────────────
+    -- Chimaerus the Undreamt God
+    1249017, -- Fearsome Cry (Magic)
+    1257087, -- Consuming Miasma (Magic)
+
+    -- ── The Venomous Abyss ──────────────────────────────────
+    -- Entombed Sentinels
+    1284471, -- Blighted Blood (Magic)
+    -- Vashnik the Malignant
+    1295173, -- Exploding Infection (Magic)
+    -- Ula'tek
+    1287036, -- Poisonous Bite (Poison)
+    1301800, -- Acidic Burst (Poison)
+    1305650, -- Anguished Cry (Magic)
+
+    -- ── The Voidspire ───────────────────────────────────────
+    -- Imperator Averzian
+    1275059, -- Black Miasma (Curse)
+    -- Vorasius
+    1259186, -- Blisterburst (Magic)
+    1272527, -- Creep Spit (Magic)
+    -- Lightblinded Vanguard
+    1258514, -- Blinding Light (Magic)
+    -- Crown of the Cosmos
+    1233865, -- Null Corona (Magic)
+    1261531, -- Corrupting Essence (Magic)
+
+    -- ⚠ March on Quel'Danas returned no dispellable abilities from the journal
+    --   data. That may be correct, or its encounters may not be linked in DB2
+    --   yet. Worth confirming in game with /salve learn.
 }
 
--- Salve is a RequiredDeps, so it is loaded and its API exists by the time this
--- file runs. Guarded anyway: a missing API should disable the sound, not throw.
+-- Salve is a RequiredDeps, so its API exists by the time this runs. Guarded
+-- anyway: a missing API should disable the sound, not throw.
 if Salve and Salve.Sound and Salve.Sound.RegisterDebuffs then
     Salve.Sound:RegisterDebuffs("Salve_SeasonData", SPELL_IDS)
 end
