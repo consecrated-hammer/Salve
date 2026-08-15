@@ -137,20 +137,14 @@ O.NewPage("Dispel", function(panel, y)
                 promptForKey(function(key)
                     -- Materialise the defaults before editing, or the first edit
                     -- would be written into the shared default table.
-                    if not ns.db.bindings or #ns.db.bindings == 0 then
-                        ns.db.bindings = CopyTable(ns.Bindings:List())
-                    end
-                    ns.db.bindings[i].key = key
+                    ns.Bindings:Materialise()[i].key = key
                     ns.RequestRebuildSoon(0.05)
                     redraw()
                 end)
             end)
 
             row.remove:SetScript("OnClick", function()
-                if not ns.db.bindings or #ns.db.bindings == 0 then
-                    ns.db.bindings = CopyTable(ns.Bindings:List())
-                end
-                table.remove(ns.db.bindings, i)
+                table.remove(ns.Bindings:Materialise(), i)
                 ns.RequestRebuildSoon(0.05)
                 redraw()
             end)
@@ -163,11 +157,8 @@ O.NewPage("Dispel", function(panel, y)
     add:SetText("Add a binding")
     add:SetScript("OnClick", function()
         promptForKey(function(key)
-            if not ns.db.bindings or #ns.db.bindings == 0 then
-                ns.db.bindings = CopyTable(ns.Bindings:List())
-            end
-            ns.db.bindings[#ns.db.bindings + 1] =
-                { key = key, role = ns.ROLE_PRIMARY }
+            local list = ns.Bindings:Materialise()
+            list[#list + 1] = { key = key, role = ns.ROLE_PRIMARY }
             ns.RequestRebuildSoon(0.05)
             redraw()
         end)

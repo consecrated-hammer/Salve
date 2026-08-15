@@ -106,6 +106,29 @@ function Bindings:List()
     return list
 end
 
+-- Turns the shared defaults into the player's own editable copy. Call before
+-- any edit.
+--
+-- ☠ COPY THE ENTRY TABLES, NOT JUST THE LIST. ns.defaultBindings is module
+--   state shared by every character; editing a row in place would mutate it, and
+--   since an empty list means "use the defaults", deleting your customisations
+--   would then restore the mutated version rather than left-and-right click.
+--   Written out here rather than relying on CopyTable's depth, which is a
+--   Blizzard global whose behaviour is not ours to depend on.
+function Bindings:Materialise()
+    if ns.db.bindings and #ns.db.bindings > 0 then return ns.db.bindings end
+
+    local copy = {}
+    for i, entry in ipairs(ns.defaultBindings) do
+        local e = {}
+        for k, v in pairs(entry) do e[k] = v end
+        copy[i] = e
+    end
+
+    ns.db.bindings = copy
+    return copy
+end
+
 -- ── Applying ───────────────────────────────────────────────────────────────
 
 function Bindings:Apply(box)
