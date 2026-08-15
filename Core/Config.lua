@@ -1,0 +1,82 @@
+local addonName, ns = ...
+
+-- Every visual and behavioural choice lives here. Nothing in Salve is baked in;
+-- if you find yourself wanting to ask the user a question, add a key instead.
+
+ns.defaults = {
+    -- Position & size. 20x20 is Decursive's MUF size, straight from its
+    -- Dcr_DebuffsFrame.xml -- deliberately tiny, and names cannot fit at that
+    -- size, which is why showNames starts off.
+    -- ☠ There is deliberately no `locked` key. showHandle IS the lock state --
+    --   two keys for one concept is how they drift apart. Use ns.IsLocked().
+    scale         = 1.0,
+    columns       = 5,
+    boxWidth      = 20,
+    boxHeight     = 20,
+    spacing       = 1,
+    point         = { "CENTER", "CENTER", 0, -140 },
+
+    -- Appearance
+    showNames     = false,
+    showStacks    = true,   -- engine-driven; Blizzard hides it at one stack
+    showWhenClean = true,
+    cleanAlpha    = 0.25,
+    showHandle    = true,   -- the persistent drag grip, like Decursive's
+
+    -- Behaviour
+    showInSolo    = true,
+    showInParty   = true,
+    showInRaid    = true,
+    -- AUTO | DISPEL | TARGET | NONE. AUTO is the second dispel where the spec
+    -- has one, falling back to the primary where it does not.
+    rightClick    = "AUTO",
+
+    -- Alert sound. Off until /salve probe confirms the hook actually fires.
+    soundEnabled  = false,
+    soundThrottle = 2,
+    soundChannel  = "Master",
+
+    -- Minimap button
+    showMinimap   = true,
+    minimapAngle  = 225,
+}
+
+local function copyDefaults(dst, src)
+    for k, v in pairs(src) do
+        if type(v) == "table" then
+            if type(dst[k]) ~= "table" then dst[k] = {} end
+            copyDefaults(dst[k], v)
+        elseif dst[k] == nil then
+            dst[k] = v
+        end
+    end
+    return dst
+end
+
+function ns.InitConfig()
+    SalveDB = copyDefaults(SalveDB or {}, ns.defaults)
+    ns.db = SalveDB
+    return ns.db
+end
+
+-- Keys that change the panel's shape or its secure attributes need a full
+-- rebuild; everything else is a restyle.
+local GEOMETRY = {
+    columns = true, boxWidth = true, boxHeight = true, spacing = true,
+    scale = true, showNames = true, showStacks = true, rightClick = true,
+    showInSolo = true, showInParty = true, showInRaid = true,
+}
+
+function ns.Set(key, value)
+    if ns.db[key] == value then return end
+    ns.db[key] = value
+
+    if GEOMETRY[key] then
+        ns.RequestRebuild()
+    elseif ns.Panel and ns.Panel.Restyle then
+        ns.Panel:Restyle()
+    end
+
+    if key == "showHandle" and ns.Handle then ns.Handle:Update() end
+    if key == "showMinimap" and ns.Minimap then ns.Minimap:Update() end
+end

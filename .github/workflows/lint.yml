@@ -1,0 +1,36 @@
+name: Lint
+
+# WoW runs Lua 5.1, so that is what the syntax check must use. luac -p catches
+# the whole class of typo that otherwise only shows up as a broken addon in game.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  luac:
+    runs-on: ubuntu-latest
+    container: nickblah/lua:5.1-luarocks
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Lua 5.1 syntax
+        run: |
+          fail=0
+          for f in $(find . -name '*.lua' -not -path './.git/*'); do
+            luac -p "$f" || fail=1
+          done
+          exit $fail
+
+      - name: Check every Lua file is listed in the TOC
+        run: |
+          fail=0
+          grep -vE '^\s*#|^\s*$' Salve.toc | tr -d '\r' | tr '\\' '/' \
+            | grep '\.lua$' | sort > /tmp/in_toc
+          find . -name '*.lua' -not -path './.git/*' \
+            | sed 's|^\./||' | sort > /tmp/on_disk
+          if ! diff -u /tmp/in_toc /tmp/on_disk; then
+            echo "TOC and disk disagree — a file is unlisted or missing."
+            fail=1
+          fi
+          exit $fail

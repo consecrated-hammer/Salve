@@ -1,0 +1,20 @@
+# CurseForge / WoWInterface packaging, for BigWigsMods/packager.
+# The repo root IS the addon folder, so there is nothing to move-folders.
+
+package-as: Salve
+
+# No embedded libraries, so there is no no-lib variant worth building.
+enable-nolib-creation: no
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+license-output: LICENSE.txt
+
+ignore:
+  - .github
+  - .pkgmeta
+  - .gitignore
+  - Build-CurseForgeZip.local.ps1
+  - Copy-ToWoWAddons.local.ps1

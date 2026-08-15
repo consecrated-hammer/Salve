@@ -1,0 +1,66 @@
+## Interface: 120100
+## Title: Salve
+## Author: consecrated-hammer
+## Version: 0.1.0
+## Notes: Compact dispel panel. One click to remove Curse, Disease, Poison and Magic debuffs from your party or raid.
+## Category-enUS: Raid
+## SavedVariables: SalveDB
+## AllowAddOnTableAccess: 1
+## IconTexture: Interface\Icons\Spell_Holy_Renew
+## X-License: GPL-3.0
+## X-Website: https://github.com/consecrated-hammer/Salve
+# Uncomment and fill in once the CurseForge project exists — the release
+# workflow needs it to upload, and it must match the project's numeric ID.
+# ## X-Curse-Project-ID: 000000
+
+# ============================================================
+# Salve — a Decursive replacement for Midnight (12.1.0)
+# ============================================================
+# No libraries, no Ace3, nothing embedded. The whole addon is the files below.
+#
+# THE ONE RULE THIS ADDON IS BUILT AROUND: aura data is SECRET in Midnight.
+# Tainted Lua may store, pass and concatenate a secret, but may NOT compare it,
+# do arithmetic on it, take its length, index it, or use it as a table key.
+# Breaking that raises "execution tainted" every frame -- which is what killed
+# Decursive and what makes the other replacements unusable.
+#
+# So Salve never reads an aura. It hands regions to Blizzard's AuraContainer
+# under the RAID_PLAYER_DISPELLABLE filter and lets the engine drive them.
+# See Features/AuraBinding.lua for the full argument.
+#
+# GPL v3, because Sounds/AfflictionAlert.ogg comes from Decursive.
+
+# Namespace and saved variables. Everything else assumes these exist.
+Core.lua
+Core\Config.lua
+
+# What to cast. Detection is Blizzard's job (the aura filter); this is only
+# needed to give the secure button a spell name.
+Features\Dispel.lua
+
+# The engine binding. The heart of the addon.
+Features\AuraBinding.lua
+
+# ⚠ Experimental: the affliction alert. Read the header before trusting it.
+Features\Sound.lua
+
+# ☠ Box.lua and Handle.lua before Panel.lua: Panel builds both from Create().
+UI\Box.lua
+UI\Handle.lua
+UI\Panel.lua
+# Optional LibDataBroker launcher. Registers nothing when LibStub is absent, and
+# never owns the minimap button -- read the header before changing that.
+UI\Broker.lua
+UI\Minimap.lua
+
+# Options. Registered into Blizzard's own Options > AddOns tree, with one
+# subcategory per page.
+# ☠ Shared.lua first: every page below calls its widget helpers at file scope.
+Options\Shared.lua
+Options\Layout.lua
+Options\Appearance.lua
+Options\Dispel.lua
+
+# Event routing and slash commands. Last, so everything they dispatch to exists.
+Core\Events.lua
+Core\Slash.lua
