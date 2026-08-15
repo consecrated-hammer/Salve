@@ -74,8 +74,15 @@ end
 
 function Handle:Update()
     if not self.frame then return end
-    -- Follows the panel: a grip floating beside a hidden panel is just litter.
-    self.frame:SetShown(ns.db.showHandle and self.frame:GetParent():IsShown())
+
+    -- ☠ DO NOT AND THIS WITH THE PANEL'S IsShown(). The handle is a CHILD of the
+    --   panel, so it already disappears with it -- the extra term only ever
+    --   latched an explicit hide. Visibility is a state driver now: the panel
+    --   can be shown by the secure environment long after the last rebuild, and
+    --   nothing calls back here when it does. A handle hidden because the panel
+    --   happened to be invisible when you ticked a condition stayed hidden for
+    --   good, leaving a panel that could not be dragged.
+    self.frame:SetShown(ns.db.showHandle and true or false)
 end
 
 -- "Locked" and "no handle" are the same state, so there is one flag and this is
