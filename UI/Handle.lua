@@ -37,16 +37,28 @@ function Handle:Create(parent)
     edge:SetColorTexture(0, 0, 0, 0.9)
     edge:SetDrawLayer("BACKGROUND")
 
-    h:SetScript("OnDragStart", function()
+    h:SetScript("OnDragStart", function(self)
         if InCombatLockdown() then
             ns.Print("can't move the panel in combat")
             return
         end
+        self.dragging = true
         parent:StartMoving()
     end)
 
-    h:SetScript("OnDragStop", function()
-        parent:StopMovingOrSizing()
+    h:SetScript("OnDragStop", function(self)
+        -- ☠ Only release a drag we actually started. OnDragStop fires even when
+        --   OnDragStart bailed out, and StopMovingOrSizing repositions a frame
+        --   full of secure buttons -- a blocked action in combat. Refusing the
+        --   drag and then moving the panel anyway is the worst of both.
+        if not self.dragging then return end
+        self.dragging = nil
+
+        -- A drag begun out of combat can still END in it. The frame has to be
+        -- released either way or it keeps following the cursor, so make the call
+        -- but let a blocked one fail quietly rather than erroring every frame.
+        pcall(parent.StopMovingOrSizing, parent)
+
         local point, _, rel, x, y = parent:GetPoint()
         ns.db.point = { point, rel, x, y }
     end)
