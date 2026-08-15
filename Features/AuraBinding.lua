@@ -132,7 +132,11 @@ function Binding:Report()
     if self.lastFailure then
         ns.Print("  |cffff4444last attach failure:|r " .. self.lastFailure)
     end
-    ns.Print("  filter: " .. ns.DISPELLABLE_FILTER)
+    -- ☠ Escape the pipe. "|" opens a colour escape in WoW's chat markup, so
+    --   printing HARMFUL|RAID_PLAYER_DISPELLABLE raw swallows the "|R" as a
+    --   colour reset and shows "HARMFULAID_PLAYER_DISPELLABLE" -- a diagnostic
+    --   that misreports the one string it exists to confirm.
+    ns.Print("  filter: " .. ns.DISPELLABLE_FILTER:gsub("|", "||"))
     ns.Print("  dispel spell: " .. tostring(ns.spellName or "|cffff4444none known|r"))
     ns.Print("  sound hook: "
         .. (ns.Sound.hookInstalled and "|cff44ff44installed|r" or "|cffff4444not installed|r")

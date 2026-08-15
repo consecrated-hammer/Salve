@@ -56,28 +56,42 @@ local function play()
     PlaySoundFile(ALERT, ns.db.soundChannel or "Master")
 end
 
--- Hooked onto the button the ENGINE creates, from inside initializeFrame --
--- the one window in which writing to that button is allowed. The engine shows
--- the button exactly when a dispellable aura appears, so OnShow is the event.
+-- ☠ HOOKING THE ENGINE'S BUTTON DIRECTLY DOES NOT WORK. Measured in game on
+--   2026-08-15: HookScript("OnShow") on the button returned by initializeFrame
+--   is REFUSED -- "/salve probe" reported "not installed, 2 rejected", one per
+--   button. The engine seals that button against tainted script attachment.
 --
--- ⚠ OnUpdate and animation drivers are known not to tick inside the button
---   subtree (onUpdateMode=disabled propagates down it). OnShow is a script
---   rather than a driver, so it should survive that -- but "should" is the
---   whole reason the sound defaults to off and the probe counts firings.
+-- So we attach to a frame of OUR OWN instead, created as a child of the button
+-- inside initializeFrame (region creation there is allowed, which is how the
+-- fill texture gets built). A child's OnShow fires when its parent becomes
+-- visible, so the engine showing the button still reaches us -- but the script
+-- lives on a frame the engine has no claim over.
+--
+-- ⚠ Also unproven. OnUpdate and animation drivers are known not to tick inside
+--   the button subtree (onUpdateMode=disabled propagates), and OnShow may turn
+--   out to be suppressed the same way. The probe counts firings; the sound
+--   stays off by default until it reports a non-zero count.
 function Sound:Hook(button)
-    if button.salveHooked then return end
+    if button.salveAlert then return end
 
-    -- ☠ Only claim success if the hook actually took. Setting the flags first
-    --   meant a rejected HookScript still blocked every retry AND made
-    --   /salve probe report the hook as installed -- a diagnostic confidently
-    --   reporting the opposite of the truth, on the one feature that exists
-    --   because its mechanism is unproven.
-    if not pcall(button.HookScript, button, "OnShow", play) then
+    local ok, alert = pcall(CreateFrame, "Frame", nil, button)
+    if not ok or not alert then
         Sound.hookFailures = (Sound.hookFailures or 0) + 1
         return
     end
 
-    button.salveHooked  = true
+    -- Must be shown in its own right, or the parent becoming visible will not
+    -- produce an OnShow on it.
+    alert:SetSize(1, 1)
+    alert:SetPoint("TOPLEFT")
+    alert:Show()
+
+    if not pcall(alert.SetScript, alert, "OnShow", play) then
+        Sound.hookFailures = (Sound.hookFailures or 0) + 1
+        return
+    end
+
+    button.salveAlert   = alert
     Sound.hookInstalled = true
 end
 
