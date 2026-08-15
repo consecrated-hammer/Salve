@@ -265,10 +265,34 @@ function Binding:Attach(box, unit)
         return true
     end
 
-    -- ☠ Drop the whole container rather than adding a second slot: AddAuraSlot
-    --   appends, so re-registering would leave the old slot live and accumulate
-    --   one more each time.
-    self:Detach(box)
+    -- ── Slot signature changed ────────────────────────────────────────────
+    --
+    -- A new slot needs a new container: AddAuraSlot appends, so re-registering
+    -- on a live one would leave the old slot bound and accumulate another each
+    -- time. But the client never destroys frames, so simply dropping the old
+    -- container strands it and everything the engine built under it until
+    -- /reload -- and a settings change touches EVERY box at once.
+    --
+    -- So retire it into a per-box cache keyed by its signature instead. Flipping
+    -- box size back and forth, or toggling stack counts off and on, then reuses
+    -- what is already there. The cost becomes one container per DISTINCT
+    -- configuration a box has ever held, rather than one per change.
+    box.containerCache = box.containerCache or {}
+
+    if box.auraContainer and box.boundSig then
+        self:Park(box)
+        box.containerCache[box.boundSig] = box.auraContainer
+        box.auraContainer = nil
+    end
+
+    local cached = box.containerCache[sig]
+    if cached then
+        box.auraContainer = cached
+        box.parked        = true   -- Park disabled it; the fast path re-enables.
+        box.boundSig      = sig
+        box.boundUnit     = nil
+        return self:Attach(box, unit)
+    end
 
     local c = self:Container(box)
     if not c then return false end
