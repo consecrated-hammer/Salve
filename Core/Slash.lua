@@ -8,7 +8,13 @@ SLASH_SALVE1 = "/salve"
 SlashCmdList.SALVE = function(msg)
     local cmd = (msg or ""):lower():match("^%s*(%S*)")
 
-    if cmd == "probe" then
+    -- Bare /salve already opens the panel, but only because it falls through to
+    -- the default. Naming it explicitly means /salve options is documented and
+    -- discoverable rather than accidental.
+    if cmd == "options" or cmd == "config" or cmd == "opt" then
+        ns.OpenOptions()
+
+    elseif cmd == "probe" then
         ns.Binding:Report()
 
     elseif cmd == "unlock" or cmd == "handle" then
@@ -25,10 +31,10 @@ SlashCmdList.SALVE = function(msg)
         ns.Print("panel position reset")
 
     elseif cmd == "help" then
-        ns.Print("/salve — options")
-        ns.Print("/salve lock | unlock — hide or show the drag handle")
-        ns.Print("/salve reset — put the panel back in the middle")
-        ns.Print("/salve probe — engine diagnostics")
+        ns.Print("|cffffd100/salve|r or |cffffd100/salve options|r — open the options panel")
+        ns.Print("|cffffd100/salve lock|r | |cffffd100unlock|r — hide or show the drag handle")
+        ns.Print("|cffffd100/salve reset|r — put the panel back in the middle")
+        ns.Print("|cffffd100/salve probe|r — engine diagnostics")
 
     else
         ns.OpenOptions()

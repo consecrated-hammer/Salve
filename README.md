@@ -51,7 +51,7 @@ cover every pixel of it. Right-click the grip to hide it once you are happy.
 
 | Command | Does |
 | :-- | :-- |
-| `/salve` | Open the options panel |
+| `/salve` or `/salve options` | Open the options panel |
 | `/salve unlock` | Show the drag handle |
 | `/salve lock` | Hide the drag handle |
 | `/salve reset` | Put the panel back in the centre |
