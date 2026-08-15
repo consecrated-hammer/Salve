@@ -58,7 +58,8 @@ cover every pixel of it. Right-click the grip to hide it once you are happy.
 | `/salve probe` | Print engine diagnostics |
 
 Options also live in **Game Menu → Options → AddOns → Salve**, under three
-pages: Layout, Appearance and Dispel.
+pages: **Panel** (where it sits and how the grid is arranged), **Boxes** (the
+size and contents of each box) and **Dispel** (spells, clicks and the alert).
 
 ## Settings worth knowing
 

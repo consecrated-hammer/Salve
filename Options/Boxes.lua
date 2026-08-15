@@ -1,13 +1,29 @@
 local addonName, ns = ...
 local O = ns.Options
 
-O.NewPage("Appearance", function(panel, y)
+-- An individual BOX: how big it is and what it carries. The grid those boxes
+-- are arranged into lives on the Panel page.
+
+O.NewPage("Boxes", function(panel, y)
     local db = ns.db
 
-    _, y = O.Header(panel, "Boxes", y)
+    _, y = O.Header(panel, "Size", y)
+
+    _, y = O.Slider(panel, "Box width",
+        "20 x 20 is the default and is deliberately small. Names need roughly 58 to be readable.", y,
+        10, 120, 1,
+        function() return db.boxWidth end,
+        function(v) ns.Set("boxWidth", v) end)
+
+    _, y = O.Slider(panel, "Box height", nil, y,
+        10, 60, 1,
+        function() return db.boxHeight end,
+        function(v) ns.Set("boxHeight", v) end)
+
+    _, y = O.Header(panel, "Contents", y)
 
     _, y = O.Check(panel, "Show unit names",
-        "Off gives bare colour squares, which is what Decursive did and what fits at 20 x 20.\n\n"
+        "Off gives bare colour squares, which is what fits at the default 20 x 20.\n\n"
         .. "Names need a box around 58 wide to be readable.", y,
         function() return db.showNames end,
         function(v) ns.Set("showNames", v) end)

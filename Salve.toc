@@ -53,11 +53,12 @@ UI\Broker.lua
 UI\Minimap.lua
 
 # Options. Registered into Blizzard's own Options > AddOns tree, with one
-# subcategory per page.
+# subcategory per page. Split by SCOPE: the panel as a whole, then an
+# individual box, then dispel behaviour.
 # ☠ Shared.lua first: every page below calls its widget helpers at file scope.
 Options\Shared.lua
-Options\Layout.lua
-Options\Appearance.lua
+Options\Panel.lua
+Options\Boxes.lua
 Options\Dispel.lua
 
 # Event routing and slash commands. Last, so everything they dispatch to exists.

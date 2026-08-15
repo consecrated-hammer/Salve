@@ -1,10 +1,13 @@
 local addonName, ns = ...
 local O = ns.Options
 
--- First page registered, so this one becomes the parent category in the
+-- The panel AS A WHOLE: where it sits, how the grid is arranged, when it
+-- appears. Anything about an individual box lives on the Boxes page.
+--
+-- First page registered, so this becomes the parent category in the
 -- Options > AddOns tree and the others hang beneath it.
 
-O.NewPage("Layout", function(panel, y)
+O.NewPage("Panel", function(panel, y)
     local db = ns.db
 
     _, y = O.Header(panel, "Position", y)
@@ -28,9 +31,9 @@ O.NewPage("Layout", function(panel, y)
         ns.db.point = { "CENTER", "CENTER", 0, -140 }
         ns.Panel:ApplyPosition()
     end)
-    y = y - 36
+    y = y - 40
 
-    _, y = O.Header(panel, "Size", y)
+    _, y = O.Header(panel, "Grid", y)
 
     _, y = O.Slider(panel, "Columns",
         "How many boxes per row before wrapping.", y,
@@ -38,18 +41,8 @@ O.NewPage("Layout", function(panel, y)
         function() return db.columns end,
         function(v) ns.Set("columns", v) end)
 
-    _, y = O.Slider(panel, "Box width",
-        "Decursive's own boxes were 20 x 20. Names need roughly 58 to be readable.", y,
-        10, 120, 1,
-        function() return db.boxWidth end,
-        function(v) ns.Set("boxWidth", v) end)
-
-    _, y = O.Slider(panel, "Box height", nil, y,
-        10, 60, 1,
-        function() return db.boxHeight end,
-        function(v) ns.Set("boxHeight", v) end)
-
-    _, y = O.Slider(panel, "Spacing", nil, y,
+    _, y = O.Slider(panel, "Spacing",
+        "Gap between boxes, in pixels.", y,
         0, 12, 1,
         function() return db.spacing end,
         function(v) ns.Set("spacing", v) end)
