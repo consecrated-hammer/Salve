@@ -54,13 +54,18 @@ function Handle:Create(parent)
         if not self.dragging then return end
         self.dragging = nil
 
-        -- A drag begun out of combat can still END in it. The frame has to be
-        -- released either way or it keeps following the cursor, so make the call
-        -- but let a blocked one fail quietly rather than erroring every frame.
-        pcall(parent.StopMovingOrSizing, parent)
+        -- ☠ A drag begun out of combat can END in it, and StopMovingOrSizing is
+        --   protected. Swallowing that failure is not enough: the panel stays
+        --   attached to the cursor with nothing scheduled to release it, so it
+        --   follows the mouse for the rest of the fight. Queue the release and
+        --   finish it the moment combat ends.
+        if InCombatLockdown() then
+            ns.pendingDragStop = true
+            ns.Print("panel will settle where you dropped it when combat ends")
+            return
+        end
 
-        local point, _, rel, x, y = parent:GetPoint()
-        ns.db.point = { point, rel, x, y }
+        Handle:Release()
     end)
 
     h:SetScript("OnEnter", function(self)
@@ -82,6 +87,19 @@ function Handle:Create(parent)
 
     self.frame = h
     return h
+end
+
+-- Stops the panel following the cursor and records where it ended up. Safe to
+-- call twice; only meaningful out of combat.
+function Handle:Release()
+    local panel = ns.Panel and ns.Panel.frame
+    if not panel or InCombatLockdown() then return false end
+
+    panel:StopMovingOrSizing()
+    local point, _, rel, x, y = panel:GetPoint()
+    ns.db.point = { point, rel, x, y }
+    ns.pendingDragStop = false
+    return true
 end
 
 function Handle:Update()

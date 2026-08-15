@@ -84,6 +84,10 @@ O.NewPage("Dispel", function(panel, y)
     local rowsTop = y
     local rows = {}
 
+    -- Forward declaration: redraw calls this, and it needs the controls that are
+    -- created below the list.
+    local reflow
+
     -- Rebuilt on every open and after every edit: both the binding list and the
     -- spells it resolves to can change underneath this page.
     local function redraw()
@@ -149,11 +153,13 @@ O.NewPage("Dispel", function(panel, y)
                 redraw()
             end)
         end
+
+        -- Push the Add button and diagnostics below however many rows there are.
+        if reflow then reflow(#list) end
     end
 
     local add = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     add:SetSize(150, 22)
-    add:SetPoint("TOPLEFT", 16, rowsTop - 5 * 32 - 8)
     add:SetText("Add a binding")
     add:SetScript("OnClick", function()
         promptForKey(function(key)
@@ -164,15 +170,31 @@ O.NewPage("Dispel", function(panel, y)
         end)
     end)
 
-    y = rowsTop - 5 * 32 - 44
-
-    _, y = O.Header(panel, "Diagnostics", y)
+    -- ☠ EVERYTHING BELOW THE LIST MOVES WITH IT. These were anchored as though
+    --   the list were always five rows; a sixth binding overlapped the Add
+    --   button, and further ones buried the diagnostics entirely -- so the
+    --   controls needed to fix an over-long list were the first casualties.
+    local diagHeader = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    diagHeader:SetText("Diagnostics")
 
     local probe = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     probe:SetSize(150, 22)
-    probe:SetPoint("TOPLEFT", 16, y)
     probe:SetText("Run engine probe")
     probe:SetScript("OnClick", function() ns.Binding:Report() end)
+
+    function reflow(rowCount)  -- luacheck: ignore (declared local above)
+        local bottom = rowsTop - rowCount * 32 - 8
+        add:ClearAllPoints()
+        add:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, bottom)
+
+        diagHeader:ClearAllPoints()
+        diagHeader:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, bottom - 40)
+
+        probe:ClearAllPoints()
+        probe:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, bottom - 66)
+    end
+
+    reflow(#ns.Bindings:List())
 
     panel.salveRefresh[#panel.salveRefresh + 1] = redraw
 end)
