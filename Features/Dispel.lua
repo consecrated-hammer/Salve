@@ -44,8 +44,12 @@ local SPELLS = {
         { id = 365585,               Poison = true },                  -- Expunge
         -- ☠ Cauterizing Flame is the reason this file resolves two spells.
         --   It is available alongside Naturalize, covers schools Naturalize
-        --   cannot, and the engine filter counts it.
-        { id = 374251, Poison = true, Curse = true, Disease = true },  -- Cauterizing Flame
+        --   cannot, and the engine filter counts it. `limited` keeps it OFF
+        --   left click: it is on a long cooldown, so making it the primary --
+        --   which raw coverage counting would -- means routine Poison cleansing
+        --   spends it and then fails, while Naturalize sits unused on the other
+        --   button.
+        { id = 374251, Poison = true, Curse = true, Disease = true, limited = true },
     },
     MAGE = {
         { id = 475,                                 Curse = true },    -- Remove Curse
@@ -102,18 +106,33 @@ function ns.UpdateDispelSpell()
             local name = nameOf(entry.id)
             if name then
                 local set, n = coverage(entry)
-                available[#available + 1] =
-                    { id = entry.id, name = name, cures = set, count = n }
+                available[#available + 1] = {
+                    id = entry.id, name = name, cures = set, count = n,
+                    limited = entry.limited,
+                }
             end
         end
     end
 
-    -- Primary: the broadest. Ties go to the earlier entry, which is the
-    -- spec-appropriate one in every table above.
+    -- Primary: the broadest REPEATABLE dispel.
+    --
+    -- ☠ Coverage alone is the wrong measure. A cooldown-limited spell can cover
+    --   more schools than the spammable one and still be the wrong thing to put
+    --   on the button you press every few seconds -- you spend it on a routine
+    --   debuff and then have nothing when the school it uniquely covers lands.
+    --   Repeatability first, then coverage.
     local best
     for _, s in ipairs(available) do
-        if not best or s.count > best.count then best = s end
+        if not s.limited and (not best or s.count > best.count) then best = s end
     end
+
+    -- Only fall back to a cooldown spell if it is genuinely all there is.
+    if not best then
+        for _, s in ipairs(available) do
+            if not best or s.count > best.count then best = s end
+        end
+    end
+
     if not best then
         return oldPrimary ~= nil or oldSecondary ~= nil
     end

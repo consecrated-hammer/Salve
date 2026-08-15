@@ -71,8 +71,10 @@ function ns.Set(key, value)
     if ns.db[key] == value then return end
     ns.db[key] = value
 
+    -- Debounced: settings arrive from sliders, which fire on every drag tick.
+    -- Events (roster, spec) call ns.RequestRebuild directly and stay immediate.
     if GEOMETRY[key] then
-        ns.RequestRebuild()
+        ns.RequestRebuildSoon()
     elseif ns.Panel and ns.Panel.Restyle then
         ns.Panel:Restyle()
     end

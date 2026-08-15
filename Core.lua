@@ -41,3 +41,21 @@ end
 function ns.FlushPending()
     if pending then ns.RequestRebuild() end
 end
+
+-- Debounced rebuild, for settings rather than events.
+--
+-- ☠ A slider fires OnValueChanged on EVERY tick of a drag. Rebuilding straight
+--   away meant one drag of the box-width slider in a raid tore down and rebuilt
+--   an AuraContainer per member per tick -- and those frames are never
+--   reclaimed by the client, so a single drag could strand thousands of them
+--   for the rest of the session. Coalesce instead: only the value you settle on
+--   costs anything.
+local rebuildTimer
+
+function ns.RequestRebuildSoon(delay)
+    if rebuildTimer then rebuildTimer:Cancel() end
+    rebuildTimer = C_Timer.NewTimer(delay or 0.3, function()
+        rebuildTimer = nil
+        ns.RequestRebuild()
+    end)
+end
