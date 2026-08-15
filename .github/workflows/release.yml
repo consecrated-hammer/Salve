@@ -22,6 +22,28 @@ jobs:
           # The packager builds the changelog from history, so it needs all of it.
           fetch-depth: 0
 
+      # The zip is named from the TAG but the version players see in their addon
+      # list comes from the TOC. Letting those drift ships "0.1.0" inside a file
+      # called 0.2.0, which is confusing to diagnose and impossible to fix after
+      # upload. Fail before publishing anything instead.
+      - name: Tag must match the TOC version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          toc=$(grep -oP '(?<=^## Version:\s).*' Salve.toc | tr -d '[:space:]')
+          echo "tag=$tag  toc=$toc"
+          if [ "$tag" != "$toc" ]; then
+            echo "::error::Tag $tag does not match '## Version: $toc' in Salve.toc."
+            exit 1
+          fi
+
+      - name: Check the changelog mentions this version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          if ! grep -q "\[$tag\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no [$tag] section — CurseForge would show an empty changelog."
+            exit 1
+          fi
+
       - name: Package and release
         uses: BigWigsMods/packager@v2
         env:
