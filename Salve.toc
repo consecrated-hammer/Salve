@@ -10,9 +10,7 @@
 ## IconTexture: Interface\AddOns\Salve\Textures\Salve
 ## X-License: GPL-3.0
 ## X-Website: https://github.com/consecrated-hammer/Salve
-# Uncomment and fill in once the CurseForge project exists — the release
-# workflow needs it to upload, and it must match the project's numeric ID.
-# ## X-Curse-Project-ID: 000000
+## X-Curse-Project-ID: 1653368
 
 # ============================================================
 # Salve — a Decursive replacement for Midnight (12.1.0)

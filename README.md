@@ -3,8 +3,9 @@
 **A compact dispel panel for World of Warcraft.** One click removes Curse,
 Disease, Poison or Magic from anyone in your group.
 
+[![CurseForge](https://img.shields.io/curseforge/v/1653368?style=flat-square&color=4c9a7a&label=curseforge)](https://www.curseforge.com/projects/1653368)
+[![Downloads](https://img.shields.io/curseforge/dt/1653368?style=flat-square&color=4c9a7a&label=downloads)](https://www.curseforge.com/projects/1653368)
 [![License](https://img.shields.io/badge/license-GPL--3.0-4c9a7a?style=flat-square)](LICENSE.txt)
-[![Release](https://img.shields.io/github/v/release/consecrated-hammer/Salve?style=flat-square&color=4c9a7a&label=release)](https://github.com/consecrated-hammer/Salve/releases)
 [![Client](https://img.shields.io/badge/client-retail-4c9a7a?style=flat-square)](https://worldofwarcraft.blizzard.com/)
 
 ---
