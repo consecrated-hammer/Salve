@@ -165,6 +165,16 @@ local function initializeFrame(box)
 
         pcall(b.SetSize, b, box:GetWidth(), box:GetHeight())
 
+        -- Lift our text above the engine's button, now that its level is known.
+        -- Without this the opaque fill created below hides the unit name -- a
+        -- child frame renders above every region of its parent, and the name
+        -- lives on the box. See the note in UI/Box.lua.
+        if box.textLayer then
+            pcall(function()
+                box.textLayer:SetFrameLevel(b:GetFrameLevel() + 5)
+            end)
+        end
+
         -- Fill: created HERE, as a child of the button. The engine tints it by
         -- dispel type and owns its visibility from AddDispelTypeTexture onward.
         if not b.salveFill then

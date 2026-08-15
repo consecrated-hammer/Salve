@@ -32,9 +32,21 @@ function Box.Create(index, parent)
     box.border:SetPoint("BOTTOMRIGHT", 1, -1)
     box.border:SetColorTexture(0, 0, 0, 0.9)
 
-    box.name = box:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    box.name:SetPoint("LEFT", 3, 0)
-    box.name:SetPoint("RIGHT", -3, 0)
+    -- ☠ THE NAME LIVES ON ITS OWN FRAME, NOT ON THE BOX. The engine's aura
+    --   button is a CHILD frame of this box, and a child renders above every
+    --   region of its parent -- so an opaque fill on that button covers a
+    --   FontString drawn here. The name would vanish exactly when the box lit
+    --   up, which is the one moment it matters. A child frame of our own,
+    --   levelled above the engine's, is the only way to stay on top.
+    --   Features/AuraBinding.lua re-asserts the level once it knows the
+    --   button's.
+    box.textLayer = CreateFrame("Frame", nil, box)
+    box.textLayer:SetAllPoints(box)
+    box.textLayer:SetFrameLevel(box:GetFrameLevel() + 10)
+
+    box.name = box.textLayer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    box.name:SetPoint("LEFT", box, "LEFT", 3, 0)
+    box.name:SetPoint("RIGHT", box, "RIGHT", -3, 0)
     box.name:SetJustifyH("LEFT")
 
     box.hl = box:CreateTexture(nil, "HIGHLIGHT")

@@ -38,7 +38,7 @@ local BUTTON_LABEL = {
 -- "SHIFT-BUTTON2" -> "Shift + Right click"
 function Bindings:Label(key)
     if not key then return "unbound" end
-    local mods, button = key:match("^(.-)(BUTTON%d)$")
+    local mods, button = key:match("^(.-)(BUTTON%d+)$")
     if not button then return key end
 
     local parts = {}
@@ -72,7 +72,10 @@ end
 -- Splits a key string into the secure-attribute prefix and button number.
 -- WoW expects modifiers lowercase and in alt-ctrl-shift order.
 local function attributeParts(key)
-    local mods, button = key:match("^(.-)BUTTON(%d)$")
+    -- ☠ %d+, not %d. Gaming mice go well past button 9, and Capture happily
+    --   records BUTTON10 -- a single-digit pattern then failed to match, so the
+    --   binding saved, displayed, and never cast anything.
+    local mods, button = key:match("^(.-)BUTTON(%d+)$")
     if not button then return nil end
 
     local prefix = ""
