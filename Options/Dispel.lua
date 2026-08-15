@@ -14,6 +14,10 @@ local function ensureCapture()
     f:SetPoint("CENTER")
     f:SetFrameStrata("FULLSCREEN_DIALOG")
     f:EnableMouse(true)
+    -- ☠ Without this the frame never receives OnKeyDown, so the advertised
+    --   Escape-to-cancel silently does nothing and the prompt can only be
+    --   dismissed by binding something.
+    f:EnableKeyboard(true)
     f:Hide()
 
     local bg = f:CreateTexture(nil, "BACKGROUND")

@@ -112,35 +112,45 @@ function Bindings:Apply(box)
     -- ☠ Clear only what we previously wrote. Blanket-clearing every button and
     --   modifier combination would be 40 attribute pairs per box per rebuild --
     --   1600 in a full raid, for nothing.
-    if box.appliedBindings then
-        for _, applied in ipairs(box.appliedBindings) do
-            box:SetAttribute(applied .. "type" .. box.appliedButton[applied], nil)
-            box:SetAttribute(applied .. "spell" .. box.appliedButton[applied], nil)
+    --
+    -- ☠ RECORD THE FULL ATTRIBUTE NAMES, not a prefix-to-button map. Two
+    --   bindings on different buttons share a prefix whenever neither uses a
+    --   modifier -- which is exactly the default pair, left and right. Keying
+    --   the record by prefix meant the second overwrote the first, so cleanup
+    --   cleared button 2 twice and left button 1 installed: a binding you had
+    --   deleted carried on casting.
+    if box.appliedAttrs then
+        for _, attr in ipairs(box.appliedAttrs) do
+            box:SetAttribute(attr, nil)
         end
     end
 
-    box.appliedBindings = {}
-    box.appliedButton   = {}
+    box.appliedAttrs = {}
+
+    local function set(attr, value)
+        box:SetAttribute(attr, value)
+        box.appliedAttrs[#box.appliedAttrs + 1] = attr
+    end
 
     for _, entry in ipairs(self:List()) do
         local prefix, button = attributeParts(entry.key or "")
         if prefix and button then
+            local typeAttr  = prefix .. "type" .. button
+            local spellAttr = prefix .. "spell" .. button
+
             if entry.action == "TARGET" then
-                box:SetAttribute(prefix .. "type" .. button, "target")
-                box:SetAttribute(prefix .. "spell" .. button, nil)
+                set(typeAttr, "target")
+                set(spellAttr, nil)
             elseif entry.action == "NONE" then
-                box:SetAttribute(prefix .. "type" .. button, nil)
-                box:SetAttribute(prefix .. "spell" .. button, nil)
+                set(typeAttr, nil)
+                set(spellAttr, nil)
             else
                 local spell = spellFor(entry)
                 if spell then
-                    box:SetAttribute(prefix .. "type" .. button, "spell")
-                    box:SetAttribute(prefix .. "spell" .. button, spell)
+                    set(typeAttr, "spell")
+                    set(spellAttr, spell)
                 end
             end
-
-            box.appliedBindings[#box.appliedBindings + 1] = prefix
-            box.appliedButton[prefix] = button
         end
     end
 end

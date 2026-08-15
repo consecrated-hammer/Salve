@@ -67,6 +67,11 @@ local GEOMETRY = {
     columns = true, boxWidth = true, boxHeight = true, spacing = true,
     scale = true, showNames = true, showStacks = true, orientation = true,
     bindings = true,
+    -- ☠ visibilityMode belongs here even though it changes no geometry: the
+    --   state driver is only (re)registered from Panel:Rebuild, so treating it
+    --   as a restyle left the old driver installed. Choosing Never did nothing
+    --   until an unrelated roster event happened along.
+    visibilityMode = true,
 }
 
 function ns.Set(key, value)
