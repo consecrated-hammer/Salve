@@ -137,20 +137,15 @@ function Binding:Report()
     --   colour reset and shows "HARMFULAID_PLAYER_DISPELLABLE" -- a diagnostic
     --   that misreports the one string it exists to confirm.
     ns.Print("  filter: " .. ns.DISPELLABLE_FILTER:gsub("|", "||"))
-    local left, rightType, right = ns.ResolveClicks()
-    ns.Print("  left click: " .. tostring(left or "|cffff4444none known|r"))
-    ns.Print("  right click: " .. (rightType == "spell" and tostring(right)
-        or rightType == "target" and "target the unit" or "nothing"))
+    for _, entry in ipairs(ns.Bindings:List()) do
+        local what = ns.Bindings:Describe(entry)
+        ns.Print("  " .. ns.Bindings:Label(entry.key) .. ": " .. tostring(what))
+    end
     local names = {}
     for _, s in ipairs(ns.knownDispels or {}) do
         names[#names + 1] = s.name .. " (" .. ns.CuresText(s.cures) .. ")"
     end
     ns.Print("  dispels known: " .. (#names > 0 and table.concat(names, ", ") or "none"))
-    ns.Print("  sound hook: "
-        .. (ns.Sound.hookInstalled and "|cff44ff44installed|r" or "|cffff4444not installed|r")
-        .. ", fired " .. tostring(ns.Sound.fireCount) .. "x"
-        .. ((ns.Sound.hookFailures or 0) > 0
-            and (", |cffff4444" .. ns.Sound.hookFailures .. " rejected|r") or ""))
 end
 
 Binding.boundCount = 0
@@ -197,12 +192,6 @@ local function initializeFrame(box)
             pcall(b.SetApplicationCount, b, b.salveStack, {})
         end
 
-        -- The affliction alert. The engine shows this button exactly when a
-        -- dispellable aura appears, so OnShow is a read-free "something landed"
-        -- event -- no aura read, no comparison, no spell list.
-        -- ⚠ Still unproven: see Features/Sound.lua. /salve probe reports whether
-        --   it has ever actually fired.
-        ns.Sound:Hook(b)
 
         Binding.boundCount = Binding.boundCount + 1
     end

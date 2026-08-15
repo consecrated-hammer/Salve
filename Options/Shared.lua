@@ -192,6 +192,126 @@ function Options.DynamicCycle(panel, label, hint, y, optionsFn, get, set)
     return btn, y - (ROW_GAP + 18)
 end
 
+-- A dropdown that opens a panel of checkboxes rather than a single-choice menu:
+-- a base mode at the top, then conditions that combine. Hand-built because
+-- Blizzard's dropdown API churned in 12.0 and a custom panel is both stabler
+-- and the only way to get the two-part layout.
+function Options.MultiSelect(panel, label, hint, y, spec)
+    local btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    btn:SetSize(210, 22)
+    btn:SetPoint("TOPLEFT", 16, y - 16)
+
+    local title = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    title:SetPoint("BOTTOMLEFT", btn, "TOPLEFT", 2, 2)
+    title:SetText(label)
+
+    local arrow = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    arrow:SetPoint("RIGHT", -6, 0)
+    arrow:SetText("|cffffd100v|r")
+
+    -- The drop-down body. Parented to UIParent at a high strata so it floats
+    -- over the settings panel rather than being clipped by it.
+    local menu = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    menu:SetFrameStrata("FULLSCREEN_DIALOG")
+    menu:SetPoint("TOPLEFT", btn, "BOTTOMLEFT", 0, -2)
+    menu:SetWidth(230)
+    menu:EnableMouse(true)
+    menu:Hide()
+
+    local bg = menu:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetColorTexture(0.05, 0.05, 0.06, 0.97)
+    for _, e in ipairs({ { "TOPLEFT", "TOPRIGHT", true }, { "BOTTOMLEFT", "BOTTOMRIGHT", true },
+                         { "TOPLEFT", "BOTTOMLEFT", false }, { "TOPRIGHT", "BOTTOMRIGHT", false } }) do
+        local t = menu:CreateTexture(nil, "OVERLAY")
+        t:SetColorTexture(0.35, 0.35, 0.38, 1)
+        t:SetPoint(e[1]); t:SetPoint(e[2])
+        if e[3] then t:SetHeight(1) else t:SetWidth(1) end
+    end
+
+    local rows, my = {}, -8
+
+    local function addRow(text, get, set, isHeading)
+        if isHeading then
+            local h = menu:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+            h:SetPoint("TOPLEFT", 10, my)
+            h:SetText(text)
+            h:SetTextColor(0.6, 0.6, 0.65)
+            my = my - 18
+            return
+        end
+
+        local row = CreateFrame("Button", nil, menu)
+        row:SetPoint("TOPLEFT", 6, my)
+        row:SetPoint("TOPRIGHT", -6, my)
+        row:SetHeight(22)
+
+        local box = row:CreateTexture(nil, "ARTWORK")
+        box:SetSize(14, 14)
+        box:SetPoint("LEFT", 6, 0)
+
+        local fs = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        fs:SetPoint("LEFT", box, "RIGHT", 8, 0)
+        fs:SetText(text)
+
+        local hl = row:CreateTexture(nil, "HIGHLIGHT")
+        hl:SetAllPoints()
+        hl:SetColorTexture(1, 1, 1, 0.07)
+
+        row.Render = function()
+            if get() then
+                box:SetColorTexture(0.28, 0.80, 0.62, 1)
+            else
+                box:SetColorTexture(0.16, 0.16, 0.18, 1)
+            end
+        end
+
+        row:SetScript("OnClick", function()
+            set(not get())
+            for _, r in ipairs(rows) do r.Render() end
+            if panel.salveRefreshAll then panel.salveRefreshAll() end
+        end)
+
+        rows[#rows + 1] = row
+        my = my - 22
+    end
+
+    for _, item in ipairs(spec.items) do
+        addRow(item.label, item.get, item.set, item.heading)
+    end
+    menu:SetHeight(-my + 8)
+
+    local function render()
+        btn:SetText(spec.summary())
+        for _, r in ipairs(rows) do r.Render() end
+    end
+
+    btn:SetScript("OnClick", function()
+        menu:SetShown(not menu:IsShown())
+        render()
+    end)
+
+    -- Close when the settings page goes away, or it would float over whatever
+    -- the player opens next.
+    panel:HookScript("OnHide", function() menu:Hide() end)
+
+    if hint then
+        btn:HookScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(hint, 1, 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        btn:HookScript("OnLeave", function(self)
+            if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
+        end)
+    end
+
+    panel.salveRefresh[#panel.salveRefresh + 1] = render
+    render()
+
+    return btn, y - (ROW_GAP + 18)
+end
+
 function Options.Header(panel, text, y)
     local fs = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     fs:SetPoint("TOPLEFT", PAD_L, y)

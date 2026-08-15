@@ -1,101 +1,175 @@
 local addonName, ns = ...
 local O = ns.Options
 
+-- ── Key capture prompt ─────────────────────────────────────────────────────
+-- Click a binding's button, then press whatever you want it to be. Built once
+-- and reused; shared by every row.
+
+local capture
+local function ensureCapture()
+    if capture then return capture end
+
+    local f = CreateFrame("Frame", "SalveBindCapture", UIParent)
+    f:SetSize(340, 110)
+    f:SetPoint("CENTER")
+    f:SetFrameStrata("FULLSCREEN_DIALOG")
+    f:EnableMouse(true)
+    f:Hide()
+
+    local bg = f:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetColorTexture(0.05, 0.04, 0.03, 0.96)
+    for _, e in ipairs({ { "TOPLEFT", "TOPRIGHT", true }, { "BOTTOMLEFT", "BOTTOMRIGHT", true },
+                         { "TOPLEFT", "BOTTOMLEFT", false }, { "TOPRIGHT", "BOTTOMRIGHT", false } }) do
+        local t = f:CreateTexture(nil, "OVERLAY")
+        t:SetColorTexture(0.58, 0.43, 0.22, 1)
+        t:SetPoint(e[1]); t:SetPoint(e[2])
+        if e[3] then t:SetHeight(1) else t:SetWidth(1) end
+    end
+
+    local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOP", 0, -16)
+    title:SetText("Press a mouse button")
+    title:SetTextColor(1, 0.82, 0.26)
+
+    local body = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    body:SetPoint("TOP", title, "BOTTOM", 0, -8)
+    body:SetWidth(300)
+    body:SetText("Hold Shift, Ctrl or Alt to include it.\nEscape cancels.")
+
+    -- ☠ Mouse buttons only. A secure action button is driven by attributes
+    --   keyed per mouse button; a keyboard key cannot be aimed at "the box
+    --   under the cursor" without a mouseover macro, which is a different
+    --   mechanism and not this panel's to own.
+    f:SetScript("OnMouseDown", function(self, button)
+        local key = ns.Bindings:Capture(button)
+        if key and self.onCapture then self.onCapture(key) end
+        self:Hide()
+    end)
+
+    f:SetScript("OnKeyDown", function(self, key)
+        if key == "ESCAPE" then self:Hide() return end
+        ns.Print("mouse buttons only — a keyboard key cannot target the box under your cursor")
+    end)
+
+    f:SetPropagateKeyboardInput(false)
+    capture = f
+    return f
+end
+
+local function promptForKey(onCapture)
+    local f = ensureCapture()
+    f.onCapture = onCapture
+    f:Show()
+    f:SetPropagateKeyboardInput(false)
+end
+
+-- ── Page ───────────────────────────────────────────────────────────────────
+
 O.NewPage("Dispel", function(panel, y)
-    local db = ns.db
+    _, y = O.Header(panel, "Detected dispels", y)
 
-    _, y = O.Header(panel, "Spell", y)
+    local known = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    known:SetPoint("TOPLEFT", 16, y)
+    known:SetWidth(520)
+    known:SetJustifyH("LEFT")
+    y = y - 40
 
-    local spell = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    spell:SetPoint("TOPLEFT", 16, y)
-    spell:SetWidth(520)
-    spell:SetJustifyH("LEFT")
-    y = y - 46
+    _, y = O.Header(panel, "Click bindings", y)
 
-    -- Refreshed on every open: the spells change with spec, and this is a likely
-    -- place to look right after respeccing.
-    -- Shows what is ACTUALLY bound right now, after any overrides below --
-    -- otherwise the page could describe a setup you had already changed.
-    panel.salveRefresh[#panel.salveRefresh + 1] = function()
-        if not ns.spellName then
-            spell:SetText("|cffff4444No dispel on this specialisation.|r")
-            return
-        end
-        local left, rightType, right = ns.ResolveClicks()
-        local text = "Left click: |cffffd100" .. tostring(left) .. "|r"
-        if rightType == "spell" then
-            text = text .. "\nRight click: |cffffd100" .. tostring(right) .. "|r"
-        elseif rightType == "target" then
-            text = text .. "\nRight click: |cffffd100targets the unit|r"
-        else
-            text = text .. "\nRight click: |cff999999nothing|r"
-        end
-        spell:SetText(text)
-    end
+    local rowsTop = y
+    local rows = {}
 
-    _, y = O.Header(panel, "Clicks", y)
-
-    -- Built from the spells you actually know, refreshed on every open, because
-    -- that list changes with your specialisation.
-    local function spellChoices(extra)
-        local values, labels = { ns.CLICK_AUTO }, { "Automatic" }
+    -- Rebuilt on every open and after every edit: both the binding list and the
+    -- spells it resolves to can change underneath this page.
+    local function redraw()
+        local names = {}
         for _, s in ipairs(ns.knownDispels or {}) do
-            values[#values + 1] = s.id
-            labels[#labels + 1] = s.name .. " (" .. ns.CuresText(s.cures) .. ")"
+            names[#names + 1] = s.name .. " (" .. ns.CuresText(s.cures) .. ")"
         end
-        if extra then
-            for i, v in ipairs(extra.values) do
-                values[#values + 1] = v
-                labels[#labels + 1] = extra.labels[i]
+        known:SetText(#names > 0 and table.concat(names, "\n")
+            or "|cffff4444No dispel on this specialisation.|r")
+
+        for _, r in ipairs(rows) do r:Hide() end
+
+        local list = ns.Bindings:List()
+        for i, entry in ipairs(list) do
+            local row = rows[i]
+            if not row then
+                row = CreateFrame("Frame", nil, panel)
+                row:SetSize(500, 30)
+
+                row.icon = row:CreateTexture(nil, "ARTWORK")
+                row.icon:SetSize(24, 24)
+                row.icon:SetPoint("LEFT", 16, 0)
+                row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+
+                row.spell = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+                row.spell:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
+                row.spell:SetWidth(210)
+                row.spell:SetJustifyH("LEFT")
+
+                row.bind = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+                row.bind:SetSize(150, 22)
+                row.bind:SetPoint("LEFT", row.spell, "RIGHT", 8, 0)
+
+                row.remove = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+                row.remove:SetSize(24, 22)
+                row.remove:SetPoint("LEFT", row.bind, "RIGHT", 6, 0)
+                row.remove:SetText("x")
+
+                rows[i] = row
             end
+
+            row:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, rowsTop - (i - 1) * 32)
+            row:Show()
+
+            local what, icon = ns.Bindings:Describe(entry)
+            row.icon:SetTexture(icon or "Interface\\Icons\\INV_Misc_QuestionMark")
+            row.spell:SetText(what)
+            row.bind:SetText(ns.Bindings:Label(entry.key))
+
+            row.bind:SetScript("OnClick", function()
+                promptForKey(function(key)
+                    -- Materialise the defaults before editing, or the first edit
+                    -- would be written into the shared default table.
+                    if not ns.db.bindings or #ns.db.bindings == 0 then
+                        ns.db.bindings = CopyTable(ns.Bindings:List())
+                    end
+                    ns.db.bindings[i].key = key
+                    ns.RequestRebuildSoon(0.05)
+                    redraw()
+                end)
+            end)
+
+            row.remove:SetScript("OnClick", function()
+                if not ns.db.bindings or #ns.db.bindings == 0 then
+                    ns.db.bindings = CopyTable(ns.Bindings:List())
+                end
+                table.remove(ns.db.bindings, i)
+                ns.RequestRebuildSoon(0.05)
+                redraw()
+            end)
         end
-        return values, labels
     end
 
-    _, y = O.DynamicCycle(panel, "Left click",
-        "Which spell the left button casts. Automatic picks the broadest dispel "
-        .. "you can cast repeatedly, keeping cooldown-limited ones off the button "
-        .. "you press most.", y,
-        function() return spellChoices() end,
-        function() return db.leftSpell end,
-        function(v) ns.Set("leftSpell", v) end)
+    local add = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    add:SetSize(150, 22)
+    add:SetPoint("TOPLEFT", 16, rowsTop - 5 * 32 - 8)
+    add:SetText("Add a binding")
+    add:SetScript("OnClick", function()
+        promptForKey(function(key)
+            if not ns.db.bindings or #ns.db.bindings == 0 then
+                ns.db.bindings = CopyTable(ns.Bindings:List())
+            end
+            ns.db.bindings[#ns.db.bindings + 1] =
+                { key = key, role = ns.ROLE_PRIMARY }
+            ns.RequestRebuildSoon(0.05)
+            redraw()
+        end)
+    end)
 
-    _, y = O.DynamicCycle(panel, "Right click",
-        "Automatic uses your second dispel where your specialisation has one, so "
-        .. "the two buttons together cover every school the panel can light up.", y,
-        function()
-            return spellChoices({
-                values = { ns.CLICK_TARGET, ns.CLICK_NONE },
-                labels = { "Target the unit", "Do nothing" },
-            })
-        end,
-        function() return db.rightSpell end,
-        function(v) ns.Set("rightSpell", v) end)
-
-    _, y = O.Header(panel, "Alert sound", y)
-
-    _, y = O.Check(panel, "Play a sound when something dispellable lands",
-        "Decursive's AfflictionAlert.\n\n"
-        .. "EXPERIMENTAL: the game's own sound API is keyed per spell ID, which "
-        .. "Salve deliberately never knows. This uses the engine's show event on "
-        .. "the box instead, which is unverified. Run the engine probe below to "
-        .. "see whether it has actually fired.", y,
-        function() return db.soundEnabled end,
-        function(v) ns.Set("soundEnabled", v) end)
-
-    _, y = O.Slider(panel, "Minimum gap between sounds",
-        "Stops a raid-wide debuff turning into a machine gun.", y,
-        0.5, 10, 0.5,
-        function() return db.soundThrottle end,
-        function(v) ns.Set("soundThrottle", v) end,
-        function(v) return string.format("%.1fs", v) end)
-
-    local test = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    test:SetSize(150, 22)
-    test:SetPoint("TOPLEFT", 16, y - 4)
-    test:SetText("Play test sound")
-    test:SetScript("OnClick", function() ns.Sound:Test() end)
-    y = y - 34
+    y = rowsTop - 5 * 32 - 44
 
     _, y = O.Header(panel, "Diagnostics", y)
 
@@ -105,11 +179,5 @@ O.NewPage("Dispel", function(panel, y)
     probe:SetText("Run engine probe")
     probe:SetScript("OnClick", function() ns.Binding:Report() end)
 
-    local hint = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-    hint:SetPoint("TOPLEFT", 16, y - 30)
-    hint:SetWidth(520)
-    hint:SetJustifyH("LEFT")
-    hint:SetText("Prints which parts of the game's aura-binding API this client offers, "
-        .. "and whether the sound hook has fired. Worth running once after a patch: "
-        .. "these are new interfaces and Blizzard has renamed them before.")
+    panel.salveRefresh[#panel.salveRefresh + 1] = redraw
 end)

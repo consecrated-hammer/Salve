@@ -62,18 +62,36 @@ O.NewPage("Panel", function(panel, y)
         function(v) ns.Set("scale", v) end,
         function(v) return string.format("%.2f", v) end)
 
-    _, y = O.Header(panel, "Where it shows", y)
+    _, y = O.Header(panel, "Visibility", y)
 
-    _, y = O.Check(panel, "Solo",
-        "Keeps a single box for yourself when ungrouped. Self-dispel still matters.", y,
-        function() return db.showInSolo end,
-        function(v) ns.Set("showInSolo", v) end)
+    local items = {
+        { label = "Always", get = function() return db.visibilityMode ~= "NEVER" end,
+          set = function() ns.Set("visibilityMode", "ALWAYS") end },
+        { label = "Never",  get = function() return db.visibilityMode == "NEVER" end,
+          set = function() ns.Set("visibilityMode", "NEVER") end },
+        { label = "Combine conditions", heading = true },
+    }
 
-    _, y = O.Check(panel, "Party", nil, y,
-        function() return db.showInParty end,
-        function(v) ns.Set("showInParty", v) end)
+    for _, c in ipairs(ns.VIS_CONDITIONS) do
+        local key = c.key
+        items[#items + 1] = {
+            label = c.label,
+            get   = function() return db.visibility[key] end,
+            set   = function(v)
+                db.visibility[key] = v or nil
+                -- Not ns.Set: the value lives in a subtable, so write it
+                -- directly and then ask for the rebuild that reapplies the
+                -- state driver.
+                ns.RequestRebuildSoon(0.05)
+            end,
+        }
+    end
 
-    _, y = O.Check(panel, "Raid", nil, y,
-        function() return db.showInRaid end,
-        function(v) ns.Set("showInRaid", v) end)
+    _, y = O.MultiSelect(panel, "Visibility",
+        "Always shows the panel unless a condition below narrows it.\n\n"
+        .. "Tick any number of conditions and the panel appears when ANY of them "
+        .. "matches. These are evaluated by the game itself, so they keep working "
+        .. "during combat -- which Lua could not do, because hiding a frame full "
+        .. "of secure buttons mid-fight is a blocked action.", y,
+        { items = items, summary = function() return ns.Visibility:Summary() end })
 end)

@@ -50,25 +50,10 @@ function Box.Bind(box, unit)
 
     box:SetAttribute("unit", unit)
 
-    -- Which spell sits on which button is the user's call; ns.ResolveClicks
-    -- applies their choice, falling back to detection where they have not made
-    -- one. Both attributes are fixed once written -- that is what keeps the box
-    -- working in combat without anything of ours running.
-    local left, rightType, right = ns.ResolveClicks()
-
-    box:SetAttribute("type1", "spell")
-    box:SetAttribute("spell1", left)
-
-    if rightType == "spell" then
-        box:SetAttribute("type2", "spell")
-        box:SetAttribute("spell2", right)
-    elseif rightType == "target" then
-        box:SetAttribute("type2", "target")
-        box:SetAttribute("spell2", nil)
-    else
-        box:SetAttribute("type2", nil)
-        box:SetAttribute("spell2", nil)
-    end
+    -- Any mouse button, with any modifiers. Every attribute is fixed once
+    -- written, which is what keeps the box working through a fight with nothing
+    -- of ours running. See Features/Bindings.lua.
+    ns.Bindings:Apply(box)
 end
 
 -- Name text and the clean-state dimming. Both are ours, both are safe in

@@ -26,8 +26,6 @@
 # So Salve never reads an aura. It hands regions to Blizzard's AuraContainer
 # under the RAID_PLAYER_DISPELLABLE filter and lets the engine drive them.
 # See Features/AuraBinding.lua for the full argument.
-#
-# GPL v3, because Sounds/AfflictionAlert.ogg comes from Decursive.
 
 # Namespace and saved variables. Everything else assumes these exist.
 Core.lua
@@ -40,8 +38,11 @@ Features\Dispel.lua
 # The engine binding. The heart of the addon.
 Features\AuraBinding.lua
 
-# ⚠ Experimental: the affliction alert. Read the header before trusting it.
-Features\Sound.lua
+# When the panel is on screen. A state driver, not Show/Hide -- read the header.
+Features\Visibility.lua
+
+# Which mouse button casts what.
+Features\Bindings.lua
 
 # ☠ Box.lua and Handle.lua before Panel.lua: Panel builds both from Create().
 UI\Box.lua

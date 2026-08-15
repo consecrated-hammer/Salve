@@ -13,21 +13,21 @@ local function unitList()
     local units = {}
     local db = ns.db
 
+    -- ☠ No show/hide decisions here. Which GROUP you are in decides how many
+    --   boxes exist; WHETHER the panel is on screen is Features/Visibility.lua's
+    --   job, via a state driver that keeps working in combat.
     if IsInRaid() then
-        if not db.showInRaid then return units end
         for i = 1, MAX_RAID_MEMBERS or 40 do
             local u = "raid" .. i
             if UnitExists(u) then units[#units + 1] = u end
         end
     elseif IsInGroup() then
-        if not db.showInParty then return units end
         units[1] = "player"
         for i = 1, 4 do
             local u = "party" .. i
             if UnitExists(u) then units[#units + 1] = u end
         end
     else
-        if not db.showInSolo then return units end
         units[1] = "player"
     end
 
@@ -66,13 +66,6 @@ end
 function Panel:Rebuild()
     if not self.frame or InCombatLockdown() then return end
 
-    -- ☠ ARM THE SOUND SUPPRESSION FIRST, BEFORE ANY BINDING HAPPENS. Binding a
-    --   slot makes the engine fire its show event for auras that are ALREADY
-    --   present, and those events arrive DURING the Attach loop below. Arming
-    --   afterwards left a window in which a login, a /reload or a roster change
-    --   mid-fight set off the alert for every debuff currently up -- the exact
-    --   noise the settle window exists to prevent.
-    ns.Sound:Settle()
 
     local db       = ns.db
     local failures = 0
@@ -134,16 +127,16 @@ function Panel:Rebuild()
         end
         self.frame:SetSize(across * w + (across - 1) * pad,
                            down * h + (down - 1) * pad)
-        self.frame:Show()
-    else
-        self.frame:Hide()
     end
+
+    -- ☠ Visibility is a STATE DRIVER, not Show()/Hide(). The panel is protected,
+    --   so Lua may not show or hide it in combat -- which is precisely when a
+    --   "hide out of combat" rule needs to act. Blizzard's secure environment
+    --   evaluates the rule instead. See Features/Visibility.lua.
+    ns.Visibility:Apply(self.frame, n > 0)
 
     ns.Handle:Update()
 
-    -- Re-arm: the window is measured from the LAST binding, and UpdateAllAuras
-    -- can deliver its show events a frame or two after Attach returns.
-    ns.Sound:Settle()
 
     -- Warn ONCE per session. Silent binding failure is the worst outcome here:
     -- the panel looks perfectly healthy and simply never lights up, which reads

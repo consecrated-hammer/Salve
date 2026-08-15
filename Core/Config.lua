@@ -24,22 +24,19 @@ ns.defaults = {
     showHandle    = true,   -- the persistent drag grip, like Decursive's
 
     -- Behaviour
-    showInSolo    = true,
-    showInParty   = true,
-    showInRaid    = true,
-    -- Which spell each mouse button casts. 0 = whatever detection chose;
-    -- -1 = target the unit; -2 = do nothing; anything else is a spell ID.
-    leftSpell     = 0,
-    rightSpell    = 0,
+    -- Click bindings. Empty means "use the defaults" (left = primary dispel,
+    -- right = secondary), which is how a fresh install and a spec change both
+    -- stay sensible. See Features/Bindings.lua.
+    bindings      = {},
 
     -- HORIZONTAL fills a row then wraps to the next; VERTICAL fills a column
     -- then wraps to the next. `columns` is the wrap point either way.
     orientation   = "HORIZONTAL",
 
-    -- Alert sound. Off until /salve probe confirms the hook actually fires.
-    soundEnabled  = false,
-    soundThrottle = 2,
-    soundChannel  = "Master",
+    -- ALWAYS | NEVER, combined with the conditions below. See
+    -- Features/Visibility.lua for why this is a state driver and not Show/Hide.
+    visibilityMode = "ALWAYS",
+    visibility     = {},
 
     -- Minimap button
     showMinimap   = true,
@@ -69,8 +66,7 @@ end
 local GEOMETRY = {
     columns = true, boxWidth = true, boxHeight = true, spacing = true,
     scale = true, showNames = true, showStacks = true, orientation = true,
-    leftSpell = true, rightSpell = true,
-    showInSolo = true, showInParty = true, showInRaid = true,
+    bindings = true,
 }
 
 function ns.Set(key, value)
