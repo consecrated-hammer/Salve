@@ -137,7 +137,15 @@ function Binding:Report()
     --   colour reset and shows "HARMFULAID_PLAYER_DISPELLABLE" -- a diagnostic
     --   that misreports the one string it exists to confirm.
     ns.Print("  filter: " .. ns.DISPELLABLE_FILTER:gsub("|", "||"))
-    ns.Print("  dispel spell: " .. tostring(ns.spellName or "|cffff4444none known|r"))
+    local left, rightType, right = ns.ResolveClicks()
+    ns.Print("  left click: " .. tostring(left or "|cffff4444none known|r"))
+    ns.Print("  right click: " .. (rightType == "spell" and tostring(right)
+        or rightType == "target" and "target the unit" or "nothing"))
+    local names = {}
+    for _, s in ipairs(ns.knownDispels or {}) do
+        names[#names + 1] = s.name .. " (" .. ns.CuresText(s.cures) .. ")"
+    end
+    ns.Print("  dispels known: " .. (#names > 0 and table.concat(names, ", ") or "none"))
     ns.Print("  sound hook: "
         .. (ns.Sound.hookInstalled and "|cff44ff44installed|r" or "|cffff4444not installed|r")
         .. ", fired " .. tostring(ns.Sound.fireCount) .. "x"

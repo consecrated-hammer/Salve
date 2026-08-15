@@ -141,6 +141,57 @@ function Options.Cycle(panel, label, hint, y, values, labels, get, set)
     return btn, y - (ROW_GAP + 18)
 end
 
+-- Like Cycle, but the option list is rebuilt every time it is drawn or clicked.
+-- Needed wherever the choices depend on game state: the pages are built once at
+-- ADDON_LOADED, while the spells you know change with every specialisation.
+function Options.DynamicCycle(panel, label, hint, y, optionsFn, get, set)
+    local btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    btn:SetSize(190, 22)
+    btn:SetPoint("TOPLEFT", 16, y - 16)
+
+    local title = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    title:SetPoint("BOTTOMLEFT", btn, "TOPLEFT", 2, 2)
+    title:SetText(label)
+
+    local function render()
+        local values, labels = optionsFn()
+        local cur = get()
+        for i, v in ipairs(values) do
+            if v == cur then btn:SetText(labels[i]) return end
+        end
+        -- The stored choice is no longer available -- a spell from the previous
+        -- spec, most likely. Show the first option rather than a blank button.
+        btn:SetText(labels[1] or "—")
+    end
+
+    btn:SetScript("OnClick", function()
+        local values = optionsFn()
+        if #values == 0 then return end
+        local cur = get()
+        for i, v in ipairs(values) do
+            if v == cur then set(values[(i % #values) + 1]) render() return end
+        end
+        set(values[1])
+        render()
+    end)
+
+    if hint then
+        btn:HookScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(hint, 1, 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        btn:HookScript("OnLeave", function(self)
+            if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
+        end)
+    end
+
+    panel.salveRefresh[#panel.salveRefresh + 1] = render
+    render()
+
+    return btn, y - (ROW_GAP + 18)
+end
+
 function Options.Header(panel, text, y)
     local fs = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     fs:SetPoint("TOPLEFT", PAD_L, y)

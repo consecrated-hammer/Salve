@@ -35,8 +35,17 @@ O.NewPage("Panel", function(panel, y)
 
     _, y = O.Header(panel, "Grid", y)
 
-    _, y = O.Slider(panel, "Columns",
-        "How many boxes per row before wrapping.", y,
+    _, y = O.Cycle(panel, "Direction",
+        "Horizontal fills a row and then wraps to the next row.\n\n"
+        .. "Vertical fills a column and then wraps to the next column — useful "
+        .. "down the side of the screen rather than across it.", y,
+        { "HORIZONTAL", "VERTICAL" },
+        { "Horizontal", "Vertical" },
+        function() return db.orientation end,
+        function(v) ns.Set("orientation", v) end)
+
+    _, y = O.Slider(panel, "Boxes per line",
+        "How many boxes before wrapping — per row when horizontal, per column when vertical.", y,
         1, 10, 1,
         function() return db.columns end,
         function(v) ns.Set("columns", v) end)

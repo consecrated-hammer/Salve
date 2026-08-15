@@ -89,11 +89,20 @@ function Panel:Rebuild()
             ns.Box.Bind(box, unit)
             ns.Box.Restyle(box)
 
+            -- HORIZONTAL fills across then wraps down; VERTICAL fills down then
+            -- wraps across. `cols` is the wrap point in both cases.
+            local n0 = i - 1
+            local col, row
+            if db.orientation == "VERTICAL" then
+                col, row = math.floor(n0 / cols), n0 % cols
+            else
+                col, row = n0 % cols, math.floor(n0 / cols)
+            end
+
             box:SetSize(w, h)
             box:ClearAllPoints()
             box:SetPoint("TOPLEFT", self.frame, "TOPLEFT",
-                ((i - 1) % cols) * (w + pad),
-                -math.floor((i - 1) / cols) * (h + pad))
+                col * (w + pad), -row * (h + pad))
             box:Show()
 
             -- Hand the box to the engine. After this it runs without us.
@@ -115,10 +124,16 @@ function Panel:Rebuild()
     self.frame:SetScale(db.scale)
 
     if n > 0 then
-        local usedCols = math.min(n, cols)
-        local rows     = math.ceil(n / cols)
-        self.frame:SetSize(usedCols * w + (usedCols - 1) * pad,
-                           rows * h + (rows - 1) * pad)
+        -- The wrap axis swaps with the orientation, so the frame's extent does
+        -- too: horizontal grows wide then tall, vertical grows tall then wide.
+        local across, down
+        if db.orientation == "VERTICAL" then
+            across, down = math.ceil(n / cols), math.min(n, cols)
+        else
+            across, down = math.min(n, cols), math.ceil(n / cols)
+        end
+        self.frame:SetSize(across * w + (across - 1) * pad,
+                           down * h + (down - 1) * pad)
         self.frame:Show()
     else
         self.frame:Hide()

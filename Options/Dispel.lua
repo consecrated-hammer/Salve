@@ -14,30 +14,63 @@ O.NewPage("Dispel", function(panel, y)
 
     -- Refreshed on every open: the spells change with spec, and this is a likely
     -- place to look right after respeccing.
+    -- Shows what is ACTUALLY bound right now, after any overrides below --
+    -- otherwise the page could describe a setup you had already changed.
     panel.salveRefresh[#panel.salveRefresh + 1] = function()
         if not ns.spellName then
             spell:SetText("|cffff4444No dispel on this specialisation.|r")
             return
         end
-        local text = "Left click: |cffffd100" .. ns.spellName .. "|r  ("
-            .. ns.CuresText(ns.primaryCures) .. ")"
-        if ns.secondaryName then
-            text = text .. "\nRight click: |cffffd100" .. ns.secondaryName .. "|r  ("
-                .. ns.CuresText(ns.secondaryCures) .. ")"
+        local left, rightType, right = ns.ResolveClicks()
+        local text = "Left click: |cffffd100" .. tostring(left) .. "|r"
+        if rightType == "spell" then
+            text = text .. "\nRight click: |cffffd100" .. tostring(right) .. "|r"
+        elseif rightType == "target" then
+            text = text .. "\nRight click: |cffffd100targets the unit|r"
+        else
+            text = text .. "\nRight click: |cff999999nothing|r"
         end
         spell:SetText(text)
     end
 
     _, y = O.Header(panel, "Clicks", y)
 
-    _, y = O.Cycle(panel, "Right click",
+    -- Built from the spells you actually know, refreshed on every open, because
+    -- that list changes with your specialisation.
+    local function spellChoices(extra)
+        local values, labels = { ns.CLICK_AUTO }, { "Automatic" }
+        for _, s in ipairs(ns.knownDispels or {}) do
+            values[#values + 1] = s.id
+            labels[#labels + 1] = s.name .. " (" .. ns.CuresText(s.cures) .. ")"
+        end
+        if extra then
+            for i, v in ipairs(extra.values) do
+                values[#values + 1] = v
+                labels[#labels + 1] = extra.labels[i]
+            end
+        end
+        return values, labels
+    end
+
+    _, y = O.DynamicCycle(panel, "Left click",
+        "Which spell the left button casts. Automatic picks the broadest dispel "
+        .. "you can cast repeatedly, keeping cooldown-limited ones off the button "
+        .. "you press most.", y,
+        function() return spellChoices() end,
+        function() return db.leftSpell end,
+        function(v) ns.Set("leftSpell", v) end)
+
+    _, y = O.DynamicCycle(panel, "Right click",
         "Automatic uses your second dispel where your specialisation has one, so "
-        .. "the two buttons together cover everything the panel can light up.\n\n"
-        .. "Set it to Dispel to make both buttons cast the same spell.", y,
-        { "AUTO", "DISPEL", "TARGET", "NONE" },
-        { "Automatic", "Same as left", "Target unit", "Do nothing" },
-        function() return db.rightClick end,
-        function(v) ns.Set("rightClick", v) end)
+        .. "the two buttons together cover every school the panel can light up.", y,
+        function()
+            return spellChoices({
+                values = { ns.CLICK_TARGET, ns.CLICK_NONE },
+                labels = { "Target the unit", "Do nothing" },
+            })
+        end,
+        function() return db.rightSpell end,
+        function(v) ns.Set("rightSpell", v) end)
 
     _, y = O.Header(panel, "Alert sound", y)
 

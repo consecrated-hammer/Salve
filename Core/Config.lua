@@ -27,9 +27,14 @@ ns.defaults = {
     showInSolo    = true,
     showInParty   = true,
     showInRaid    = true,
-    -- AUTO | DISPEL | TARGET | NONE. AUTO is the second dispel where the spec
-    -- has one, falling back to the primary where it does not.
-    rightClick    = "AUTO",
+    -- Which spell each mouse button casts. 0 = whatever detection chose;
+    -- -1 = target the unit; -2 = do nothing; anything else is a spell ID.
+    leftSpell     = 0,
+    rightSpell    = 0,
+
+    -- HORIZONTAL fills a row then wraps to the next; VERTICAL fills a column
+    -- then wraps to the next. `columns` is the wrap point either way.
+    orientation   = "HORIZONTAL",
 
     -- Alert sound. Off until /salve probe confirms the hook actually fires.
     soundEnabled  = false,
@@ -63,7 +68,8 @@ end
 -- rebuild; everything else is a restyle.
 local GEOMETRY = {
     columns = true, boxWidth = true, boxHeight = true, spacing = true,
-    scale = true, showNames = true, showStacks = true, rightClick = true,
+    scale = true, showNames = true, showStacks = true, orientation = true,
+    leftSpell = true, rightSpell = true,
     showInSolo = true, showInParty = true, showInRaid = true,
 }
 

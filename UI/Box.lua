@@ -49,23 +49,20 @@ function Box.Bind(box, unit)
     box.unit = unit
 
     box:SetAttribute("unit", unit)
+
+    -- Which spell sits on which button is the user's call; ns.ResolveClicks
+    -- applies their choice, falling back to detection where they have not made
+    -- one. Both attributes are fixed once written -- that is what keeps the box
+    -- working in combat without anything of ours running.
+    local left, rightType, right = ns.ResolveClicks()
+
     box:SetAttribute("type1", "spell")
-    box:SetAttribute("spell1", ns.spellName)
+    box:SetAttribute("spell1", left)
 
-    local rc = ns.db.rightClick
-
-    -- AUTO puts the SECOND dispel on right click where the spec has one, so the
-    -- two buttons between them cover everything the engine filter can light.
-    -- Without it, a spec whose schools are split across two spells (a
-    -- Preservation Evoker with Cauterizing Flame, say) shows lit boxes that the
-    -- left-click spell cannot touch.
-    if rc == "AUTO" then
+    if rightType == "spell" then
         box:SetAttribute("type2", "spell")
-        box:SetAttribute("spell2", ns.secondaryName or ns.spellName)
-    elseif rc == "DISPEL" then
-        box:SetAttribute("type2", "spell")
-        box:SetAttribute("spell2", ns.spellName)
-    elseif rc == "TARGET" then
+        box:SetAttribute("spell2", right)
+    elseif rightType == "target" then
         box:SetAttribute("type2", "target")
         box:SetAttribute("spell2", nil)
     else

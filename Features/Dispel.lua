@@ -99,8 +99,10 @@ function ns.UpdateDispelSpell()
         return oldPrimary ~= nil or oldSecondary ~= nil
     end
 
-    -- Everything the character actually has.
+    -- Everything the character actually has. Exposed so the options panel can
+    -- offer the real list rather than a guess.
     local available = {}
+    ns.knownDispels = available
     for _, entry in ipairs(list) do
         if known(entry.id) then
             local name = nameOf(entry.id)
@@ -164,6 +166,49 @@ end
 
 function ns.CanDispel()
     return ns.spellName ~= nil
+end
+
+-- ── Click assignment ───────────────────────────────────────────────────────
+--
+-- Auto-detection picks sensible defaults, but which spell sits on which button
+-- is a preference, so both are overridable. 0 means "whatever detection chose";
+-- the negatives are the non-spell actions.
+
+ns.CLICK_AUTO   =  0
+ns.CLICK_TARGET = -1
+ns.CLICK_NONE   = -2
+
+local function nameForID(spellID)
+    for _, s in ipairs(ns.knownDispels or {}) do
+        if s.id == spellID then return s.name end
+    end
+end
+
+-- Returns leftSpellName, rightActionType, rightSpellName.
+-- rightActionType is "spell", "target" or nil.
+function ns.ResolveClicks()
+    local db = ns.db or {}
+
+    local left = nameForID(db.leftSpell or 0) or ns.spellName
+    if not left then return nil end
+
+    local want = db.rightSpell or ns.CLICK_AUTO
+
+    if want == ns.CLICK_NONE then
+        return left, nil, nil
+    elseif want == ns.CLICK_TARGET then
+        return left, "target", nil
+    elseif want == ns.CLICK_AUTO then
+        -- The second dispel where there is one, so the two buttons together
+        -- cover every school the engine filter can light up.
+        local right = ns.secondaryName or left
+        -- If the user moved the secondary onto LEFT, put the primary on right
+        -- rather than the same spell twice.
+        if left == ns.secondaryName then right = ns.spellName or left end
+        return left, "spell", right
+    end
+
+    return left, "spell", nameForID(want) or ns.secondaryName or left
 end
 
 -- Human-readable "Magic, Poison" for the options panel.
