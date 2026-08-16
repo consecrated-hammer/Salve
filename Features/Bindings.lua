@@ -25,8 +25,22 @@ ns.ROLE_SECONDARY = "SECONDARY"
 
 ns.defaultBindings = {
     { key = "BUTTON1", role = ns.ROLE_PRIMARY },
-    { key = "BUTTON2", role = ns.ROLE_SECONDARY },
 }
+
+function Bindings:Defaults()
+    local list = ns.defaultBindings
+    -- A secondary click is useful only when the specialisation genuinely has
+    -- a different second dispel. Falling back to the primary spell produced
+    -- two rows that both cast Cleanse and implied an ability choice that did
+    -- not exist.
+    if ns.secondaryName and ns.secondaryName ~= ns.spellName then
+        return {
+            list[1],
+            { key = "BUTTON2", role = ns.ROLE_SECONDARY },
+        }
+    end
+    return list
+end
 
 -- ── Key strings ────────────────────────────────────────────────────────────
 
@@ -105,7 +119,7 @@ end
 
 function Bindings:List()
     local list = ns.db and ns.db.bindings
-    if not list or #list == 0 then return ns.defaultBindings end
+    if not list or #list == 0 then return self:Defaults() end
     return list
 end
 
@@ -122,7 +136,7 @@ function Bindings:Materialise()
     if ns.db.bindings and #ns.db.bindings > 0 then return ns.db.bindings end
 
     local copy = {}
-    for i, entry in ipairs(ns.defaultBindings) do
+    for i, entry in ipairs(self:Defaults()) do
         local e = {}
         for k, v in pairs(entry) do e[k] = v end
         copy[i] = e

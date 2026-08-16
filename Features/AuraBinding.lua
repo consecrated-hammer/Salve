@@ -20,6 +20,7 @@ local addonName, ns = ...
 --     -> SetAllPoints
 --     -> SetUnit(unit)
 --     -> AddAuraSlot(slotKey, filterString, { initializeFrame = ... })
+--     -> returnedButton:SetAllPoints(box)
 --     -> SetEnabled(true)                                    <-- LAST, always
 --
 -- ☠ SetEnabled GATES AURA-EVENT REGISTRATION and must come last. Without it the
@@ -55,11 +56,84 @@ local Binding = ns.Binding
 
 local SLOT_KEY = "salveDispel"
 
+local function currentDispelTypes()
+    local types = {}
+    for _, spell in ipairs(ns.knownDispels or {}) do
+        for dispelType in pairs(spell.cures or {}) do
+            types[dispelType] = true
+        end
+    end
+    return types
+end
+
+local function dispelTypeSignature()
+    local parts = {}
+    local types = currentDispelTypes()
+    for _, dispelType in ipairs(ns.DISPEL_TYPES or {}) do
+        if types[dispelType] then parts[#parts + 1] = dispelType end
+    end
+    return table.concat(parts, ",")
+end
+
+local function dispelTextureStyle()
+    local current = Enum and Enum.CustomAuraButtonDispelTypeTextureStyle
+    if current and current.PreserveAsset ~= nil then return current.PreserveAsset end
+    local old = Enum and Enum.CustomAuraButtonBorderStyle
+    if old and old.Color ~= nil then return old.Color end
+    local shim = _G.AuraButtonBorderStyle
+    if shim and shim.Color ~= nil then return shim.Color end
+    return 3 -- current PreserveAsset value; last-resort for enum-less clients
+end
+
 -- ── Capability probe ───────────────────────────────────────────────────────
 -- These interfaces are new in 12.1.0 and undocumented publicly. Probe once,
--- record what this client offers, and report it from /salve probe.
+-- record what this client offers, and report it from /salve debug.
 
 Binding.caps = nil
+Binding.cooldowns = setmetatable({}, { __mode = "k" })
+
+local function cooldownDuration()
+    if not ns.spellID then return nil end
+    if not C_Spell or not C_Spell.GetSpellCooldownDuration then
+        return nil, "C_Spell.GetSpellCooldownDuration is unavailable"
+    end
+    local ok, duration = pcall(C_Spell.GetSpellCooldownDuration, ns.spellID)
+    if not ok then return nil, tostring(duration) end
+    return duration
+end
+
+local function applyCooldown(cooldown, duration)
+    local ok, err
+    if duration and cooldown.SetCooldownFromDurationObject then
+        ok, err = pcall(cooldown.SetCooldownFromDurationObject, cooldown, duration)
+    elseif cooldown.Clear then
+        ok, err = pcall(cooldown.Clear, cooldown)
+    else
+        ok, err = false, "cooldown widget has no supported setter"
+    end
+    if not ok then Binding.lastCooldownFailure = tostring(err) end
+    return ok
+end
+
+function Binding:RegisterCooldown(cooldown)
+    if not cooldown then return end
+    self.cooldowns[cooldown] = true
+    local duration, err = cooldownDuration()
+    if err then self.lastCooldownFailure = err end
+    applyCooldown(cooldown, duration)
+end
+
+function Binding:RefreshCooldowns()
+    -- The duration object may contain secret values. Never inspect it: forward
+    -- the object intact to Blizzard's cooldown widget, whose native setter is
+    -- explicitly allowed to consume it in combat.
+    self.lastCooldownFailure = nil
+    local duration, err = cooldownDuration()
+    if err then self.lastCooldownFailure = err end
+    for cooldown in pairs(self.cooldowns) do
+        applyCooldown(cooldown, duration)
+    end
+end
 
 -- Everything Attach's sequence actually depends on. A client missing any of
 -- these cannot be driven by this file, and pretending otherwise would attach
@@ -72,7 +146,7 @@ local function probe()
 
     -- ☠ NEVER CACHE A COMBAT-TIME PROBE. Creating a container in combat is a
     --   hard client error, so we cannot test then -- but recording that as
-    --   "unsupported" would be a lie that outlives the fight. /salve probe typed
+    --   "unsupported" would be a lie that outlives the fight. /salve debug typed
     --   mid-pull once disabled the addon for the rest of the session: every
     --   later rebuild read the cached false and refused to bind anything.
     if InCombatLockdown() then
@@ -107,7 +181,7 @@ Binding.Probe = probe
 
 function Binding:Report()
     local caps = probe()
-    ns.Print("engine binding report")
+    ns.Print("engine binding report (revision " .. tostring(ns.REVISION or "legacy") .. ")")
 
     if caps.deferred then
         ns.Print("  |cffffd100can't probe in combat|r — the test needs to build a "
@@ -129,14 +203,20 @@ function Binding:Report()
     -- It should track the number of boxes, not the number of roster changes;
     -- if it climbs during normal play, the retarget fast path has broken.
     ns.Print("  containers built: " .. tostring(self.containersBuilt or 0))
+    local cooldownCount = 0
+    for _ in pairs(self.cooldowns) do cooldownCount = cooldownCount + 1 end
+    ns.Print("  cooldown widgets: " .. tostring(cooldownCount)
+        .. " (primary spell " .. tostring(ns.spellID or "none") .. ")")
+    if self.lastCooldownFailure then
+        ns.Print("  |cffff4444cooldown failure:|r " .. self.lastCooldownFailure)
+    end
     if self.lastFailure then
         ns.Print("  |cffff4444last attach failure:|r " .. self.lastFailure)
     end
-    -- ☠ Escape the pipe. "|" opens a colour escape in WoW's chat markup, so
-    --   printing HARMFUL|RAID_PLAYER_DISPELLABLE raw swallows the "|R" as a
-    --   colour reset and shows "HARMFULAID_PLAYER_DISPELLABLE" -- a diagnostic
-    --   that misreports the one string it exists to confirm.
+    -- ☠ Escape pipes in case the filter gains multiple tokens again. "|" opens
+    --   a colour escape in WoW chat markup and can corrupt the diagnostic.
     ns.Print("  filter: " .. ns.DISPELLABLE_FILTER:gsub("|", "||"))
+    ns.Print("  candidate dispel types: " .. ns.CuresText(currentDispelTypes()))
     for _, entry in ipairs(ns.Bindings:List()) do
         local what = ns.Bindings:Describe(entry)
         ns.Print("  " .. ns.Bindings:Label(entry.key) .. ": " .. tostring(what))
@@ -174,6 +254,16 @@ local function initializeFrame(box)
                 box.textLayer:SetFrameLevel(b:GetFrameLevel() + 5)
             end)
         end
+        if box.dispelCooldown then
+            -- The engine button is a child frame and therefore renders above
+            -- regions on the box. Lift our independent cooldown above its
+            -- opaque fill once the button's actual level is known.
+            pcall(function()
+                -- Above the name layer (+5): the countdown is short-lived and
+                -- action-critical, so its outlined number wins the overlap.
+                box.dispelCooldown:SetFrameLevel(b:GetFrameLevel() + 7)
+            end)
+        end
 
         -- Fill: created HERE, as a child of the button. The engine tints it by
         -- dispel type and owns its visibility from AddDispelTypeTexture onward.
@@ -184,10 +274,18 @@ local function initializeFrame(box)
         end
 
         if b.AddDispelTypeTexture then
-            pcall(function()
+            local ok, err = pcall(function()
                 if b.ClearDispelTypeTextures then b:ClearDispelTypeTextures() end
-                b:AddDispelTypeTexture(b.salveFill)
+                b:AddDispelTypeTexture(b.salveFill, {
+                    style = dispelTextureStyle(),
+                    showWhenHarmful = true,
+                    showWhenHelpful = false,
+                    showIcon = false,
+                })
             end)
+            if not ok then box.salveVisualBindFailure = tostring(err) end
+        else
+            box.salveVisualBindFailure = "aura button has no AddDispelTypeTexture method"
         end
 
         -- Stack count, likewise engine-written.
@@ -203,7 +301,9 @@ local function initializeFrame(box)
         end
 
 
-        Binding.boundCount = Binding.boundCount + 1
+        if not box.salveVisualBindFailure then
+            Binding.boundCount = Binding.boundCount + 1
+        end
     end
 end
 
@@ -247,6 +347,7 @@ function Binding:Attach(box, unit)
     --   button still at the old dimensions.
     local sig = table.concat({
         tostring(ns.db.showStacks), ns.db.boxWidth, ns.db.boxHeight,
+        dispelTypeSignature(),
     }, "|")
 
     -- Fast path: same slot, possibly a different unit, possibly parked.
@@ -318,9 +419,24 @@ function Binding:Attach(box, unit)
         return false
     end
 
-    if not pcall(c.AddAuraSlot, c, SLOT_KEY, ns.DISPELLABLE_FILTER, {
+    box.salveVisualBindFailure = nil
+    local slotOK, slot = pcall(c.AddAuraSlot, c, SLOT_KEY, ns.DISPELLABLE_FILTER, {
+        candidateFilters = { includeDispelTypes = currentDispelTypes() },
         initializeFrame = initializeFrame(box),
-    }) then
+    })
+    if not slotOK or not slot or box.salveVisualBindFailure then
+        self.lastFailure = box.salveVisualBindFailure
+            or (slotOK and "AddAuraSlot returned no button" or tostring(slot))
+        self:Detach(box)
+        return false
+    end
+
+    -- AddAuraSlot creates the button but does not place an overlay slot for the
+    -- addon. Danders' working overlay path explicitly anchors the returned
+    -- button to its owner frame. Merely sizing it in initializeFrame leaves its
+    -- bound texture with no guaranteed position over Salve's visible box.
+    if not slot.SetAllPoints or not pcall(slot.SetAllPoints, slot, box) then
+        self.lastFailure = "AddAuraSlot button could not be anchored to its box"
         self:Detach(box)
         return false
     end

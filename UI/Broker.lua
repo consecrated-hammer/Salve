@@ -29,7 +29,7 @@ local addonName, ns = ...
 ns.Broker = {}
 local Broker = ns.Broker
 
-local ICON = "Interface\\Icons\\Spell_Holy_Renew"
+local ICON = "Interface\\AddOns\\Salve\\Textures\\SalveClean"
 
 local function getLib(name)
     if not LibStub then return nil end

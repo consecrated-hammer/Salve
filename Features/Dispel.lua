@@ -3,11 +3,12 @@ local addonName, ns = ...
 -- ============================================================
 -- What to CAST. Not what to detect.
 -- ============================================================
--- Detection is entirely Blizzard's: ns.DISPELLABLE_FILTER already means
--- "debuffs this character can remove", resolved engine-side. This file only
--- works out which spell to put on the secure button.
+-- Detection is entirely Blizzard's: AuraBinding hands the engine a HARMFUL
+-- filter plus the dispel schools resolved here. This file works out both which
+-- spell to put on the secure button and which schools its native candidate
+-- filter should include.
 --
--- ☠ THE FILTER IS BROADER THAN ANY SINGLE SPELL. It covers everything the
+-- ☠ THE CANDIDATE FILTER IS BROADER THAN ANY SINGLE SPELL. It covers everything the
 --   character can remove across EVERY dispel they know. A Preservation Evoker
 --   with Cauterizing Flame gets Curse and Disease boxes lit, and Naturalize
 --   cannot touch either. Picking one spell and hoping meant the panel promised

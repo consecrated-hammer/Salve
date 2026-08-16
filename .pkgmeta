@@ -1,13 +1,15 @@
 # CurseForge / WoWInterface packaging, for BigWigsMods/packager.
-# The repo root IS the main addon folder; the companion below is moved out
-# beside it so the package contains two addons.
+# The repo root IS the main addon folder; each season module below is moved out
+# beside it so one release contains the main addon plus its load boundaries.
 
 package-as: Salve
 
-# The companion ships alongside as its own addon folder, so a season's debuff
-# list can be updated without touching Salve itself.
+# Data modules ship beside Salve as load-on-demand addon folders. They are one
+# product and one release; WoW requires a separate folder for each loadable
+# boundary, but only the current instance's module is loaded at runtime.
 move-folders:
-  Salve/Salve_SeasonData: Salve_SeasonData
+  Salve/Salve_Data_Midnight_S1: Salve_Data_Midnight_S1
+  Salve/Salve_Data_Midnight_S2: Salve_Data_Midnight_S2
 
 # No embedded libraries, so there is no no-lib variant worth building.
 enable-nolib-creation: no
@@ -22,10 +24,16 @@ ignore:
   - .github
   - .pkgmeta
   - .gitignore
+  - data
+  - docs
+  - tests
+  - tools
   - Build-CurseForgeZip.local.ps1
   - Copy-ToWoWAddons.local.ps1
   # Source art for the CurseForge project icon, uploaded through their site.
-  # The game cannot load a PNG, so shipping it would be dead weight in every
-  # download. Textures/Salve.tga is the in-game version.
+  # The game cannot load a PNG, so shipping source PNGs would be dead weight in
+  # every download. Matching TGA files are the in-game versions.
   - Textures/Salve.png
   - Textures/Salve-curseforge-400.png
+  - Textures/SalveClean.png
+  - Textures/SalveTransparent.png

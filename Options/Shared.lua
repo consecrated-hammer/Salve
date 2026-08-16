@@ -24,17 +24,35 @@ local ROW_GAP = 26
 
 -- Hints live in a tooltip rather than as a second line of grey text under every
 -- control: at this many settings the inline version turns the page into a wall.
-local function attachHint(control, hint)
+local function attachHint(control, title, hint)
     if not hint then return end
+    control.salveHintTitle = title
     control.salveHint = hint
     control:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(self.salveHint, 1, 1, 1, 1, true)
+        GameTooltip:SetText(self.salveHintTitle or "Salve", 1, 0.82, 0.26)
+        GameTooltip:AddLine(self.salveHint, 1, 1, 1, true)
         GameTooltip:Show()
     end)
     control:HookScript("OnLeave", function(self)
         if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
     end)
+end
+
+Options.AttachHint = attachHint
+
+local function attachTitleHint(parent, fontString, title, hint)
+    if not hint then return end
+    local region = CreateFrame("Frame", nil, parent)
+    region:SetPoint("TOPLEFT", fontString, "TOPLEFT", -2, 2)
+    region:SetPoint("BOTTOMRIGHT", fontString, "BOTTOMRIGHT", 2, -2)
+    region:EnableMouse(true)
+    attachHint(region, title, hint)
+    return region
+end
+
+local function refreshAll(panel)
+    if panel.salveRefreshAll then panel.salveRefreshAll() end
 end
 
 function Options.CheckButton(parent)
@@ -61,8 +79,10 @@ function Options.Check(panel, label, hint, y, get, set)
     btn:SetChecked(get() and true or false)
     btn:SetScript("OnClick", function(self)
         set(self:GetChecked() and true or false)
+        refreshAll(panel)
     end)
-    attachHint(btn, hint)
+    if btn.SetHitRectInsets then btn:SetHitRectInsets(0, -460, 0, 0) end
+    attachHint(btn, label, hint)
 
     panel.salveRefresh[#panel.salveRefresh + 1] = function()
         btn:SetChecked(get() and true or false)
@@ -83,8 +103,17 @@ function Options.Slider(panel, label, hint, y, minV, maxV, step, get, set, fmt)
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     title:SetPoint("BOTTOMLEFT", s, "TOPLEFT", 0, 2)
 
+    local function labelText()
+        return type(label) == "function" and label() or label
+    end
+
+    local titleHint
     local function render(v)
-        title:SetText(label .. ": |cffffd100" .. (fmt and fmt(v) or tostring(v)) .. "|r")
+        local shownLabel = labelText()
+        title:SetText(shownLabel .. ": |cffffd100"
+            .. (fmt and fmt(v) or tostring(v)) .. "|r")
+        s.salveHintTitle = shownLabel
+        if titleHint then titleHint.salveHintTitle = shownLabel end
     end
 
     s:SetValue(get())
@@ -96,8 +125,11 @@ function Options.Slider(panel, label, hint, y, minV, maxV, step, get, set, fmt)
         v = math.floor(v / step + 0.5) * step
         render(v)
         set(v)
+        refreshAll(panel)
     end)
-    attachHint(s, hint)
+    s.salveTitle = title
+    attachHint(s, labelText(), hint)
+    titleHint = attachTitleHint(panel, title, labelText(), hint)
 
     panel.salveRefresh[#panel.salveRefresh + 1] = function()
         s:SetValue(get())
@@ -130,15 +162,78 @@ function Options.Cycle(panel, label, hint, y, values, labels, get, set)
     btn:SetScript("OnClick", function()
         local cur = get()
         for i, v in ipairs(values) do
-            if v == cur then set(values[(i % #values) + 1]) render() return end
+            if v == cur then
+                set(values[(i % #values) + 1])
+                render()
+                refreshAll(panel)
+                return
+            end
         end
         set(values[1])
         render()
+        refreshAll(panel)
     end)
-    attachHint(btn, hint)
+    btn.salveTitle = title
+    attachHint(btn, label, hint)
+    attachTitleHint(panel, title, label, hint)
 
     panel.salveRefresh[#panel.salveRefresh + 1] = render
     return btn, y - (ROW_GAP + 18)
+end
+
+-- Two short choices under one heading. Alignment reads much faster as a pair:
+-- Horizontal and Vertical belong together, not as two full-width sections.
+function Options.CyclePair(panel, heading, y, left, right)
+    local groupTitle = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    groupTitle:SetPoint("TOPLEFT", PAD_L, y)
+    groupTitle:SetText(heading)
+
+    local function makeChoice(x, spec)
+        local title = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        title:SetPoint("TOPLEFT", x, y - 20)
+        title:SetText(spec.label)
+
+        local btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+        btn:SetSize(150, 22)
+        btn:SetPoint("TOPLEFT", x, y - 34)
+        btn.salveTitle = title
+
+        local function render()
+            local current = spec.get()
+            for i, value in ipairs(spec.values) do
+                if value == current then
+                    btn:SetText(spec.labels[i])
+                    return
+                end
+            end
+            btn:SetText(spec.labels[1])
+        end
+
+        btn:SetScript("OnClick", function()
+            local current = spec.get()
+            for i, value in ipairs(spec.values) do
+                if value == current then
+                    spec.set(spec.values[(i % #spec.values) + 1])
+                    render()
+                    refreshAll(panel)
+                    return
+                end
+            end
+            spec.set(spec.values[1])
+            render()
+            refreshAll(panel)
+        end)
+
+        attachHint(btn, heading .. " — " .. spec.label, spec.hint)
+        attachTitleHint(panel, title, heading .. " — " .. spec.label, spec.hint)
+        panel.salveRefresh[#panel.salveRefresh + 1] = render
+        render()
+        return btn
+    end
+
+    local leftButton = makeChoice(PAD_L, left)
+    local rightButton = makeChoice(206, right)
+    return leftButton, rightButton, y - 66
 end
 
 -- Like Cycle, but the option list is rebuilt every time it is drawn or clicked.
@@ -175,16 +270,9 @@ function Options.DynamicCycle(panel, label, hint, y, optionsFn, get, set)
         render()
     end)
 
-    if hint then
-        btn:HookScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(hint, 1, 1, 1, 1, true)
-            GameTooltip:Show()
-        end)
-        btn:HookScript("OnLeave", function(self)
-            if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
-        end)
-    end
+    btn.salveTitle = title
+    attachHint(btn, label, hint)
+    attachTitleHint(panel, title, label, hint)
 
     panel.salveRefresh[#panel.salveRefresh + 1] = render
     render()
@@ -295,16 +383,9 @@ function Options.MultiSelect(panel, label, hint, y, spec)
     -- the player opens next.
     panel:HookScript("OnHide", function() menu:Hide() end)
 
-    if hint then
-        btn:HookScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(hint, 1, 1, 1, 1, true)
-            GameTooltip:Show()
-        end)
-        btn:HookScript("OnLeave", function(self)
-            if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
-        end)
-    end
+    btn.salveTitle = title
+    attachHint(btn, label, hint)
+    attachTitleHint(panel, title, label, hint)
 
     panel.salveRefresh[#panel.salveRefresh + 1] = render
     render()
@@ -316,7 +397,43 @@ function Options.Header(panel, text, y)
     local fs = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     fs:SetPoint("TOPLEFT", PAD_L, y)
     fs:SetText(text)
-    return fs, y - 24
+
+    local divider = panel:CreateTexture(nil, "ARTWORK")
+    divider:SetHeight(1)
+    divider:SetPoint("LEFT", fs, "RIGHT", 10, 0)
+    divider:SetPoint("RIGHT", panel, "RIGHT", -20, 0)
+    divider:SetColorTexture(0.38, 0.38, 0.42, 0.7)
+
+    return fs, y - 28
+end
+
+function Options.SetEnabled(control, enabled)
+    if not control then return end
+    if control.SetEnabled then
+        control:SetEnabled(enabled)
+    elseif enabled and control.Enable then
+        control:Enable()
+    elseif not enabled and control.Disable then
+        control:Disable()
+    end
+    local colour = enabled and 1 or 0.5
+    if control.Text then control.Text:SetTextColor(colour, colour, colour) end
+    if control.salveTitle then
+        control.salveTitle:SetTextColor(colour, colour, colour)
+    end
+end
+
+function Options.PageReset(panel, y, reset)
+    local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    button:SetSize(180, 22)
+    button:SetPoint("TOPLEFT", 16, y - 4)
+    button:SetText("Reset page to defaults")
+    attachHint(button, "Reset page to defaults", "Reset only the settings on this page.")
+    button:SetScript("OnClick", function()
+        reset()
+        if panel.salveRefreshAll then panel.salveRefreshAll() end
+    end)
+    return button, y - 40
 end
 
 -- ── Page construction ──────────────────────────────────────────────────────
@@ -329,35 +446,94 @@ end
 --   variables are real.
 Options.queue = {}
 
-function Options.NewPage(name, build)
-    Options.queue[#Options.queue + 1] = { name = name, build = build }
+function Options.NewPage(spec, build)
+    if type(spec) == "string" then spec = { name = spec } end
+    spec.build = build
+    Options.queue[#Options.queue + 1] = spec
 end
 
 function Options.BuildAll()
     for _, page in ipairs(Options.queue) do
-        Options.CreatePage(page.name, page.build)
+        Options.CreatePage(page)
     end
     Options.queue = {}
 end
 
 -- Builds a canvas panel and registers it. The FIRST page registered becomes the
 -- parent category; the rest become subcategories under it.
-function Options.CreatePage(name, build)
+function Options.CreatePage(spec)
+    local name, build = spec.name, spec.build
     local panel = CreateFrame("Frame", "SalveOptions" .. name:gsub("%s", ""))
     panel.name = name
     panel.salveRefresh = {}
 
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", PAD_L, -16)
-    title:SetText("Salve — " .. name)
+    title:SetText(spec.title or name)
 
-    build(panel, -48)
+    local contentTop = -48
+    if spec.description then
+        local description = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        description:SetPoint("TOPLEFT", PAD_L, -42)
+        description:SetWidth(540)
+        description:SetJustifyH("LEFT")
+        description:SetTextColor(0.72, 0.72, 0.72)
+        description:SetText(spec.description)
+        contentTop = -68
+    end
+
+    local pageIcon = panel:CreateTexture(nil, "ARTWORK")
+    pageIcon:SetSize(42, 42)
+    pageIcon:SetPoint("TOPRIGHT", -38, -12)
+    pageIcon:SetTexture("Interface\\AddOns\\Salve\\Textures\\SalveTransparent")
+
+    local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 0, contentTop)
+    scroll:SetPoint("BOTTOMRIGHT", -30, 10)
+
+    local content = CreateFrame("Frame", nil, scroll)
+    content:SetSize(560, 1)
+    scroll:SetScrollChild(content)
+    scroll:EnableMouseWheel(true)
+    scroll:SetScript("OnMouseWheel", function(self, delta)
+        local range = self:GetVerticalScrollRange() or 0
+        local nextValue = self:GetVerticalScroll() - delta * 40
+        self:SetVerticalScroll(math.max(0, math.min(range, nextValue)))
+    end)
+    content.salveRefresh = panel.salveRefresh
+
+    panel.salveRefreshAll = function()
+        if panel.salveRefreshing then return end
+        panel.salveRefreshing = true
+        for _, fn in ipairs(panel.salveRefresh) do fn() end
+        panel.salveRefreshing = false
+    end
+    content.salveRefreshAll = panel.salveRefreshAll
+    content.salveSetBottom = function(bottomY)
+        content:SetHeight(math.max(1, -(bottomY or -1) + 16))
+    end
+    content.salveCreatePinned = function(height)
+        height = math.max(1, height or 1)
+        scroll:ClearAllPoints()
+        scroll:SetPoint("TOPLEFT", 0, contentTop - height)
+        scroll:SetPoint("BOTTOMRIGHT", -30, 10)
+
+        local pinned = CreateFrame("Frame", nil, panel)
+        pinned:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, contentTop)
+        pinned:SetSize(560, height)
+        pinned.salveRefresh = panel.salveRefresh
+        pinned.salveRefreshAll = panel.salveRefreshAll
+        return pinned
+    end
+
+    local bottomY = build(content, -8)
+    content.salveSetBottom(bottomY or -600)
 
     -- Blizzard shows a canvas panel without telling it to refresh, so pull the
     -- saved values back in on every open. Otherwise a value changed by a slash
     -- command shows stale here.
     panel:SetScript("OnShow", function(self)
-        for _, fn in ipairs(self.salveRefresh) do fn() end
+        self.salveRefreshAll()
     end)
 
     if Settings and Settings.RegisterCanvasLayoutCategory then

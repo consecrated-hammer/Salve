@@ -7,6 +7,50 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased]
+
+## [1.0.0] — 2026-08-16
+
+First stable release.
+
+### Added
+
+- Load-on-demand Midnight Season 1 and Season 2 sound catalogues. Only data for
+  the current dungeon or raid loads, and only spell schools the character can
+  remove are registered.
+- Blizzard-driven Cleanse cooldown sweeps and countdown text on every cell.
+- Scrollable Salve, Visibility, Dispels, Troubleshooting, Commands and About
+  pages with short tooltips and per-page reset actions.
+- A pinned 1–40 player preview for layout, clear/dispellable state, cooldown,
+  names, stack counts, class colours, sizing and text placement.
+- Configurable name and cooldown text size/alignment, clear-cell class colours,
+  and eight drag-handle anchors.
+- Temporary location-scoped aura logging for catalogue diagnostics. It turns
+  itself off on zone change, reload and logout.
+- Copyable diagnostics, `/salve debug`, optional startup message, CurseForge
+  metadata, release screenshots and a complete in-game command reference.
+
+### Changed
+
+- Detection now uses Blizzard's broad harmful-aura candidate filter narrowed to
+  the dispel schools the current character can remove. This catches manually
+  curable dungeon and legacy effects omitted by the raid-only flag.
+- Alert sound defaults off and uses the bundled GPL-compatible Decursive alert.
+- Learning mode is opt-in and session-only instead of always listening.
+- Clean cells use Blizzard artwork and persistent borders rather than flat,
+  merging boxes.
+- `/salve probe` remains as a compatibility alias for `/salve debug`.
+
+### Fixed
+
+- Secret or unreadable legacy auras no longer produce learning-mode Lua errors.
+- Duplicate automatic click bindings are collapsed and removed visibility
+  conditions are cleared from existing profiles.
+- Cooldown widgets render outside Blizzard's sealed aura-button subtree.
+- Sound and learning modules remain dormant when both features are disabled.
+- Options pages stay within the settings frame and refresh reliably after
+  changes, resets and specialisation swaps.
+
 ## [0.1.0] — 2026-08-15
 
 Beta release.
@@ -39,6 +83,10 @@ Beta release.
 - LibDataBroker launcher, registered only when another addon has already loaded
   LibStub. Salve embeds no libraries and depends on none.
 - `/salve probe` engine diagnostics.
-- Experimental affliction alert sound, off by default.
+- Optional native aura alert sound, off by default. Load-on-demand Midnight
+  Season 1 and Season 2 modules register only the current instance's verified
+  IDs and only schools the current character can remove.
+- Opt-in, group-scoped `/salve learn` diagnostics for readable catalogue gaps.
 
+[1.0.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.0.0
 [0.1.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v0.1.0

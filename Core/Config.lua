@@ -18,15 +18,24 @@ ns.defaults = {
 
     -- Appearance
     showNames     = false,
+    nameJustifyH  = "LEFT",
+    nameJustifyV  = "MIDDLE",
+    nameFontSize  = 11,
+    cooldownJustifyH = "CENTER",
+    cooldownJustifyV = "MIDDLE",
+    cooldownFontSize = 14,
     showStacks    = true,   -- engine-driven; Blizzard hides it at one stack
+    useClassColours = false,
     showWhenClean = true,
     cleanAlpha    = 0.25,
     showHandle    = true,   -- the persistent drag grip, like Decursive's
+    handlePosition = "TOPLEFT",
+    showStartupMessage = true,
 
     -- Behaviour
     -- Click bindings. Empty means "use the defaults" (left = primary dispel,
-    -- right = secondary), which is how a fresh install and a spec change both
-    -- stay sensible. See Features/Bindings.lua.
+    -- plus right = secondary only when it is a genuinely different spell),
+    -- which is how a fresh install and a spec change both stay sensible.
     bindings      = {},
 
     -- HORIZONTAL fills a row then wraps to the next; VERTICAL fills a column
@@ -38,16 +47,21 @@ ns.defaults = {
     visibilityMode = "ALWAYS",
     visibility     = {},
 
-    -- Alert sound. Spell IDs come from a companion addon (Salve_SeasonData);
-    -- see Features/Sound.lua for why this cannot be driven by a filter.
+    -- Alert sound. Typed spell IDs come from the bundled load-on-demand
+    -- Salve_Data_* module for the current instance.
     soundEnabled  = false,
     soundChannel  = "Master",
     soundFile     = nil,
 
-    -- Learn mode is ADDITIVE and on by default: anything the season data misses
-    -- gets picked up by playing, and what it finds persists here.
-    learnMode     = true,
+    -- Learning is a diagnostic capture mode, never normal combat work. It is
+    -- deliberately opt-in, session-only, and scoped to the current location
+    -- and group units in Sound.lua.
+    learnMode     = false,
     learned       = {},
+
+    -- Saved-variable migrations. Increment only when an old shape needs an
+    -- explicit conversion; ordinary new defaults do not need a bump.
+    schemaVersion = 4,
 
     -- Minimap button
     showMinimap   = true,
@@ -67,7 +81,92 @@ local function copyDefaults(dst, src)
 end
 
 function ns.InitConfig()
-    SalveDB = copyDefaults(SalveDB or {}, ns.defaults)
+    SalveDB = SalveDB or {}
+    local oldSchema = tonumber(SalveDB.schemaVersion) or 1
+    SalveDB = copyDefaults(SalveDB, ns.defaults)
+
+    if oldSchema < 2 then
+        -- The first sound implementation stored learned IDs directly in the
+        -- table and enabled its global UNIT_AURA listener by default. Preserve
+        -- those IDs as unscoped diagnostics, but never activate them: they have
+        -- no instance or dispel-school provenance.
+        local oldLearned = SalveDB.learned
+        local migrated = {}
+        local unscoped = { name = "Unscoped legacy discoveries", spells = {} }
+        for spellID, name in pairs(type(oldLearned) == "table" and oldLearned or {}) do
+            if type(spellID) == "number" and type(name) ~= "table" then
+                unscoped.spells[spellID] = {
+                    spellID = spellID,
+                    name = type(name) == "string" and name or "?",
+                    provenance = "legacy learn",
+                }
+            end
+        end
+        if next(unscoped.spells) then migrated[0] = unscoped end
+        SalveDB.learned = migrated
+        SalveDB.learnMode = false
+        SalveDB.schemaVersion = 2
+    end
+
+    if oldSchema < 3 then
+        -- Instance IDs are valid scopes for dungeons and raids, but outdoor
+        -- content used numeric key 0 for every zone. Move existing buckets to
+        -- explicit typed keys; legacy outdoor discoveries remain unscoped and
+        -- inactive rather than being attributed to an invented map.
+        local scoped = {}
+        for key, bucket in pairs(type(SalveDB.learned) == "table" and SalveDB.learned or {}) do
+            local scopeKey = key
+            if type(key) == "number" then
+                scopeKey = key > 0 and ("instance:" .. key) or "world:0"
+            end
+            if type(scopeKey) == "string" and type(bucket) == "table" then
+                local target = scoped[scopeKey]
+                if not target then
+                    target = {
+                        name = bucket.name,
+                        scopeType = scopeKey:match("^([^:]+):"),
+                        scopeID = tonumber(scopeKey:match(":(%d+)$")),
+                        spells = {},
+                    }
+                    scoped[scopeKey] = target
+                end
+                for spellID, record in pairs(type(bucket.spells) == "table" and bucket.spells or {}) do
+                    target.spells[spellID] = record
+                end
+            end
+        end
+        SalveDB.learned = scoped
+        SalveDB.schemaVersion = 3
+    end
+
+    if oldSchema < 4 then
+        SalveDB.schemaVersion = 4
+    end
+
+    -- Normalize on every load, not only at the schema boundary. A profile can
+    -- reach schema 4 before an older synced Options file finishes writing its
+    -- duplicate rows. Secure attributes can hold only one action per mouse
+    -- chord, so duplicates are never meaningful and are safe to collapse.
+    local deduped, seen = {}, {}
+    for _, entry in ipairs(type(SalveDB.bindings) == "table" and SalveDB.bindings or {}) do
+        local key = type(entry) == "table" and entry.key
+        if type(key) ~= "string" or not seen[key] then
+            deduped[#deduped + 1] = entry
+            if type(key) == "string" then seen[key] = true end
+        end
+    end
+    SalveDB.bindings = deduped
+
+    -- These visibility choices were removed. Clear their saved values too so
+    -- a profile cannot retain invisible conditions that no longer appear in
+    -- the options page or summary.
+    SalveDB.visibility.mounted = nil
+    SalveDB.visibility.notMounted = nil
+
+    -- Learning is a diagnostic for the current play session. Never restore an
+    -- accidentally forgotten listener after logout or /reload.
+    SalveDB.learnMode = false
+
     ns.db = SalveDB
     return ns.db
 end
@@ -89,6 +188,13 @@ function ns.Set(key, value)
     if ns.db[key] == value then return end
     ns.db[key] = value
 
+    if key == "soundEnabled" or key == "soundChannel" or key == "soundFile" then
+        if ns.Sound then ns.Sound:OnSettingChanged(key) end
+        return
+    end
+
+    if key == "showStartupMessage" then return end
+
     -- Debounced: settings arrive from sliders, which fire on every drag tick.
     -- Events (roster, spec) call ns.RequestRebuild directly and stay immediate.
     if GEOMETRY[key] then
@@ -97,6 +203,8 @@ function ns.Set(key, value)
         ns.Panel:Restyle()
     end
 
-    if key == "showHandle" and ns.Handle then ns.Handle:Update() end
+    if (key == "showHandle" or key == "handlePosition") and ns.Handle then
+        ns.Handle:Update()
+    end
     if key == "showMinimap" and ns.Minimap then ns.Minimap:Update() end
 end

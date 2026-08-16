@@ -19,6 +19,8 @@ Thumbs.db
 # Lua bytecode / temp
 *.luac
 *.tmp
+__pycache__/
+*.pyc
 
 # Local dev scripts (not for distribution)
 Build-CurseForgeZip.local.ps1

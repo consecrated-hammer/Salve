@@ -1,0 +1,35 @@
+module,instance_id,spell_id,spell_name,dispel_type,source,source_build,verified
+Salve_Data_Midnight_S1,658,1261921,Cryoshards,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,658,1264186,Shadowbind,Curse,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2526,389033,Lasher Toxin,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2811,1214038,Ethereal Shackles,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2811,1214714,Void Torrent,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2811,1248689,Hastening Ward,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2811,1284627,Umbral Splinters,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2874,1246666,Infected Pinions,Disease,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2874,1254175,Cries of the Fallen,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2874,1260709,Vilebranch Sting,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2912,1233865,Null Corona,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2912,1258514,Blinding Light,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2912,1259186,Blisterburst,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2912,1261531,Corrupting Essence,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2912,1272527,Creep Spit,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2912,1275059,Black Miasma,Curse,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2939,1249017,Fearsome Cry,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S1,2939,1257087,Consuming Miasma,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,1592,1221714,Poison Burst,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,1762,267273,Poison Nova,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,1762,267763,Wretched Discharge,Disease,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,1877,267027,Poison Spit,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2813,474515,Heartstop Poison,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2813,1228198,Corroding Spittle,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2825,1234846,Toxic Spores,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2859,1236658,Bloodthorn Roots,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2923,1226031,Poison Splash,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2923,1263971,Mind-Numbing Poison,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2993,1296069,Regurgitate,Disease,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,3004,1284471,Blighted Blood,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,3004,1287036,Poisonous Bite,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,3004,1295173,Exploding Infection,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,3004,1301800,Acidic Burst,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,3004,1305650,Anguished Cry,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true

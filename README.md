@@ -3,12 +3,24 @@
 **A compact dispel panel for World of Warcraft.** One click removes Curse,
 Disease, Poison or Magic from anyone in your group.
 
-[![CurseForge](https://img.shields.io/curseforge/v/1653368?style=flat-square&color=4c9a7a&label=curseforge)](https://www.curseforge.com/projects/1653368)
-[![Downloads](https://img.shields.io/curseforge/dt/1653368?style=flat-square&color=4c9a7a&label=downloads)](https://www.curseforge.com/projects/1653368)
+[![CurseForge](https://img.shields.io/curseforge/v/1653368?style=flat-square&color=4c9a7a&label=curseforge)](https://www.curseforge.com/wow/addons/salve)
+[![Downloads](https://img.shields.io/curseforge/dt/1653368?style=flat-square&color=4c9a7a&label=downloads)](https://www.curseforge.com/wow/addons/salve)
 [![License](https://img.shields.io/badge/license-GPL--3.0-4c9a7a?style=flat-square)](LICENSE.txt)
 [![Client](https://img.shields.io/badge/client-retail-4c9a7a?style=flat-square)](https://worldofwarcraft.blizzard.com/)
 
 ---
+
+## Why Salve exists
+
+WoW: Midnight made aura details private to addons. Older dispel addons were
+built around reading those details, so they became unreliable or stopped
+working.
+
+Salve is built for the new rules. Blizzard decides which cells light up and
+what dispel colour they use; Salve supplies the clickable panel. It can show
+and remove debuffs your character can dispel. It cannot inspect them to rank
+individual spells, and optional sound alerts can only cover spell IDs in the
+current dungeon or raid catalogue.
 
 ## What it does
 
@@ -26,6 +38,18 @@ second dispel covering other schools, it goes on right click automatically.
 Evoker and Mage. Detected automatically, with nothing to reconfigure when you
 change spec.
 
+## Screenshots
+
+| Clear cells | Dispellable cells | Unit names |
+| :--: | :--: | :--: |
+| ![Compact clear cells](docs/screenshots/panel-clear-cells.png) | ![Cells lit by dispel type](docs/screenshots/panel-dispellable-cells.png) | ![Wide cells with unit names](docs/screenshots/panel-unit-names.png) |
+
+![Pinned preview and layout options](docs/screenshots/options-preview-and-layout.png)
+
+More settings: [cell appearance](docs/screenshots/options-cell-size-and-alignment.png),
+[visibility](docs/screenshots/options-visibility.png), and
+[dispels and alerts](docs/screenshots/options-dispels-and-alerts.png).
+
 ## How it works
 
 Salve never reads your debuffs.
@@ -34,18 +58,20 @@ It hands the game a filter — *harmful auras this character can remove* — alo
 with the artwork for each box, and the game decides what matches, when a box is
 visible, what colour it is and what the stack count says.
 
-This keeps the addon small and quiet. There is no aura event handler, and none
-of Salve's own code runs during a fight. It also means the dispel colours come
-from the game's palette rather than Salve's, so colourblind settings are
-respected automatically and the colours always match the rest of your UI.
+This keeps the addon small and quiet. Normal operation has no aura event
+handler, and none of Salve's own detection code runs during a fight. The
+opt-in learning diagnostic is the sole exception. It also means the dispel
+colours come from the game's palette rather than Salve's, so colourblind
+settings are respected automatically.
 
 ## Getting started
 
 Install, then type **`/salve`**.
 
-The panel starts in the centre of your screen with a small gold grip beside it.
+The panel starts in the centre of your screen with a small gold grip above it.
 Drag the grip to place it — not the panel itself, whose boxes are buttons and
-cover every pixel of it. Right-click the grip to hide it once you are happy.
+cover every pixel of it. Use `/salve lock` or right-click the minimap button to
+hide the grip once you are happy.
 
 ### Commands
 
@@ -55,11 +81,14 @@ cover every pixel of it. Right-click the grip to hide it once you are happy.
 | `/salve unlock` | Show the drag handle |
 | `/salve lock` | Hide the drag handle |
 | `/salve reset` | Put the panel back in the centre |
-| `/salve probe` | Print engine diagnostics |
+| `/salve debug` | Print a diagnostic report (`probe` remains an alias) |
+| `/salve learn on` / `off` / `status` | Control temporary, location-scoped aura learning |
+| `/salve learned` / `learned clear` | Inspect or clear learned spell IDs |
+| `/salve help` | Print the command list in chat |
 
-Options also live in **Game Menu → Options → AddOns → Salve**, under three
-pages: **Panel** (where it sits and how the grid is arranged), **Boxes** (the
-size and contents of each box) and **Dispel** (spells, clicks and the alert).
+Options also live in **Game Menu → Options → AddOns → Salve**, across six
+pages: **Salve** (layout and live preview), **Visibility**, **Dispels**,
+**Troubleshooting**, **Commands** and **About**.
 
 ## Settings worth knowing
 
@@ -67,27 +96,35 @@ size and contents of each box) and **Dispel** (spells, clicks and the alert).
 for names to fit — turn names on and raise the box width to around 58 if you
 would rather have them.
 
-**Keep clean units visible** holds the panel's shape so boxes never move
-mid-fight. Turning it off empties the panel until something lands. Note that a
-fully transparent box is still clickable: mouse input cannot be disabled on a
-protected frame during combat.
+**Keep their cells on screen** holds the panel's shape. Turning it off makes
+cells with nothing to dispel transparent. Their click areas stay in place:
+mouse input cannot be changed on a protected frame during combat.
 
-**Alert sound** is experimental and off by default. Run `/salve probe` to see
-whether it has actually fired on your client.
+**Alert sound** is optional and off by default. When enabled, Salve loads
+only the bundled data module covering the current instance, then registers only
+that instance's debuff schools your character can remove. Season 1, Season 2
+and future catalogues can coexist without loading or activating one another.
+Run `/salve debug` to see the active module, spell ID count and native
+sound registrations.
+
+Diagnostic learning is deliberately temporary. Outdoor discoveries are keyed
+to the current map; dungeon and raid discoveries are keyed to their instance.
+Learning switches itself off when that location changes and never survives a
+UI reload, logout or client restart.
 
 ## Limitations
 
 These are worth stating plainly, because they are not oversights:
 
-- **No priority ordering between debuff schools, and no per-spell filtering.**
+- **The visual panel has no priority ordering or per-spell filtering.**
   Both would require inspecting aura data, which addons are no longer permitted
   to do. They are outside what the game allows, not features left undone.
+- **Sound coverage is source-backed but not guaranteed complete.** Encounter
+  Journal data covers boss abilities, not every trash debuff. Opt-in learning
+  can collect readable omissions; private auras still require curated data.
 - **Dispel colours cannot be customised,** for the same reason. The game owns
   them.
 
 ## Licence
 
 Salve is licensed **GPL v3**. See [LICENSE.txt](LICENSE.txt).
-
-`Sounds/AfflictionAlert.ogg` is taken from Decursive by Archarodim and used
-under GPL v3.

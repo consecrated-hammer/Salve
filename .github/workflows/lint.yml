@@ -16,21 +16,45 @@ jobs:
 
       - name: Check Lua 5.1 syntax
         run: |
-          fail=0
-          for f in $(find . -name '*.lua' -not -path './.git/*'); do
-            luac -p "$f" || fail=1
-          done
-          exit $fail
+          find . -name '*.lua' -not -path './.git/*' -print0 \
+            | xargs -0 -n1 luac -p
 
-      - name: Check every Lua file is listed in the TOC
+      - name: Test sound module lifecycle
         run: |
-          fail=0
-          grep -vE '^\s*#|^\s*$' Salve.toc | tr -d '\r' | tr '\\' '/' \
-            | grep '\.lua$' | sort > /tmp/in_toc
-          find . -name '*.lua' -not -path './.git/*' \
-            | sed 's|^\./||' | sort > /tmp/on_disk
-          if ! diff -u /tmp/in_toc /tmp/on_disk; then
-            echo "TOC and disk disagree — a file is unlisted or missing."
-            fail=1
-          fi
-          exit $fail
+          lua tests/test_config.lua
+          lua tests/test_aura_binding.lua
+          lua tests/test_bindings.lua
+          lua tests/test_sound.lua
+          lua tests/test_options.lua
+          lua tests/test_slash.lua
+
+      - name: Check each addon's Lua files against its own TOC
+        run: |
+          check_toc() {
+            dir="$1"
+            toc="$2"
+            awk '!/^[[:space:]]*(#|$)/ { gsub(/\\/, "/"); if ($0 ~ /\.lua$/) print }' \
+              "$toc" | tr -d '\r' | sort > /tmp/in_toc
+            if [ "$dir" = "." ]; then
+              find Core Features Options UI -name '*.lua' -print \
+                | sort > /tmp/on_disk
+              printf '%s\n' Core.lua >> /tmp/on_disk
+              sort -o /tmp/on_disk /tmp/on_disk
+            else
+              find "$dir" -maxdepth 1 -name '*.lua' -printf '%f\n' | sort > /tmp/on_disk
+            fi
+            diff -u /tmp/in_toc /tmp/on_disk
+          }
+
+          check_toc . Salve.toc
+          for dir in Salve_Data_*; do
+            check_toc "$dir" "$dir/$dir.toc"
+          done
+
+  data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate catalogue and generated modules
+        run: python3 tools/generate_data_modules.py --check

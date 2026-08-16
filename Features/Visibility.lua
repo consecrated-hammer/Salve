@@ -27,8 +27,6 @@ ns.VIS_CONDITIONS = {
     { key = "solo",        label = "Solo",             cond = "[nogroup]" },
     { key = "inParty",     label = "In a party",       cond = "[group:party]" },
     { key = "inRaid",      label = "In a raid group",  cond = "[group:raid]" },
-    { key = "mounted",     label = "Mounted",          cond = "[mounted]" },
-    { key = "notMounted",  label = "Not mounted",      cond = "[nomounted]" },
 }
 
 -- Builds the conditional string. Conditions are OR-ed: the panel shows if ANY

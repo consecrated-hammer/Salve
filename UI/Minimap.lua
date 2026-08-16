@@ -11,7 +11,7 @@ local RADIUS = 80
 
 -- ☠ TGA or BLP only, and referenced WITHOUT the extension. WoW cannot load a
 --   PNG: it fails silently and you get an empty button rather than an error.
-local ICON = "Interface\\AddOns\\Salve\\Textures\\Salve"
+local ICON = "Interface\\AddOns\\Salve\\Textures\\SalveClean"
 
 -- ☠ Salve always owns its own button, even when LibDBIcon happens to be loaded
 --   by some other addon. Handing the job over would make the icon's position
@@ -30,10 +30,10 @@ function Minimap_:Create()
     bg:SetAllPoints()
 
     local icon = b:CreateTexture(nil, "ARTWORK")
-    icon:SetPoint("TOPLEFT", b, "TOPLEFT", 7, -7)
-    icon:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -7, 7)
+    icon:SetPoint("TOPLEFT", b, "TOPLEFT", 5, -5)
+    icon:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -5, 5)
     icon:SetTexture(ICON)
-    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    icon:SetTexCoord(0, 1, 0, 1)
     b.icon = icon
 
     local border = b:CreateTexture(nil, "OVERLAY")

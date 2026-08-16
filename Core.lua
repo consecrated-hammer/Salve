@@ -5,15 +5,27 @@ local addonName, ns = ...
 _G.Salve = ns
 
 ns.name    = addonName
-ns.VERSION = "0.1.0"
+function ns.GetMetadata(key)
+    if C_AddOns and C_AddOns.GetAddOnMetadata then
+        return C_AddOns.GetAddOnMetadata(addonName, key)
+    end
+    return GetAddOnMetadata and GetAddOnMetadata(addonName, key)
+end
+
+ns.VERSION = ns.GetMetadata("Version") or "1.0.0"
+-- Development revision for distinguishing synced installs that share the same
+-- release version. Surface this in /salve debug before debugging live code.
+ns.REVISION = "1.0.0"
 
 -- The four dispel schools, in the order the options UI lists them.
 ns.DISPEL_TYPES = { "Magic", "Curse", "Disease", "Poison" }
 
--- Blizzard's filter for "harmful, and I personally can remove it". Class- and
--- spec-aware, resolved engine-side. This single string replaces every
--- can-I-dispel-this table an addon used to need.
-ns.DISPELLABLE_FILTER = "HARMFUL|RAID_PLAYER_DISPELLABLE"
+-- Aura presence remains entirely engine-driven. The accompanying native
+-- candidate filter in AuraBinding limits HARMFUL auras to the dispel schools
+-- covered by this character's detected spells. This is broader and more
+-- accurate than RAID_PLAYER_DISPELLABLE, whose internal raid flag omits some
+-- manually curable dungeon and legacy auras.
+ns.DISPELLABLE_FILTER = "HARMFUL"
 
 function ns.Print(msg)
     print("|cff66ddaaSalve:|r " .. tostring(msg or ""))

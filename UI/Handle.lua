@@ -16,12 +16,39 @@ local Handle = ns.Handle
 
 local SIZE = 10
 
+function Handle:Position()
+    if not self.frame or not ns.Panel or not ns.Panel.frame then return end
+    local h, parent = self.frame, ns.Panel.frame
+    local position = ns.db.handlePosition or "TOPLEFT"
+    local halfCell = (ns.db.boxWidth or 20) / 2
+
+    h:ClearAllPoints()
+    if position == "LEFT" then
+        h:SetPoint("RIGHT", parent, "LEFT", -1, 0)
+    elseif position == "TOP" then
+        h:SetPoint("BOTTOM", parent, "TOP", 0, 1)
+    elseif position == "TOPRIGHT" then
+        h:SetPoint("BOTTOM", parent, "TOPRIGHT", -halfCell, 1)
+    elseif position == "RIGHT" then
+        h:SetPoint("LEFT", parent, "RIGHT", 1, 0)
+    elseif position == "BOTTOMRIGHT" then
+        h:SetPoint("TOP", parent, "BOTTOMRIGHT", -halfCell, -1)
+    elseif position == "BOTTOM" then
+        h:SetPoint("TOP", parent, "BOTTOM", 0, -1)
+    elseif position == "BOTTOMLEFT" then
+        h:SetPoint("TOP", parent, "BOTTOMLEFT", halfCell, -1)
+    else
+        -- Top-left is centred over cell 1 rather than hanging off the panel's
+        -- corner. That keeps the default useful even for unusual grid shapes.
+        h:SetPoint("BOTTOM", parent, "TOPLEFT", halfCell, 1)
+    end
+end
+
 function Handle:Create(parent)
     if self.frame then return self.frame end
 
     local h = CreateFrame("Button", "SalveHandle", parent)
     h:SetSize(SIZE, SIZE)
-    h:SetPoint("BOTTOMRIGHT", parent, "TOPLEFT", -1, 1)
     h:SetFrameLevel(parent:GetFrameLevel() + 20)
     h:RegisterForDrag("LeftButton")
     h:EnableMouse(true)
@@ -86,6 +113,7 @@ function Handle:Create(parent)
     h:SetScript("OnClick", function() ns.OpenOptions() end)
 
     self.frame = h
+    self:Position()
     return h
 end
 
@@ -104,6 +132,8 @@ end
 
 function Handle:Update()
     if not self.frame then return end
+
+    self:Position()
 
     -- ☠ DO NOT AND THIS WITH THE PANEL'S IsShown(). The handle is a CHILD of the
     --   panel, so it already disappears with it -- the extra term only ever

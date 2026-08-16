@@ -1,0 +1,44 @@
+{
+  "interface": 120100,
+  "version": "1.0.0",
+  "modules": [
+    {
+      "folder": "Salve_Data_Midnight_S1",
+      "title": "Midnight Season 1",
+      "priority": 1201,
+      "manifest_source": "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+      "instances": [
+        { "id": 658, "name": "Pit of Saron" },
+        { "id": 1209, "name": "Skyreach" },
+        { "id": 1753, "name": "Seat of the Triumvirate" },
+        { "id": 2526, "name": "Algeth'ar Academy" },
+        { "id": 2805, "name": "Windrunner Spire" },
+        { "id": 2811, "name": "Magisters' Terrace" },
+        { "id": 2874, "name": "Maisara Caverns" },
+        { "id": 2912, "name": "The Voidspire" },
+        { "id": 2913, "name": "March on Quel'Danas" },
+        { "id": 2915, "name": "Nexus-Point Xenas" },
+        { "id": 2939, "name": "The Dreamrift" }
+      ]
+    },
+    {
+      "folder": "Salve_Data_Midnight_S2",
+      "title": "Midnight Season 2",
+      "priority": 1202,
+      "manifest_source": "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
+      "instances": [
+        { "id": 1592, "name": "Sporefall" },
+        { "id": 1762, "name": "Kings' Rest" },
+        { "id": 1877, "name": "Temple of Sethraliss" },
+        { "id": 2521, "name": "Ruby Life Pools" },
+        { "id": 2813, "name": "Murder Row" },
+        { "id": 2825, "name": "Den of Nalorakk" },
+        { "id": 2859, "name": "The Blinding Vale" },
+        { "id": 2923, "name": "Voidscar Arena" },
+        { "id": 2987, "name": "The Tidebound Grotto" },
+        { "id": 2993, "name": "Altar of Fangs" },
+        { "id": 3004, "name": "The Venomous Abyss" }
+      ]
+    }
+  ]
+}

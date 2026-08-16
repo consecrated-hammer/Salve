@@ -1,7 +1,8 @@
 ## Interface: 120100
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 0.1.0
+## Version: 1.0.0
+## X-ReleaseDate: 2026-08-16
 ## Notes: Compact dispel panel. One click to remove Curse, Disease, Poison and Magic debuffs from your party or raid.
 ## Category-enUS: Raid
 ## SavedVariables: SalveDB
@@ -10,6 +11,7 @@
 ## IconTexture: Interface\AddOns\Salve\Textures\Salve
 ## X-License: GPL-3.0
 ## X-Website: https://github.com/consecrated-hammer/Salve
+## X-CurseForge: https://www.curseforge.com/wow/addons/salve
 ## X-Curse-Project-ID: 1653368
 
 # ============================================================
@@ -24,7 +26,8 @@
 # Decursive and what makes the other replacements unusable.
 #
 # So Salve never reads an aura. It hands regions to Blizzard's AuraContainer
-# under the RAID_PLAYER_DISPELLABLE filter and lets the engine drive them.
+# under HARMFUL plus native dispel-type candidates and lets the engine drive
+# them.
 # See Features/AuraBinding.lua for the full argument.
 
 # Namespace and saved variables. Everything else assumes these exist.
@@ -44,7 +47,7 @@ Features\Visibility.lua
 # Which mouse button casts what.
 Features\Bindings.lua
 
-# Alert sounds. Spell IDs are supplied by the Salve_SeasonData companion.
+# Alert sounds and the loader for bundled, instance-scoped Salve_Data_* modules.
 Features\Sound.lua
 
 # ☠ Box.lua and Handle.lua before Panel.lua: Panel builds both from Create().
@@ -56,14 +59,16 @@ UI\Panel.lua
 UI\Broker.lua
 UI\Minimap.lua
 
-# Options. Registered into Blizzard's own Options > AddOns tree, with one
-# subcategory per page. Split by SCOPE: the panel as a whole, then an
-# individual box, then dispel behaviour.
+# Options. The first page becomes the root AddOns category; the rest are
+# player-facing tasks rather than internal frame objects.
 # ☠ Shared.lua first: every page below calls its widget helpers at file scope.
 Options\Shared.lua
-Options\Panel.lua
-Options\Boxes.lua
+Options\Salve.lua
+Options\Visibility.lua
 Options\Dispel.lua
+Options\Troubleshooting.lua
+Options\Commands.lua
+Options\About.lua
 
 # Event routing and slash commands. Last, so everything they dispatch to exists.
 Core\Events.lua

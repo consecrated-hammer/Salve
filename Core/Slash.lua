@@ -6,7 +6,7 @@ local addonName, ns = ...
 SLASH_SALVE1 = "/salve"
 
 SlashCmdList.SALVE = function(msg)
-    local cmd = (msg or ""):lower():match("^%s*(%S*)")
+    local cmd, arg = (msg or ""):lower():match("^%s*(%S*)%s*(%S*)")
 
     -- Bare /salve already opens the panel, but only because it falls through to
     -- the default. Naming it explicitly means /salve options is documented and
@@ -15,13 +15,24 @@ SlashCmdList.SALVE = function(msg)
         ns.OpenOptions()
 
     elseif cmd == "learn" then
-        ns.Sound:ToggleLearn(not ns.db.learnMode)
+        if arg == "on" then
+            ns.Sound:SetLearning(true)
+        elseif arg == "off" then
+            ns.Sound:SetLearning(false)
+        else
+            local state = ns.db.learnMode
+                and ("ON for " .. tostring(ns.Sound.activeScopeName)
+                    .. " (auto-off when you leave or reload)") or "off"
+            ns.Print("learn mode is " .. state
+                .. " — use |cffffd100/salve learn on|r or |cffffd100off|r")
+        end
 
     elseif cmd == "learned" then
-        ns.Sound:DumpLearned()
+        if arg == "clear" then ns.Sound:ClearLearned() else ns.Sound:DumpLearned() end
 
-    elseif cmd == "probe" then
+    elseif cmd == "debug" or cmd == "probe" then
         ns.Binding:Report()
+        ns.Sound:Report()
 
     elseif cmd == "unlock" or cmd == "handle" then
         ns.SetLocked(false)
@@ -40,9 +51,10 @@ SlashCmdList.SALVE = function(msg)
         ns.Print("|cffffd100/salve|r or |cffffd100/salve options|r — open the options panel")
         ns.Print("|cffffd100/salve lock|r | |cffffd100unlock|r — hide or show the drag handle")
         ns.Print("|cffffd100/salve reset|r — put the panel back in the middle")
-        ns.Print("|cffffd100/salve probe|r — engine diagnostics")
-        ns.Print("|cffffd100/salve learn|r — harvest dispellable debuff spell IDs")
-        ns.Print("|cffffd100/salve learned|r — print what was harvested")
+        ns.Print("|cffffd100/salve debug|r — print a diagnostic report")
+        ns.Print("|cffffd100/salve learn on|r | |cffffd100off|r | |cffffd100status|r — temporary aura logging")
+        ns.Print("|cffffd100/salve learned|r | |cffffd100learned clear|r — list or clear recorded auras")
+        ns.Print("|cffffd100/salve help|r — show this command list")
 
     else
         ns.OpenOptions()

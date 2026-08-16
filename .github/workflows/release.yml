@@ -1,6 +1,6 @@
 name: Release
 
-# Tag a commit v0.1.0 (or 0.1.0) and this packages the addon and publishes it.
+# Tag a commit v1.0.0 (or 1.0.0) and this packages the addon and publishes it.
 # CurseForge upload only happens once CF_API_KEY is set in the repository
 # secrets AND the TOC carries an X-Curse-Project-ID; without either, the
 # packager still builds the zip and attaches it to the GitHub release.
@@ -23,13 +23,13 @@ jobs:
           fetch-depth: 0
 
       # The zip is named from the TAG but the version players see in their addon
-      # list comes from the TOC. Letting those drift ships "0.1.0" inside a file
+      # list comes from the TOC. Letting those drift ships an old version inside a file
       # called 0.2.0, which is confusing to diagnose and impossible to fix after
       # upload. Fail before publishing anything instead.
       # ☠ Strip any -alpha/-beta suffix before comparing. The packager reads the
       #   release TYPE from the tag (a tag containing "beta" uploads as a beta),
-      #   so v0.1.0-beta is a normal thing to push -- but the TOC version stays
-      #   0.1.0, and a naive comparison would reject every pre-release.
+      #   so v1.0.0-beta is a normal thing to push -- but the TOC version stays
+      #   1.0.0, and a naive comparison would reject every pre-release.
       - name: Tag must match the TOC version
         run: |
           tag="${GITHUB_REF_NAME#v}"
@@ -49,6 +49,18 @@ jobs:
             echo "::error::CHANGELOG.md has no [$tag] section — CurseForge would show an empty changelog."
             exit 1
           fi
+          release_date=$(sed -n 's/^## X-ReleaseDate:[[:space:]]*//p' Salve.toc)
+          if ! printf '%s' "$release_date" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+            echo "::error::Salve.toc needs X-ReleaseDate in YYYY-MM-DD form."
+            exit 1
+          fi
+          if ! grep -Fq "## [$tag] — $release_date" CHANGELOG.md; then
+            echo "::error::X-ReleaseDate $release_date does not match CHANGELOG.md for [$tag]."
+            exit 1
+          fi
+
+      - name: Validate generated data modules
+        run: python3 tools/generate_data_modules.py --check
 
       - name: Package and release
         uses: BigWigsMods/packager@v2

@@ -147,7 +147,7 @@ function Panel:Rebuild()
         if not self.warnedFailure then
             self.warnedFailure = true
             ns.Print("|cffff4444" .. failures .. " box(es) could not bind to the aura engine.|r "
-                .. "They will click but never light up. Run |cffffd100/salve probe|r.")
+                .. "They will click but never light up. Run |cffffd100/salve debug|r.")
         end
     end
 end

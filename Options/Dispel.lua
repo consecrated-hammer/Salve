@@ -70,19 +70,24 @@ end
 
 -- ── Page ───────────────────────────────────────────────────────────────────
 
-O.NewPage("Dispel", function(panel, y)
-    _, y = O.Header(panel, "Detected dispels", y)
+O.NewPage({
+    name = "Dispels",
+    description = "What each click does, and when Salve makes a sound.",
+}, function(panel, y)
+    _, y = O.Header(panel, "Your dispels", y)
 
-    local known = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    known:SetPoint("TOPLEFT", 16, y)
-    known:SetWidth(520)
-    known:SetJustifyH("LEFT")
-    y = y - 40
+    local knownTop = y
+    local knownRows = {}
+    local knownNote = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    knownNote:SetPoint("TOPLEFT", 16, knownTop - 86)
+    knownNote:SetText("Detected from your current specialisation.")
+    y = y - 110
 
     _, y = O.Header(panel, "Click bindings", y)
 
     local rowsTop = y
     local rows = {}
+    local pageBottom
 
     -- Forward declaration: redraw calls this, and it needs the controls that are
     -- created below the list.
@@ -91,12 +96,51 @@ O.NewPage("Dispel", function(panel, y)
     -- Rebuilt on every open and after every edit: both the binding list and the
     -- spells it resolves to can change underneath this page.
     local function redraw()
-        local names = {}
-        for _, s in ipairs(ns.knownDispels or {}) do
-            names[#names + 1] = s.name .. " (" .. ns.CuresText(s.cures) .. ")"
+        for _, row in ipairs(knownRows) do row:Hide() end
+        for i, spell in ipairs(ns.knownDispels or {}) do
+            local row = knownRows[i]
+            if not row then
+                row = CreateFrame("Frame", nil, panel)
+                row:SetSize(500, 26)
+                row.icon = row:CreateTexture(nil, "ARTWORK")
+                row.icon:SetSize(22, 22)
+                row.icon:SetPoint("LEFT", 16, 0)
+                row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                row.text = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+                row.text:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
+                row.text:SetJustifyH("LEFT")
+                knownRows[i] = row
+            end
+            row:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, knownTop - (i - 1) * 28)
+            row.icon:SetTexture(C_Spell and C_Spell.GetSpellTexture
+                and C_Spell.GetSpellTexture(spell.id)
+                or "Interface\\Icons\\INV_Misc_QuestionMark")
+            row.icon:Show()
+            row.text:ClearAllPoints()
+            row.text:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
+            row.text:SetText(spell.name .. "  |cff999999"
+                .. ns.CuresText(spell.cures) .. "|r")
+            row:Show()
         end
-        known:SetText(#names > 0 and table.concat(names, "\n")
-            or "|cffff4444No dispel on this specialisation.|r")
+        if #(ns.knownDispels or {}) == 0 then
+            local row = knownRows[1]
+            if not row then
+                row = CreateFrame("Frame", nil, panel)
+                row:SetSize(500, 26)
+                row.icon = row:CreateTexture(nil, "ARTWORK")
+                row.icon:SetSize(22, 22)
+                row.icon:SetPoint("LEFT", 16, 0)
+                row.text = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+                row.text:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
+                knownRows[1] = row
+            end
+            row:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, knownTop)
+            row.icon:Hide()
+            row.text:ClearAllPoints()
+            row.text:SetPoint("LEFT", 16, 0)
+            row.text:SetText("|cffff4444No dispel on this specialisation.|r")
+            row:Show()
+        end
 
         for _, r in ipairs(rows) do r:Hide() end
 
@@ -125,6 +169,9 @@ O.NewPage("Dispel", function(panel, y)
                 row.remove:SetSize(24, 22)
                 row.remove:SetPoint("LEFT", row.bind, "RIGHT", 6, 0)
                 row.remove:SetText("x")
+                O.AttachHint(row.bind, "Change binding",
+                    "Press a mouse button. Hold Shift, Ctrl or Alt to include it.")
+                O.AttachHint(row.remove, "Remove binding", "Remove this mouse binding.")
 
                 rows[i] = row
             end
@@ -134,19 +181,25 @@ O.NewPage("Dispel", function(panel, y)
 
             local what, icon = ns.Bindings:Describe(entry)
             row.icon:SetTexture(icon or "Interface\\Icons\\INV_Misc_QuestionMark")
-            row.spell:SetText(what)
+            row.spell:SetText(what:gsub(" %(automatic%)$", " |cff888888— automatic|r"))
             row.bind:SetText(ns.Bindings:Label(entry.key))
 
             row.bind:SetScript("OnClick", function()
                 promptForKey(function(key)
                     -- Materialise the defaults before editing, or the first edit
                     -- would be written into the shared default table.
-                    ns.Bindings:Materialise()[i].key = key
+                    local list = ns.Bindings:Materialise()
+                    for otherIndex, entry in ipairs(list) do
+                        if otherIndex ~= i and entry.key == key then
+                            ns.Print(ns.Bindings:Label(key) .. " is already assigned")
+                            return
+                        end
+                    end
+                    list[i].key = key
                     ns.RequestRebuildSoon(0.05)
                     redraw()
                 end)
             end)
-
             row.remove:SetScript("OnClick", function()
                 table.remove(ns.Bindings:Materialise(), i)
                 ns.RequestRebuildSoon(0.05)
@@ -161,40 +214,87 @@ O.NewPage("Dispel", function(panel, y)
     local add = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     add:SetSize(150, 22)
     add:SetText("Add a binding")
+    O.AttachHint(add, "Add a binding", "Add another mouse click.")
     add:SetScript("OnClick", function()
         promptForKey(function(key)
             local list = ns.Bindings:Materialise()
+            for _, entry in ipairs(list) do
+                if entry.key == key then
+                    ns.Print(ns.Bindings:Label(key) .. " is already assigned")
+                    return
+                end
+            end
             list[#list + 1] = { key = key, role = ns.ROLE_PRIMARY }
             ns.RequestRebuildSoon(0.05)
             redraw()
         end)
     end)
 
-    -- ☠ EVERYTHING BELOW THE LIST MOVES WITH IT. These were anchored as though
-    --   the list were always five rows; a sixth binding overlapped the Add
-    --   button, and further ones buried the diagnostics entirely -- so the
-    --   controls needed to fix an over-long list were the first casualties.
-    local diagHeader = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    diagHeader:SetText("Diagnostics")
+    local restore = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    restore:SetSize(150, 22)
+    restore:SetText("Restore defaults")
+    O.AttachHint(restore, "Restore defaults",
+        "Put the best detected dispel on left click, plus right click when needed.")
+    restore:SetScript("OnClick", function()
+        ns.db.bindings = {}
+        ns.RequestRebuildSoon(0.05)
+        redraw()
+    end)
 
-    local probe = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    probe:SetSize(150, 22)
-    probe:SetText("Run engine probe")
-    probe:SetScript("OnClick", function() ns.Binding:Report() end)
+    -- Everything below the binding list lives in one footer, so an arbitrarily
+    -- long custom binding list moves the complete alert section.
+    local footer = CreateFrame("Frame", nil, panel)
+    footer:SetSize(560, 205)
+    footer.salveRefresh = panel.salveRefresh
+    footer.salveRefreshAll = panel.salveRefreshAll
+
+    local fy = -4
+    _, fy = O.Header(footer, "Alerts", fy)
+
+    _, fy = O.Check(footer, "Play a sound when something you can dispel appears",
+        "Uses only the spell list for your current zone, dungeon or raid.", fy,
+        function() return ns.db.soundEnabled end,
+        function(v) ns.Set("soundEnabled", v) end)
+
+    local channel
+    channel, fy = O.Cycle(footer, "Sound channel",
+        "Master is audible even when game sound effects are muted.", fy,
+        { "Master", "SFX", "Dialog" },
+        { "Master", "Sound effects", "Dialog" },
+        function() return ns.db.soundChannel end,
+        function(v) ns.Set("soundChannel", v) end)
+
+    local test = CreateFrame("Button", nil, footer, "UIPanelButtonTemplate")
+    test:SetSize(70, 22)
+    test:SetPoint("LEFT", channel, "RIGHT", 18, 0)
+    test:SetText("Test")
+    O.AttachHint(test, "Test sound", "Play the selected alert now.")
+    test:SetScript("OnClick", function() ns.Sound:Test() end)
+
+    _, fy = O.PageReset(footer, fy - 8, function()
+        ns.Set("bindings", {})
+        ns.Set("soundEnabled", ns.defaults.soundEnabled)
+        ns.Set("soundChannel", ns.defaults.soundChannel)
+        ns.Set("soundFile", ns.defaults.soundFile)
+        redraw()
+    end)
 
     function reflow(rowCount)  -- luacheck: ignore (declared local above)
         local bottom = rowsTop - rowCount * 32 - 8
         add:ClearAllPoints()
         add:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, bottom)
+        restore:ClearAllPoints()
+        restore:SetPoint("LEFT", add, "RIGHT", 8, 0)
 
-        diagHeader:ClearAllPoints()
-        diagHeader:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, bottom - 40)
-
-        probe:ClearAllPoints()
-        probe:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, bottom - 66)
+        footer:ClearAllPoints()
+        footer:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, bottom - 40)
+        pageBottom = bottom - 255
+        if panel.salveSetBottom then panel.salveSetBottom(pageBottom) end
     end
 
-    reflow(#ns.Bindings:List())
+    redraw()
 
     panel.salveRefresh[#panel.salveRefresh + 1] = redraw
+    ns.Options.RefreshDispel = redraw
+    return pageBottom
 end)
