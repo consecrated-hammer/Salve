@@ -9,6 +9,20 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-08-16
+
+### Added
+
+- Expanded alert-sound coverage to all eight Midnight Season 2 Mythic+
+  dungeons using current Mythic Dungeon Tools dispel metadata, Blizzard DB2
+  spell categories and four live learning captures.
+- Added 52 catalogue records, bringing the Season 2 Mythic+ pool to 62
+  source-backed spell IDs.
+
+### Changed
+
+- Updated instance 2993 to its live in-game name, Altar of Rezan.
+
 ## [1.0.0] — 2026-08-16
 
 First stable release.
@@ -88,5 +102,6 @@ Beta release.
   IDs and only schools the current character can remove.
 - Opt-in, group-scoped `/salve learn` diagnostics for readable catalogue gaps.
 
+[1.1.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.1.0
 [1.0.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.0.0
 [0.1.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v0.1.0

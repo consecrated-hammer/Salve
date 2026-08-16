@@ -27,7 +27,7 @@ Available extras:
 - `screenshots/panel-clear-cells.png`
 - `screenshots/options-cell-text-and-appearance.png`
 
-Retake after loading 1.0.0 before uploading; these captures show old build text:
+Retake after loading 1.1.0 before uploading; these captures show old build text:
 
 - [ ] `screenshots/options-troubleshooting.png`
 - [ ] `screenshots/options-about.png`

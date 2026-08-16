@@ -12,10 +12,10 @@ function ns.GetMetadata(key)
     return GetAddOnMetadata and GetAddOnMetadata(addonName, key)
 end
 
-ns.VERSION = ns.GetMetadata("Version") or "1.0.0"
+ns.VERSION = ns.GetMetadata("Version") or "1.1.0"
 -- Development revision for distinguishing synced installs that share the same
 -- release version. Surface this in /salve debug before debugging live code.
-ns.REVISION = "1.0.0"
+ns.REVISION = "1.1.0"
 
 -- The four dispel schools, in the order the options UI lists them.
 ns.DISPEL_TYPES = { "Magic", "Curse", "Disease", "Poison" }

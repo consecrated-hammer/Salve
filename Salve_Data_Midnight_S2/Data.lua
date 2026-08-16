@@ -46,6 +46,136 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
                     build = "12.1.0.69299",
                 },
             },
+            {
+                spellID = 269935,
+                dispelType = "Magic",
+                name = "Bound by Shadow",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 269972,
+                dispelType = "Curse",
+                name = "Hex Volley",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 270492,
+                dispelType = "Curse",
+                name = "Hex",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 270499,
+                dispelType = "Magic",
+                name = "Frost Shock",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 270901,
+                dispelType = "Magic",
+                name = "Unholy Mending",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 270920,
+                dispelType = "Magic",
+                name = "Bind Soul",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 276031,
+                dispelType = "Magic",
+                name = "Pit of Despair",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1294815,
+                dispelType = "Magic",
+                name = "Shadowfrost Bolt",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1294972,
+                dispelType = "Magic",
+                name = "Soul Bolt",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1295125,
+                dispelType = "Magic",
+                name = "Spectral Bolt",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1296671,
+                dispelType = "Magic",
+                name = "Captain's Bulwark",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1298104,
+                dispelType = "Poison",
+                name = "Putrid Seekers",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1306763,
+                dispelType = "Poison",
+                name = "Serpent Strike",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
         },
     },
     [1877] = {
@@ -64,6 +194,66 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
                     build = "12.1.0.69299",
                 },
             },
+            {
+                spellID = 1293307,
+                dispelType = "Curse",
+                name = "Addle Mind",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1293464,
+                dispelType = "Magic",
+                name = "Accumulate Charge",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1296052,
+                dispelType = "Magic",
+                name = "Imbued Conduction",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1308100,
+                dispelType = "Poison",
+                name = "Poisoned Cheap Shot",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1308148,
+                dispelType = "Poison",
+                name = "Cytotoxin",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1310739,
+                dispelType = "Magic",
+                name = "Accumulate Charge",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
         },
     },
     [2521] = {
@@ -72,6 +262,56 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
         coverage = "Encounter Journal baseline; trash may be absent",
         debuffs = {
+            {
+                spellID = 373972,
+                dispelType = "Magic",
+                name = "Blaze of Glory",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 381515,
+                dispelType = "Magic",
+                name = "Stormslam",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 391031,
+                dispelType = "Magic",
+                name = "Stormcloud Barrier",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 392641,
+                dispelType = "Magic",
+                name = "Rolling Thunder",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1305234,
+                dispelType = "Magic",
+                name = "Cold Claws",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
         },
     },
     [2813] = {
@@ -91,6 +331,76 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
                 },
             },
             {
+                spellID = 1201554,
+                dispelType = "Magic",
+                name = "Seduction",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1216538,
+                dispelType = "Magic",
+                name = "Fel Detonation",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1216590,
+                dispelType = "Poison",
+                name = "Heartstop Poison",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1217633,
+                dispelType = "Magic",
+                name = "Corroding Spittle",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1217930,
+                dispelType = "Magic",
+                name = "Imprison",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1217973,
+                dispelType = "Curse",
+                name = "Curse of Doom",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1223939,
+                dispelType = "Poison",
+                name = "Envenom",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
                 spellID = 1228198,
                 dispelType = "Magic",
                 name = "Corroding Spittle",
@@ -98,6 +408,26 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
                 provenance = {
                     source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
                     build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1229433,
+                dispelType = "Magic",
+                name = "Fel Crazed",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1256300,
+                dispelType = "Magic",
+                name = "Massive Fel Detonation",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
                 },
             },
         },
@@ -118,6 +448,56 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
                     build = "12.1.0.69299",
                 },
             },
+            {
+                spellID = 1235549,
+                dispelType = "Magic",
+                name = "Glacial Torment",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1238801,
+                dispelType = "Curse",
+                name = "Insatiable Hunger",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1239860,
+                dispelType = "Magic",
+                name = "Cryo Surge",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1297696,
+                dispelType = "Magic",
+                name = "Healing Breeze",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1297699,
+                dispelType = "Disease",
+                name = "Rotten Supplies",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
         },
     },
     [2859] = {
@@ -134,6 +514,46 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
                 provenance = {
                     source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
                     build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1238084,
+                dispelType = "Magic",
+                name = "Spore Spines",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1238581,
+                dispelType = "Magic",
+                name = "Spiny Shield",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1250937,
+                dispelType = "Poison",
+                name = "Toxic Spew",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1259365,
+                dispelType = "Magic",
+                name = "Bloodthorn Roots",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
                 },
             },
         },
@@ -155,6 +575,36 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
                 },
             },
             {
+                spellID = 1239855,
+                dispelType = "Magic",
+                name = "Sky Strike",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1249238,
+                dispelType = "Magic",
+                name = "Fire Spit",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1250043,
+                dispelType = "Magic",
+                name = "Melt Armor",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
                 spellID = 1263971,
                 dispelType = "Poison",
                 name = "Mind-Numbing Poison",
@@ -162,6 +612,16 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
                 provenance = {
                     source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
                     build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1289258,
+                dispelType = "Poison",
+                name = "Corrosive Essence",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
                 },
             },
         },
@@ -175,11 +635,41 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
         },
     },
     [2993] = {
-        name = "Altar of Fangs",
+        name = "Altar of Rezan",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
         coverage = "Encounter Journal baseline; trash may be absent",
         debuffs = {
+            {
+                spellID = 1289416,
+                dispelType = "Poison",
+                name = "Envenom",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1294569,
+                dispelType = "Magic",
+                name = "Paralyzing Shots",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1294845,
+                dispelType = "Poison",
+                name = "Corrosive Fangs",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
             {
                 spellID = 1296069,
                 dispelType = "Disease",
@@ -188,6 +678,36 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
                 provenance = {
                     source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
                     build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1305368,
+                dispelType = "Poison",
+                name = "Spiteful Venom",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1306230,
+                dispelType = "Poison",
+                name = "Venom Burst",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1307571,
+                dispelType = "Poison",
+                name = "Envenom",
+                verified = true,
+                provenance = {
+                    source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
+                    build = "12.1.0 live",
                 },
             },
         },

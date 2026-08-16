@@ -2,7 +2,7 @@
 ## Title: Salve |cff66ddaaData: Midnight Season 1|r
 ## Notes: Load-on-demand dispellable-debuff data for Salve.
 ## Author: consecrated-hammer
-## Version: 1.0.0
+## Version: 1.1.0
 ## LoadOnDemand: 1
 ## RequiredDeps: Salve
 ## X-License: GPL-3.0

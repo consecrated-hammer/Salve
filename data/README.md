@@ -11,6 +11,12 @@ source is an Encounter Journal baseline and does not enumerate ordinary dungeon
 trash. An instance with zero rows is kept in the manifest so Salve can report
 that its module loaded but no verified candidates are available.
 
+For Midnight Season 2 Mythic+, the catalogue also uses the dispel-school spell
+metadata in Mythic Dungeon Tools commit `4b8b0b7`. This covers trash and other
+enemy spells omitted by the Encounter Journal. Those IDs were checked against
+the 12.1.0 DB2 spell categories where available; live `/salve learn` captures
+remain the preferred confirmation for the exact aura IDs that reach players.
+
 To regenerate after editing either source file:
 
 ```sh

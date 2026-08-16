@@ -1,6 +1,6 @@
 {
   "interface": 120100,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "modules": [
     {
       "folder": "Salve_Data_Midnight_S1",
@@ -36,7 +36,7 @@
         { "id": 2859, "name": "The Blinding Vale" },
         { "id": 2923, "name": "Voidscar Arena" },
         { "id": 2987, "name": "The Tidebound Grotto" },
-        { "id": 2993, "name": "Altar of Fangs" },
+        { "id": 2993, "name": "Altar of Rezan" },
         { "id": 3004, "name": "The Venomous Abyss" }
       ]
     }

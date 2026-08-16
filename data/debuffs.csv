@@ -20,14 +20,66 @@ Salve_Data_Midnight_S1,2939,1257087,Consuming Miasma,Magic,wago.tools DB2 Journa
 Salve_Data_Midnight_S2,1592,1221714,Poison Burst,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
 Salve_Data_Midnight_S2,1762,267273,Poison Nova,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
 Salve_Data_Midnight_S2,1762,267763,Wretched Discharge,Disease,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,1762,269935,Bound by Shadow,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1762,269972,Hex Volley,Curse,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1762,270492,Hex,Curse,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1762,270499,Frost Shock,Magic,in-game learning,12.1.0 live,true
+Salve_Data_Midnight_S2,1762,270901,Unholy Mending,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1762,270920,Bind Soul,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1762,276031,Pit of Despair,Magic,in-game learning,12.1.0 live,true
+Salve_Data_Midnight_S2,1762,1294815,Shadowfrost Bolt,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1762,1294972,Soul Bolt,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1762,1295125,Spectral Bolt,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1762,1296671,Captain's Bulwark,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1762,1298104,Putrid Seekers,Poison,in-game learning,12.1.0 live,true
+Salve_Data_Midnight_S2,1762,1306763,Serpent Strike,Poison,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
 Salve_Data_Midnight_S2,1877,267027,Poison Spit,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,1877,1293307,Addle Mind,Curse,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1877,1293464,Accumulate Charge,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1877,1296052,Imbued Conduction,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1877,1308100,Poisoned Cheap Shot,Poison,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1877,1308148,Cytotoxin,Poison,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,1877,1310739,Accumulate Charge,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2521,373972,Blaze of Glory,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2521,381515,Stormslam,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2521,391031,Stormcloud Barrier,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2521,392641,Rolling Thunder,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2521,1305234,Cold Claws,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
 Salve_Data_Midnight_S2,2813,474515,Heartstop Poison,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2813,1201554,Seduction,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2813,1216538,Fel Detonation,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2813,1216590,Heartstop Poison,Poison,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2813,1217633,Corroding Spittle,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2813,1217930,Imprison,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2813,1217973,Curse of Doom,Curse,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2813,1223939,Envenom,Poison,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
 Salve_Data_Midnight_S2,2813,1228198,Corroding Spittle,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2813,1229433,Fel Crazed,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2813,1256300,Massive Fel Detonation,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
 Salve_Data_Midnight_S2,2825,1234846,Toxic Spores,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2825,1235549,Glacial Torment,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2825,1238801,Insatiable Hunger,Curse,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2825,1239860,Cryo Surge,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2825,1297696,Healing Breeze,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2825,1297699,Rotten Supplies,Disease,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
 Salve_Data_Midnight_S2,2859,1236658,Bloodthorn Roots,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2859,1238084,Spore Spines,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2859,1238581,Spiny Shield,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2859,1250937,Toxic Spew,Poison,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2859,1259365,Bloodthorn Roots,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
 Salve_Data_Midnight_S2,2923,1226031,Poison Splash,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2923,1239855,Sky Strike,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2923,1249238,Fire Spit,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2923,1250043,Melt Armor,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
 Salve_Data_Midnight_S2,2923,1263971,Mind-Numbing Poison,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2923,1289258,Corrosive Essence,Poison,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2993,1289416,Envenom,Poison,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2993,1294569,Paralyzing Shots,Magic,in-game learning,12.1.0 live,true
+Salve_Data_Midnight_S2,2993,1294845,Corrosive Fangs,Poison,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
 Salve_Data_Midnight_S2,2993,1296069,Regurgitate,Disease,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,2993,1305368,Spiteful Venom,Poison,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2993,1306230,Venom Burst,Poison,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2993,1307571,Envenom,Poison,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
 Salve_Data_Midnight_S2,3004,1284471,Blighted Blood,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
 Salve_Data_Midnight_S2,3004,1287036,Poisonous Bite,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
 Salve_Data_Midnight_S2,3004,1295173,Exploding Infection,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true

@@ -1,7 +1,7 @@
 ## Interface: 120100
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 1.0.0
+## Version: 1.1.0
 ## X-ReleaseDate: 2026-08-16
 ## Notes: Compact dispel panel. One click to remove Curse, Disease, Poison and Magic debuffs from your party or raid.
 ## Category-enUS: Raid
