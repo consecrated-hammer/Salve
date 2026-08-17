@@ -5,11 +5,9 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
----
-
 ## [Unreleased]
 
-## [1.1.0] — 2026-08-16
+## [1.1.0] - 2026-08-16
 
 ### Added
 
@@ -23,7 +21,7 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Updated instance 2993 to its live in-game name, Altar of Rezan.
 
-## [1.0.0] — 2026-08-16
+## [1.0.0] - 2026-08-16
 
 First stable release.
 
@@ -65,7 +63,7 @@ First stable release.
 - Options pages stay within the settings frame and refresh reliably after
   changes, resets and specialisation swaps.
 
-## [0.1.0] — 2026-08-15
+## [0.1.0] - 2026-08-15
 
 Beta release.
 

@@ -45,8 +45,14 @@ jobs:
         run: |
           tag="${GITHUB_REF_NAME#v}"
           tag="${tag%%-*}"
-          if ! grep -q "\[$tag\]" CHANGELOG.md; then
-            echo "::error::CHANGELOG.md has no [$tag] section — CurseForge would show an empty changelog."
+          # ☠ Require the exact Keep a Changelog heading, hyphen and all:
+          #   ## [1.2.3] - 2026-08-17
+          # CurseForge parses this format, and an em dash instead of a hyphen
+          # stops it sectioning the file -- the whole history then renders as
+          # one blob on every release. Cheap to get wrong, invisible until it
+          # is published, so make CI refuse it.
+          if ! grep -qE "^## \\[$tag\\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md needs a heading exactly '## [$tag] - YYYY-MM-DD' (hyphen, not an em dash)."
             exit 1
           fi
           release_date=$(sed -n 's/^## X-ReleaseDate:[[:space:]]*//p' Salve.toc)
