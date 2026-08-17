@@ -207,10 +207,14 @@ ns.Sound:SetLearning(true, true)
 
 currentMapID, currentMapName = 43, "Westfall"
 ns.Sound:ActivateCurrentInstance()
-equal(ns.db.learnMode, false, "learning automatically stops on scope change")
-equal(ns.Sound.learningScopeKey, nil, "expired learning scope cleared")
+equal(ns.db.learnMode, true, "learning keeps running across a scope change")
+equal(ns.Sound.learningScopeKey, ns.Sound.activeScopeKey, "learning re-scoped to the new zone")
+-- The listener STAYS registered across a scope change. Dropping it was the
+-- mechanism behind the old self-disabling behaviour; learning now follows you
+-- from zone to zone, which is the point for movement-impairing effects.
 for index = 1, 5 do
-    equal(createdFrames[index].event, nil, "scope change unregisters listener " .. index)
+    equal(createdFrames[index].event, "UNIT_AURA",
+        "scope change keeps listener " .. index .. " registered")
 end
 
 print("sound tests passed")

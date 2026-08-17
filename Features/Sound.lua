@@ -243,12 +243,14 @@ function Sound:ActivateCurrentInstance()
     self.activeScopeKey, self.activeScopeName, self.activeScopeType, self.activeScopeID =
         currentScope(self.activeInstanceName, self.activeInstanceID)
 
+    -- ☠ Changing zone RE-SCOPES learning; it does not switch it off. Turning
+    --   it off here defeated the whole point for movement data, which only
+    --   accumulates by running dungeons.
     if ns.db.learnMode and self.learningScopeKey ~= self.activeScopeKey then
         local oldScope = self.learningScopeKey
-        ns.db.learnMode = false
-        self.learningScopeKey = nil
-        if oldScope then
-            ns.Print("learn mode automatically turned off after leaving " .. oldScope)
+        self.learningScopeKey = self.activeScopeKey
+        if oldScope and self.activeScopeName then
+            ns.Print("learning now scoped to " .. self.activeScopeName)
         end
     end
     self.activeModule = nil

@@ -14,6 +14,12 @@ SlashCmdList.SALVE = function(msg)
     if cmd == "options" or cmd == "config" or cmd == "opt" then
         ns.OpenOptions()
 
+    elseif cmd == "snared" then
+        ns.Escape:CaptureCurrent()
+
+    elseif cmd == "snares" then
+        ns.Escape:DumpCaptured()
+
     elseif cmd == "learn" then
         if arg == "on" then
             ns.Sound:SetLearning(true)

@@ -61,6 +61,12 @@ ns.defaults = {
     -- deliberately opt-in, session-only, and scoped to the current location
     -- and group units in Sound.lua.
     learnMode     = false,
+
+    -- Movement-impairment category. `escapes` is the set of your own spells you
+    -- have opted in to (keyed by spell ID); `learnedMovement` is the set of
+    -- root/snare spell IDs captured with /salve snared.
+    escapes         = {},
+    learnedMovement = {},
     learned       = {},
 
     -- Saved-variable migrations. Increment only when an old shape needs an
@@ -167,9 +173,13 @@ function ns.InitConfig()
     SalveDB.visibility.mounted = nil
     SalveDB.visibility.notMounted = nil
 
-    -- Learning is a diagnostic for the current play session. Never restore an
-    -- accidentally forgotten listener after logout or /reload.
-    SalveDB.learnMode = false
+    -- ☠ Learning PERSISTS across logout and /reload. It used to reset itself,
+    --   on the theory that a forgotten listener was a hazard -- but in practice
+    --   the traffic is light, and for movement-impairing effects learning is
+    --   not a diagnostic at all: it is the primary source of data, because
+    --   Blizzard's journal only describes boss abilities and dungeon snares
+    --   come from trash. Resetting it meant the one category that depends on it
+    --   never accumulated anything.
 
     ns.db = SalveDB
     return ns.db

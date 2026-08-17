@@ -83,6 +83,81 @@ O.NewPage({
     knownNote:SetText("Detected from your current specialisation.")
     y = y - 110
 
+    _, y = O.Header(panel, "Getting out of roots and snares", y)
+
+    local escapeNote = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    escapeNote:SetPoint("TOPLEFT", 16, y)
+    escapeNote:SetWidth(520)
+    escapeNote:SetJustifyH("LEFT")
+    escapeNote:SetText("Roots and snares carry no dispel school, so the normal filter "
+        .. "never sees them. Tick the spells you actually count as an escape. "
+        .. "Party-wide ones light anyone's cell; personal ones light only yours.\n"
+        .. "Capture the effects themselves with |cffffd100/salve snared|r while impaired.")
+    y = y - 46
+
+    local escapeRows = {}
+    local escapeTop = y
+
+    local function redrawEscapes()
+        for _, r in ipairs(escapeRows) do r:Hide() end
+        local list = ns.knownEscapes or {}
+
+        for i, spell in ipairs(list) do
+            local row = escapeRows[i]
+            if not row then
+                row = CreateFrame("Frame", nil, panel)
+                row:SetSize(500, 26)
+                row.check = O.CheckButton(row)
+                row.check:SetPoint("LEFT", 14, 0)
+                row.icon = row:CreateTexture(nil, "ARTWORK")
+                row.icon:SetSize(20, 20)
+                row.icon:SetPoint("LEFT", row.check, "RIGHT", 4, 0)
+                row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                row.text = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+                row.text:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
+                row.text:SetWidth(430)
+                row.text:SetJustifyH("LEFT")
+                escapeRows[i] = row
+            end
+
+            row:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, escapeTop - (i - 1) * 28)
+            row.icon:SetTexture(C_Spell and C_Spell.GetSpellTexture
+                and C_Spell.GetSpellTexture(spell.id)
+                or "Interface\\Icons\\INV_Misc_QuestionMark")
+
+            local scope = spell.scope == ns.ESCAPE_ALLY and "|cff66ddaaparty-wide|r"
+                or "|cff888888personal|r"
+            row.text:SetText(("%s  %s  |cff999999%s|r")
+                :format(spell.name, scope, spell.note or ""))
+
+            row.check:SetChecked(ns.db.escapes[spell.id] and true or false)
+            row.check:SetScript("OnClick", function(self)
+                ns.db.escapes[spell.id] = self:GetChecked() and true or nil
+                ns.RequestRebuildSoon(0.05)
+            end)
+            row:Show()
+        end
+
+        if #list == 0 then
+            local row = escapeRows[1]
+            if not row then
+                row = CreateFrame("Frame", nil, panel)
+                row:SetSize(500, 26)
+                row.text = row:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+                row.text:SetPoint("LEFT", 16, 0)
+                escapeRows[1] = row
+            end
+            row:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, escapeTop)
+            if row.check then row.check:Hide() end
+            if row.icon then row.icon:Hide() end
+            row.text:SetText("No known escape on this specialisation.")
+            row:Show()
+        end
+    end
+
+    panel.salveRefresh[#panel.salveRefresh + 1] = redrawEscapes
+    y = escapeTop - math.max(1, 3) * 28 - 12
+
     _, y = O.Header(panel, "Click bindings", y)
 
     local rowsTop = y

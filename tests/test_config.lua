@@ -55,7 +55,10 @@ SalveDB = {
     },
 }
 ns.InitConfig()
-equal(ns.db.learnMode, false, "learning never survives UI reload")
+-- Learning PERSISTS now. For movement-impairing effects it is the primary
+-- data source, not a diagnostic, so resetting it meant that category never
+-- accumulated anything.
+equal(ns.db.learnMode, true, "learning survives UI reload")
 equal(ns.db.schemaVersion, 4, "duplicate-binding migration applied")
 equal(#ns.db.bindings, 1, "duplicate mouse bindings collapsed")
 equal(ns.db.visibility.mounted, nil, "removed mounted condition cleared")

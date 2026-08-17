@@ -55,6 +55,7 @@ ns.Binding = {}
 local Binding = ns.Binding
 
 local SLOT_KEY = "salveDispel"
+local MOVE_SLOT_KEY = "salveMovement"
 
 local function currentDispelTypes()
     local types = {}
@@ -307,6 +308,39 @@ local function initializeFrame(box)
     end
 end
 
+-- Movement-impairment overlay. A border rather than a fill, so a rooted player
+-- who is ALSO dispellable still shows the dispel colour underneath -- the two
+-- categories stack instead of one hiding the other.
+local function initializeMovementFrame(box)
+    return function(b)
+        pcall(function()
+            if b.SetMouseClickEnabled then b:SetMouseClickEnabled(false) end
+            if b.SetMouseMotionEnabled then b:SetMouseMotionEnabled(false) end
+        end)
+        pcall(b.SetSize, b, box:GetWidth(), box:GetHeight())
+
+        if not b.salveEdges then
+            b.salveEdges = {}
+            for _, e in ipairs({ { "TOPLEFT", "TOPRIGHT", true }, { "BOTTOMLEFT", "BOTTOMRIGHT", true },
+                                 { "TOPLEFT", "BOTTOMLEFT", false }, { "TOPRIGHT", "BOTTOMRIGHT", false } }) do
+                local t = b:CreateTexture(nil, "OVERLAY")
+                t:SetColorTexture(1, 0.82, 0.26, 1)
+                t:SetPoint(e[1]); t:SetPoint(e[2])
+                if e[3] then t:SetHeight(2) else t:SetWidth(2) end
+                b.salveEdges[#b.salveEdges + 1] = t
+            end
+        end
+
+        -- ☠ Bound the same way the dispel fill is: the engine owns whether these
+        --   are shown, so they must be handed over, never Show()n by us.
+        if b.AddDispelTypeTexture then
+            pcall(function()
+                for _, t in ipairs(b.salveEdges) do b:AddDispelTypeTexture(t) end
+            end)
+        end
+    end
+end
+
 -- ── Attaching one box ──────────────────────────────────────────────────────
 
 function Binding:Container(box)
@@ -348,6 +382,12 @@ function Binding:Attach(box, unit)
     local sig = table.concat({
         tostring(ns.db.showStacks), ns.db.boxWidth, ns.db.boxHeight,
         dispelTypeSignature(),
+        -- ☠ The movement slot is baked in at creation like everything else, so
+        --   enabling an escape or learning a new snare has to change the
+        --   signature or already-bound boxes would never pick it up.
+        ns.Escape and #ns.Escape:AllSpellIDs() or 0,
+        ns.Escape and tostring(ns.Escape:Active()) or "false",
+        ns.Escape and tostring(ns.Escape:HasAllyEscape()) or "false",
     }, "|")
 
     -- Fast path: same slot, possibly a different unit, possibly parked.
@@ -439,6 +479,30 @@ function Binding:Attach(box, unit)
         self.lastFailure = "AddAuraSlot button could not be anchored to its box"
         self:Detach(box)
         return false
+    end
+
+    -- Second slot: movement impairment. Added only when it could tell you
+    -- something you can act on -- an ally escape lets it light anyone's cell,
+    -- a personal one lights your own and nobody else's, because you cannot
+    -- Blink someone else out of a root.
+    --
+    -- ☠ A FAILURE HERE IS NOT FATAL. The dispel slot above is the addon's
+    --   reason to exist; this is an extra. If the client rejects it, the box
+    --   still dispels -- so record it and carry on rather than detaching.
+    if ns.Escape and ns.Escape:Active() then
+        local mine = (unit == "player")
+        if mine or ns.Escape:HasAllyEscape() then
+            local ids = ns.Escape:AllSpellIDs()
+            if #ids > 0 then
+                local ok, err = pcall(c.AddAuraSlot, c, MOVE_SLOT_KEY, "HARMFUL", {
+                    candidateFilters = { includeSpellIDs = ids },
+                    initializeFrame  = initializeMovementFrame(box),
+                })
+                if not ok then
+                    self.lastMovementFailure = tostring(err)
+                end
+            end
+        end
     end
 
     -- ☠ LAST. This is what registers the container for aura events.

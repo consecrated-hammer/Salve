@@ -29,6 +29,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
 
     elseif event == "PLAYER_LOGIN" then
         ns.UpdateDispelSpell()
+        ns.Escape:Update()
         if ns.Options.RefreshDispel then ns.Options.RefreshDispel() end
         ns.Panel:Create()
         -- Broker first: it is a no-op without LibStub, and it never affects the
@@ -52,6 +53,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         or event == "SPELLS_CHANGED" then
         if ns.UpdateDispelSpell() then
             if ns.Options.RefreshDispel then ns.Options.RefreshDispel() end
+            ns.Escape:Update()
             ns.Sound:OnDispelChanged()
             if ns.Options.RefreshTroubleshooting then ns.Options.RefreshTroubleshooting() end
             ns.RequestRebuild()

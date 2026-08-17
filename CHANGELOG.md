@@ -7,6 +7,36 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-08-17
+
+### Added
+
+- **Roots and snares (alpha).** These carry no dispel school, so Salve's normal
+  filter never saw them. A second engine-driven overlay now outlines a cell when
+  a captured movement-impairing effect is on it, drawn as a border so a cell
+  that is also dispellable still shows its dispel colour underneath.
+- Per-class escape list on the Dispels page. Nothing is enabled until you tick
+  it: several candidates are mobility rather than a true removal, and some are
+  talent-gated, so which ones count is your call rather than Salve's.
+- Party-wide escapes (Blessing of Freedom, Tiger's Lust, Master's Call) light
+  anyone's cell. Personal ones (Blink, Wraith Walk, shapeshift and the rest)
+  light only your own, because you cannot Blink someone else out of a root.
+- `/salve snared` captures whatever is impairing you right now, and
+  `/salve snares` lists what has been captured.
+
+### Changed
+
+- Learning no longer switches itself off on zone change, reload or logout. It
+  re-scopes instead. Traffic is light in practice, and for movement-impairing
+  effects learning is the primary data source rather than a diagnostic.
+
+### Known limitations
+
+- The curated movement list is nearly empty by design. Blizzard's journal
+  describes only boss abilities, and dungeon roots and snares come almost
+  entirely from trash, so a database join across the whole Season 1 and
+  Season 2 pool yields three spells. `/salve snared` is how this fills in.
+
 ## [1.2.0] - 2026-08-17
 
 ### Added
@@ -122,6 +152,7 @@ Beta release.
   IDs and only schools the current character can remove.
 - Opt-in, group-scoped `/salve learn` diagnostics for readable catalogue gaps.
 
+[1.3.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.3.0
 [1.2.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.2.0
 [1.1.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.1.0
 [1.0.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.0.0
