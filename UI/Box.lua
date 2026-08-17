@@ -60,10 +60,55 @@ local function StyleNameText(box)
     end
 end
 
+
+-- ── Tooltip ────────────────────────────────────────────────────────────────
+--
+-- Who you are pointing at, and what each button will do to them. The bindings
+-- are configurable and the spells change with specialisation, so the tooltip is
+-- built from the live binding list rather than hardcoded to "left cleanses".
+--
+-- ☠ Scripts are attached at CREATION. The box is a secure action button, so
+--   setting scripts on it during combat would be a blocked action -- but doing
+--   it once here, out of combat, is fine and never needs repeating.
+local function ShowBoxTooltip(box)
+    if not (ns.db and ns.db.showTooltip) then return end
+    if not box.unit or not UnitExists(box.unit) then return end
+
+    GameTooltip:SetOwner(box, "ANCHOR_RIGHT")
+
+    -- SetUnit gives the game's own unit tooltip -- name, level, class -- and
+    -- handles restricted or secret unit identity itself, which we may not.
+    GameTooltip:SetUnit(box.unit)
+
+    local bindings = ns.Bindings and ns.Bindings:List()
+    if bindings and #bindings > 0 then
+        GameTooltip:AddLine(" ")
+        for _, entry in ipairs(bindings) do
+            local what = ns.Bindings:Describe(entry)
+            if what then
+                GameTooltip:AddDoubleLine(
+                    ns.Bindings:Label(entry.key),
+                    (what:gsub(" %(automatic%)$", "")),
+                    1, 0.82, 0.26,
+                    1, 1, 1)
+            end
+        end
+    end
+
+    GameTooltip:Show()
+end
+
+local function HideBoxTooltip(box)
+    if GameTooltip:IsOwned(box) then GameTooltip:Hide() end
+end
+
 function Box.Create(index, parent)
     local box = CreateFrame("Button", "SalveBox" .. index, parent,
         "SecureActionButtonTemplate")
     box:RegisterForClicks("AnyDown")
+
+    box:HookScript("OnEnter", ShowBoxTooltip)
+    box:HookScript("OnLeave", HideBoxTooltip)
 
     -- Dim plate behind everything: what you see when the unit is clean. Use
     -- Blizzard's status-bar artwork instead of a flat colour so bare 20x20

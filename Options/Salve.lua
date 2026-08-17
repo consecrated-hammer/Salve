@@ -371,6 +371,12 @@ O.NewPage({
 
     _, y = O.Header(panel, "Inside each cell", y)
 
+    local showTooltip
+    showTooltip, y = O.Check(panel, "Show tooltip on hover",
+        "Shows who you are pointing at and what each mouse button will cast on them.", y,
+        function() return db.showTooltip end,
+        function(v) ns.Set("showTooltip", v) end)
+
     local showNames
     showNames, y = O.Check(panel, "Show unit names",
         "Names work best with cells about 58 pixels wide or more.", y,

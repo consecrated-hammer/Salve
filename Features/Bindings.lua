@@ -217,3 +217,14 @@ function Bindings:Describe(entry)
         or entry.role == ns.ROLE_SECONDARY and " (automatic)" or ""
     return name .. suffix, icon
 end
+
+-- True when spellID is one of this character's dispels. Used to decide whether
+-- a cast should drive the cooldown sweep -- casting anything else must not,
+-- or the swipe just tracks the global cooldown.
+function Bindings:IsDispelSpell(spellID)
+    if type(spellID) ~= "number" then return false end
+    for _, s in ipairs(ns.knownDispels or {}) do
+        if s.id == spellID then return true end
+    end
+    return false
+end

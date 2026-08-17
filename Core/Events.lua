@@ -4,16 +4,16 @@ local addonName, ns = ...
 -- Event routing
 -- ============================================================
 -- Note what is NOT here in normal operation: UNIT_AURA. Salve does not react to
--- aura changes -- the engine drives every lit box directly. SPELL_UPDATE_COOLDOWN
--- only forwards Cleanse's opaque Duration object into Blizzard cooldown widgets;
--- it never reads an aura or branches on secret combat state.
+-- aura changes -- the engine drives every lit box directly. The cooldown path
+-- only forwards the dispel's opaque Duration object into Blizzard cooldown
+-- widgets; it never reads an aura or branches on secret combat state.
 --
 -- UNIT_AURA uses dedicated per-unit listener frames ONLY while opt-in learn
 -- mode is on. ns.Sound:SetLearning owns those registrations.
 
 local frame = CreateFrame("Frame", "SalveEventFrame")
 
-frame:SetScript("OnEvent", function(_, event, arg1)
+frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     if event == "ADDON_LOADED" then
         if arg1 ~= addonName then return end
         ns.InitConfig()
@@ -57,7 +57,21 @@ frame:SetScript("OnEvent", function(_, event, arg1)
             ns.RequestRebuild()
         end
 
-    elseif event == "SPELL_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_CHARGES" then
+    elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
+        -- ☠ THE SWEEP IS DRIVEN BY CASTS, NOT BY SPELL_UPDATE_COOLDOWN.
+        --   That event fires on EVERY global cooldown, and the duration object
+        --   it hands back during a GCD *is* the GCD -- so refreshing on it made
+        --   every box sweep constantly for a second and a half, whatever you
+        --   cast. The sweep became noise rather than information.
+        --
+        --   Refreshing only when a DISPEL actually goes off means the swipe
+        --   shows the dispel's own cooldown and nothing else. The Duration
+        --   object animates itself to completion, so there is nothing to clear.
+        if arg1 == "player" and ns.Bindings:IsDispelSpell(arg3) then
+            ns.Binding:RefreshCooldowns()
+        end
+
+    elseif event == "SPELL_UPDATE_CHARGES" then
         ns.Binding:RefreshCooldowns()
 
     elseif event == "PLAYER_REGEN_ENABLED" then
@@ -81,9 +95,18 @@ for _, e in ipairs({
     "GROUP_ROSTER_UPDATE",
     "PLAYER_SPECIALIZATION_CHANGED",
     "SPELLS_CHANGED",
-    "SPELL_UPDATE_COOLDOWN",
+    -- ☠ Deliberately NOT SPELL_UPDATE_COOLDOWN: it fires on every GCD. See the
+    --   UNIT_SPELLCAST_SUCCEEDED branch above.
     "SPELL_UPDATE_CHARGES",
     "PLAYER_REGEN_ENABLED",
 }) do
     frame:RegisterEvent(e)
+end
+
+-- Only the player's own casts matter, so filter at registration rather than
+-- taking every group member's cast and discarding it in Lua.
+if frame.RegisterUnitEvent then
+    frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
+else
+    frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 end

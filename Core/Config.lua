@@ -18,6 +18,10 @@ ns.defaults = {
 
     -- Appearance
     showNames     = false,
+    -- Who you are pointing at and what each click does. On by default: the
+    -- bindings are configurable, so without it there is nothing on screen that
+    -- says what a box will cast.
+    showTooltip   = true,
     nameJustifyH  = "LEFT",
     nameJustifyV  = "MIDDLE",
     nameFontSize  = 11,
