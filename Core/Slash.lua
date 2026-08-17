@@ -33,6 +33,9 @@ SlashCmdList.SALVE = function(msg)
     elseif cmd == "learned" then
         if arg == "clear" then ns.Sound:ClearLearned() else ns.Sound:DumpLearned() end
 
+    elseif cmd == "version" then
+        ns.Print("version " .. tostring(ns.VERSION) .. "  revision " .. tostring(ns.REVISION))
+
     elseif cmd == "debug" or cmd == "probe" then
         ns.Binding:Report()
         ns.Sound:Report()
@@ -55,6 +58,7 @@ SlashCmdList.SALVE = function(msg)
         ns.Print("|cffffd100/salve lock|r | |cffffd100unlock|r — hide or show the drag handle")
         ns.Print("|cffffd100/salve reset|r — put the panel back in the middle")
         ns.Print("|cffffd100/salve debug|r — print a diagnostic report")
+        ns.Print("|cffffd100/salve version|r — print the loaded version and revision")
         ns.Print("|cffffd100/salve learn on|r | |cffffd100off|r | |cffffd100status|r — persistent, opt-in aura logging")
         ns.Print("|cffffd100/salve snares|r — list auto-captured root and snare spell IDs")
         ns.Print("|cffffd100/salve learned|r | |cffffd100learned clear|r — list or clear recorded auras")

@@ -24,6 +24,13 @@ local ns = {
 
 assert(loadfile("Features/Escape.lua"))("Salve", ns)
 
+equal(ns.Escape:RegisterMovement("Salve_Data_Test", { 45678 }), true,
+    "curated movement registration succeeds")
+local curated = ns.Escape:AllSpellIDs()
+equal(#curated, 1, "curated movement ID is active before learning")
+equal(curated[1], 45678, "curated movement ID is retained")
+rebuilds = 0
+
 equal(ns.Escape:CaptureLossOfControl("party1", 2), true,
     "automatic root capture succeeds")
 equal(ns.learned.movement[12345], "Test Root", "automatic root stores spell")

@@ -229,7 +229,8 @@ end
 -- ── Active-instance selection and registration ────────────────────────────
 
 function Sound:NeedsData()
-    return ns.db and (ns.db.soundEnabled or ns.db.learnMode)
+    return ns.db and (ns.db.soundEnabled or ns.db.learnMode
+        or (ns.Escape and ns.Escape.Active and ns.Escape:Active()))
 end
 
 function Sound:ActivateCurrentInstance()

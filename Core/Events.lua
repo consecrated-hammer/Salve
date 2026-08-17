@@ -59,23 +59,6 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             ns.RequestRebuild()
         end
 
-    elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
-        -- ☠ THE SWEEP IS DRIVEN BY CASTS, NOT BY SPELL_UPDATE_COOLDOWN.
-        --   That event fires on EVERY global cooldown, and the duration object
-        --   it hands back during a GCD *is* the GCD -- so refreshing on it made
-        --   every box sweep constantly for a second and a half, whatever you
-        --   cast. The sweep became noise rather than information.
-        --
-        --   Refreshing only when a DISPEL actually goes off means the swipe
-        --   shows the dispel's own cooldown and nothing else. The Duration
-        --   object animates itself to completion, so there is nothing to clear.
-        if arg1 == "player" and ns.Bindings:IsDispelSpell(arg3) then
-            ns.Binding:RefreshCooldowns()
-        end
-
-    elseif event == "SPELL_UPDATE_CHARGES" then
-        ns.Binding:RefreshCooldowns()
-
     elseif event == "LOSS_OF_CONTROL_ADDED" then
         -- Unlike aura data, the loss-of-control API supplies the ROOT/SNARE
         -- classification and spell ID. This captures movement effects during a
@@ -108,19 +91,8 @@ for _, e in ipairs({
     "GROUP_ROSTER_UPDATE",
     "PLAYER_SPECIALIZATION_CHANGED",
     "SPELLS_CHANGED",
-    -- ☠ Deliberately NOT SPELL_UPDATE_COOLDOWN: it fires on every GCD. See the
-    --   UNIT_SPELLCAST_SUCCEEDED branch above.
-    "SPELL_UPDATE_CHARGES",
     "LOSS_OF_CONTROL_ADDED",
     "PLAYER_REGEN_ENABLED",
 }) do
     frame:RegisterEvent(e)
-end
-
--- Only the player's own casts matter, so filter at registration rather than
--- taking every group member's cast and discarding it in Lua.
-if frame.RegisterUnitEvent then
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
-else
-    frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 end

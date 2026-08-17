@@ -7,6 +7,8 @@ end
 local bindingReports, soundReports, opened = 0, 0, 0
 local messages = {}
 local ns = {
+    VERSION = "1.3.1",
+    REVISION = "test-hotfix",
     db = { learnMode = false },
     Binding = { Report = function() bindingReports = bindingReports + 1 end },
     Sound = {
@@ -31,6 +33,11 @@ equal(soundReports, 1, "debug runs sound report")
 SlashCmdList.SALVE("probe")
 equal(bindingReports, 2, "probe compatibility alias remains")
 equal(soundReports, 2, "probe alias includes sound report")
+
+SlashCmdList.SALVE("version")
+if not messages[#messages]:find("version 1.3.1  revision test-hotfix", 1, true) then
+    error("version prints loaded revision")
+end
 
 SlashCmdList.SALVE("")
 equal(opened, 1, "bare command opens options")

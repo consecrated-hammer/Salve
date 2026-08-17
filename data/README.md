@@ -2,8 +2,9 @@
 
 `modules.json` is the authoritative expansion/season/instance manifest and
 links each module to the Blizzard season announcement used to select instances.
-`debuffs.csv` is the reviewed spell catalogue. `tools/generate_data_modules.py`
-validates both and generates the load-on-demand `Salve_Data_*` addon folders.
+`debuffs.csv` is the reviewed dispel catalogue and `movement.csv` is the
+reviewed root/snare catalogue. `tools/generate_data_modules.py` validates both
+and generates the load-on-demand `Salve_Data_*` addon folders.
 
 `verified=true` means the row and its dispel school were checked against the
 named source. It does **not** claim complete instance coverage. The current DB2
@@ -27,6 +28,8 @@ python3 tools/generate_data_modules.py --check
 New DB2 candidates should enter the CSV as `verified=false`, then be reviewed
 before activation. In-game `/salve learn on` discoveries include instance and
 dispel-school provenance and can be promoted here after verification.
+Automatically captured roots and snares belong in `movement.csv`; they are
+registered independently of the alert-sound setting.
 
 For a new client build, download `JournalInstance`, `JournalEncounter`,
 `JournalEncounterSection`, `SpellCategories` and `SpellName` CSVs from

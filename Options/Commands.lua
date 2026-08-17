@@ -6,6 +6,7 @@ local commands = {
     { "/salve lock", "Hide the drag handle" },
     { "/salve unlock", "Show the drag handle; handle also works" },
     { "/salve reset", "Move Salve back to the centre" },
+    { "/salve version", "Print the loaded version and revision" },
     { "/salve debug", "Print a diagnostic report; probe also works" },
     { "/salve learn on | off | status", "Control persistent, opt-in aura logging" },
     { "/salve snares", "List auto-captured root and snare spell IDs for sharing" },

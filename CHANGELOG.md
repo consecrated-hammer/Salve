@@ -7,6 +7,19 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-08-17
+
+### Added
+
+- Promoted five live captures from Vaults of Atal'Utek into the Season 2
+  catalogue: four dispellable effects and the Snared movement impairment.
+
+### Fixed
+
+- `/salve version` reports the installed version and revision instead of
+  opening Options. Removed the remaining spell-cast cooldown refresh path so
+  non-dispel global cooldowns cannot sweep Salve cells.
+
 ## [1.3.1] - 2026-08-17
 
 ### Fixed

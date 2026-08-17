@@ -133,6 +133,9 @@ O.NewPage({
             row.check:SetChecked(ns.db.escapes[spell.id] and true or false)
             row.check:SetScript("OnClick", function(self)
                 ns.db.escapes[spell.id] = self:GetChecked() and true or nil
+                -- Curated movement IDs live in the instance data addon. Load
+                -- it as soon as an escape makes that overlay relevant.
+                if ns.Sound then ns.Sound:ActivateCurrentInstance() end
                 ns.RequestRebuildSoon(0.05)
             end)
             row:Show()
