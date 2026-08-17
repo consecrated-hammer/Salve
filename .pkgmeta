@@ -14,8 +14,13 @@ move-folders:
 # No embedded libraries, so there is no no-lib variant worth building.
 enable-nolib-creation: no
 
+# ☠ NOT CHANGELOG.md. The packager hands this file to CurseForge verbatim, so
+#   pointing it at the full history published every past release's notes on
+#   every upload and relied on CurseForge to section the file itself. Release
+#   CI extracts just the tagged version into RELEASE_NOTES.md before packaging,
+#   which is deterministic and does not depend on anyone else's parser.
 manual-changelog:
-  filename: CHANGELOG.md
+  filename: RELEASE_NOTES.md
   markup-type: markdown
 
 license-output: LICENSE.txt
@@ -33,6 +38,7 @@ ignore:
   # Source art for the CurseForge project icon, uploaded through their site.
   # The game cannot load a PNG, so shipping source PNGs would be dead weight in
   # every download. Matching TGA files are the in-game versions.
+  - CHANGELOG.md
   - Textures/Salve.png
   - Textures/Salve-curseforge-400.png
   - Textures/SalveClean.png

@@ -7,6 +7,28 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-17
+
+### Added
+
+- Hover tooltip on every cell, naming the unit and listing what each bound
+  mouse button will cast on them. Built from your live bindings, so it follows
+  custom assignments and specialisation changes. On by default, with a toggle
+  on the Salve page.
+
+### Changed
+
+- The cooldown swipe now shows only the dispel's own cooldown. It previously
+  refreshed on `SPELL_UPDATE_COOLDOWN`, which fires on every global cooldown,
+  so cells swept for a second and a half whatever you cast and the swipe
+  carried no information.
+
+### Fixed
+
+- Release notes now conform to Keep a Changelog, so CurseForge sections each
+  release instead of rendering the whole history as one block. Only the
+  released version's notes are published.
+
 ## [1.1.0] - 2026-08-16
 
 ### Added
@@ -100,6 +122,7 @@ Beta release.
   IDs and only schools the current character can remove.
 - Opt-in, group-scoped `/salve learn` diagnostics for readable catalogue gaps.
 
+[1.2.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.2.0
 [1.1.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.1.0
 [1.0.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.0.0
 [0.1.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v0.1.0

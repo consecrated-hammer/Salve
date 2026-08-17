@@ -26,6 +26,9 @@ __pycache__/
 Build-CurseForgeZip.local.ps1
 Copy-ToWoWAddons.local.ps1
 
+# Generated at release time by CI from CHANGELOG.md
+RELEASE_NOTES.md
+
 # Local notes
 ROADMAP.local.md
 

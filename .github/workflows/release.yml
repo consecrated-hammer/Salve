@@ -68,6 +68,24 @@ jobs:
       - name: Validate generated data modules
         run: python3 tools/generate_data_modules.py --check
 
+      # Publish ONLY this version's notes. .pkgmeta points the packager at
+      # RELEASE_NOTES.md rather than CHANGELOG.md, so what reaches CurseForge is
+      # exactly the section below and never the whole history.
+      - name: Extract this version's release notes
+        run: |
+          tag="${GITHUB_REF_NAME#v}"; tag="${tag%%-*}"
+          awk -v v="$tag" '
+            $0 ~ ("^## \\[" v "\\] - ") { inside = 1; next }
+            inside && /^## \[/ { exit }
+            inside { print }
+          ' CHANGELOG.md > RELEASE_NOTES.md
+          if [ ! -s RELEASE_NOTES.md ]; then
+            echo "::error::Extracted no release notes for $tag from CHANGELOG.md."
+            exit 1
+          fi
+          echo "----- notes for $tag -----"
+          cat RELEASE_NOTES.md
+
       - name: Package and release
         uses: BigWigsMods/packager@v2
         env:
