@@ -128,8 +128,23 @@ if not report:find("Version: 0.1.0", 1, true) then error("report omits version")
 if not report:find("Aura engine: ready", 1, true) then error("report omits engine state") end
 if report:find("|c", 1, true) then error("copy report contains chat colour escapes") end
 
+-- ☠ ASSERT CONSISTENCY, NOT A LITERAL DATE. This used to pin 2026-08-16, so
+--   every release failed here and had to edit the assertion -- which teaches
+--   you to update the test rather than ask whether the change was right. What
+--   actually matters is that the TOC's version and release date agree with the
+--   CHANGELOG heading, which is the same thing release CI enforces.
 local toc = assert(io.open("Salve.toc", "r")):read("*a")
-equal(toc:match("## X%-ReleaseDate:%s*(%d%d%d%d%-%d%d%-%d%d)"), "2026-08-16",
-    "release date metadata")
+
+local version = toc:match("## Version:%s*([%d%.]+)")
+if not version then error("Salve.toc has no ## Version") end
+
+local releaseDate = toc:match("## X%-ReleaseDate:%s*(%d%d%d%d%-%d%d%-%d%d)")
+if not releaseDate then error("Salve.toc has no well-formed X-ReleaseDate") end
+
+local changelog = assert(io.open("CHANGELOG.md", "r")):read("*a")
+local heading = ("## [%s] - %s"):format(version, releaseDate)
+if not changelog:find(heading, 1, true) then
+    error(("CHANGELOG.md has no '%s' heading"):format(heading))
+end
 
 print("options tests passed")
