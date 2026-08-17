@@ -92,7 +92,7 @@ O.NewPage({
     escapeNote:SetText("Roots and snares carry no dispel school, so the normal filter "
         .. "never sees them. Tick the spells you actually count as an escape. "
         .. "Party-wide ones light anyone's cell; personal ones light only yours.\n"
-        .. "Capture the effects themselves with |cffffd100/salve snared|r while impaired.")
+        .. "With learning enabled, Salve captures the effects automatically while you play.")
     y = y - 46
 
     local escapeRows = {}

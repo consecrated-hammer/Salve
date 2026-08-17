@@ -182,69 +182,64 @@ function Escape:AllSpellIDs()
     for _, set in pairs(self.sources) do
         for id in pairs(set) do add(id) end
     end
-    for id in pairs((ns.db and ns.db.learnedMovement) or {}) do add(id) end
+    for id in pairs((ns.learned and ns.learned.movement) or {}) do add(id) end
     return list
 end
 
 -- ── Capture ────────────────────────────────────────────────────────────────
 --
--- ☠ AURA DATA DOES NOT CARRY THE MECHANIC. There is no field saying "this is a
---   root", so Salve cannot decide on its own which of your debuffs is a snare
---   -- guessing would fill the list with everything harmless you ever caught.
+-- Aura data itself does not carry the mechanic. Blizzard's loss-of-control
+-- feed does: LOSS_OF_CONTROL_ADDED identifies the affected group unit and its
+-- effect index, while C_LossOfControl supplies the ROOT/SNARE type and spell
+-- ID. That is the automatic learning path used here; guessing from every
+-- non-dispellable aura would fill the list with harmless effects.
 --
--- So capture is deliberate: get rooted, type /salve snared, and Salve records
--- what is on you right now. Precise, no noise, and it works because trash
--- snares are readable -- private auras are an encounter-mechanic measure.
-function Escape:CaptureCurrent()
-    if not (C_UnitAuras and C_UnitAuras.GetAuraDataByIndex) then
-        ns.Print("this client cannot read auras")
-        return
+-- Learning mode captures roots and snares automatically, including on group
+-- members, from that loss-of-control feed.
+local function capture(id, name)
+    if type(id) ~= "number" or ns.learned.movement[id] then return false end
+    ns.learned.movement[id] = type(name) == "string" and name or true
+    ns.Print(("captured |cffffd100%d|r  %s"):format(id, tostring(name or "?")))
+    if ns.RequestRebuildSoon then ns.RequestRebuildSoon(0.05) end
+    return true
+end
+
+function Escape:CaptureLossOfControl(unit, effectIndex)
+    if not (ns.db and ns.db.learnMode and C_LossOfControl) then return false end
+    if type(effectIndex) ~= "number" then return false end
+
+    local getter = C_LossOfControl.GetActiveLossOfControlDataByUnit
+    local ok, data
+    if getter and type(unit) == "string" then
+        ok, data = pcall(getter, unit, effectIndex)
+    elseif unit == "player" and C_LossOfControl.GetActiveLossOfControlData then
+        ok, data = pcall(C_LossOfControl.GetActiveLossOfControlData, effectIndex)
+    else
+        return false
     end
+    if not ok or type(data) ~= "table" then return false end
 
     local function plain(v)
         if issecretvalue and issecretvalue(v) then return nil end
         return v
     end
+    local locType = plain(data.locType)
+    if locType ~= "ROOT" and locType ~= "SNARE" then return false end
 
-    ns.db.learnedMovement = ns.db.learnedMovement or {}
-    local added = 0
-
-    for i = 1, 40 do
-        local aura = plain(C_UnitAuras.GetAuraDataByIndex("player", i, "HARMFUL"))
-        if not aura then break end
-
-        local id   = plain(aura.spellId)
-        local name = plain(aura.name)
-        -- Skip anything already covered by the dispel path: if it has a dispel
-        -- school, the normal filter already lights it and this category would
-        -- only duplicate it.
-        local school = plain(aura.dispelName)
-
-        if id and not school and not ns.db.learnedMovement[id] then
-            ns.db.learnedMovement[id] = name or true
-            added = added + 1
-            ns.Print(("captured |cffffd100%d|r  %s"):format(id, tostring(name or "?")))
-        end
-    end
-
-    if added == 0 then
-        ns.Print("nothing new captured — either you are not impaired, or what is "
-            .. "on you is already a dispellable school")
-    else
-        if ns.RequestRebuildSoon then ns.RequestRebuildSoon(0.05) end
-    end
+    ns.learned.movement = ns.learned.movement or {}
+    return capture(plain(data.spellID), plain(data.displayText))
 end
 
 function Escape:DumpCaptured()
     local ids = {}
-    for id in pairs((ns.db and ns.db.learnedMovement) or {}) do ids[#ids + 1] = id end
+    for id in pairs((ns.learned and ns.learned.movement) or {}) do ids[#ids + 1] = id end
     table.sort(ids)
     if #ids == 0 then
-        ns.Print("nothing captured yet — get rooted and type /salve snared")
+        ns.Print("nothing captured yet — enable learning and keep playing")
         return
     end
     ns.Print(("%d captured, all active:"):format(#ids))
     for _, id in ipairs(ids) do
-        print(("    %d, -- %s"):format(id, tostring(ns.db.learnedMovement[id])))
+        print(("    %d, -- %s"):format(id, tostring(ns.learned.movement[id])))
     end
 end

@@ -18,7 +18,9 @@ local ns = {
 SalveDB = {
     learnMode = true,
     learned = { [12345] = "Old discovery" },
+    learnedMovement = { [23456] = "Old Root" },
 }
+SalveLearnedDB = nil
 
 local chunk = assert(loadfile("Core/Config.lua"))
 chunk("Salve", ns)
@@ -36,8 +38,11 @@ equal(ns.db.cooldownJustifyH, "CENTER", "cooldown text defaults centred")
 equal(ns.db.cooldownJustifyV, "MIDDLE", "cooldown text defaults middle")
 equal(ns.db.cooldownFontSize, 14, "cooldown text size default")
 equal(ns.db.handlePosition, "TOPLEFT", "drag handle defaults above cell one")
-equal(ns.db.learned["world:0"].spells[12345].name, "Old discovery", "legacy ID preserved")
-equal(ns.db.learned["world:0"].spells[12345].dispelType, nil, "unsafe legacy type not invented")
+equal(ns.learned.auras["world:0"].spells[12345].name, "Old discovery", "legacy ID preserved")
+equal(ns.learned.auras["world:0"].spells[12345].dispelType, nil, "unsafe legacy type not invented")
+equal(ns.db.learned, nil, "discoveries removed from preferences")
+equal(ns.learned.movement[23456], "Old Root", "movement discovery migrated")
+equal(ns.db.learnedMovement, nil, "movement discoveries removed from preferences")
 
 ns.Set("soundEnabled", true)
 equal(soundRefreshes, 1, "sound setting refreshes native registrations")
@@ -54,6 +59,7 @@ SalveDB = {
         { key = "BUTTON1", role = "PRIMARY" },
     },
 }
+SalveLearnedDB = nil
 ns.InitConfig()
 -- Learning PERSISTS now. For movement-impairing effects it is the primary
 -- data source, not a diagnostic, so resetting it meant that category never

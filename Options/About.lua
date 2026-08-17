@@ -6,7 +6,7 @@ local tips = {
     "If it lights up, click it.",
     "Drag the gold handle. The cells have important clicking to do.",
     "Master sound still works when sound effects are muted.",
-    "Aura logging forgets to stay on. On purpose.",
+    "Aura logging stays on when you ask it to. On purpose.",
     "Purple swirl? Salve first, questions later.",
     "A glowing cell is not a suggestion.",
     "One click removes a debuff. Repeated clicks express concern.",

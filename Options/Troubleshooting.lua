@@ -193,8 +193,8 @@ O.NewPage({
 
     _, y = O.Header(panel, "Aura logging", y)
 
-    _, y = O.Check(panel, "Record aura names Salve can read",
-        "Adds aura listeners and readable-aura scans; private auras still cannot be recorded.", y,
+    _, y = O.Check(panel, "Learn missed debuffs and movement effects",
+        "Stays enabled until you turn it off. Adds aura listeners, readable-aura scans, and automatic root/snare capture; private auras still cannot be recorded.", y,
         function() return ns.db.learnMode end,
         function(v) ns.Sound:SetLearning(v) end)
 
@@ -202,8 +202,8 @@ O.NewPage({
     note:SetPoint("TOPLEFT", 16, y + 4)
     note:SetWidth(520)
     note:SetJustifyH("LEFT")
-    note:SetText("For a missed debuff. Turns itself off when you change zone, reload, or log out.")
-    y = y - 34
+    note:SetText("What this means: Salve records readable dispellable aura names, IDs and schools from your group into the separate SalveLearnedDB block in its saved data, scoped to each location. It also captures Blizzard-reported roots and snares automatically while you play — no slash command needed in a Mythic+. It remains on across zones and sessions. It starts off only so you choose whether to record that group data; once enabled, leave it on to improve coverage. Private auras still cannot be learned.")
+    y = y - 110
 
     _, y = O.PageReset(panel, y, function()
         -- Learned records are useful evidence, not a page preference. Resetting

@@ -82,7 +82,8 @@ hide the grip once you are happy.
 | `/salve lock` | Hide the drag handle |
 | `/salve reset` | Put the panel back in the centre |
 | `/salve debug` | Print a diagnostic report (`probe` remains an alias) |
-| `/salve learn on` / `off` / `status` | Control temporary, location-scoped aura learning |
+| `/salve learn on` / `off` / `status` | Control persistent, opt-in aura learning |
+| `/salve snares` | List auto-captured root and snare spell IDs for sharing |
 | `/salve learned` / `learned clear` | Inspect or clear learned spell IDs |
 | `/salve help` | Print the command list in chat |
 
@@ -107,10 +108,15 @@ and future catalogues can coexist without loading or activating one another.
 Run `/salve debug` to see the active module, spell ID count and native
 sound registrations.
 
-Diagnostic learning is deliberately temporary. Outdoor discoveries are keyed
-to the current map; dungeon and raid discoveries are keyed to their instance.
-Learning switches itself off when that location changes and never survives a
-UI reload, logout or client restart.
+Diagnostic learning is deliberately opt-in and stays enabled until you turn it
+off. Outdoor discoveries are keyed to the current map; dungeon and raid
+discoveries are keyed to their instance. While it is enabled, Salve listens for
+group aura changes and stores readable dispellable aura names, IDs and schools
+in the separate `SalveLearnedDB` block in its saved data; private auras cannot be learned. It also automatically
+captures Blizzard-reported roots and snares for group members through the
+loss-of-control feed, so there is no need to type a command during a pull. It
+starts off only so you explicitly choose whether to record group data; once
+enabled, leave it on to improve coverage.
 
 ## Limitations
 

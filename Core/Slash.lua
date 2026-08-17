@@ -14,9 +14,6 @@ SlashCmdList.SALVE = function(msg)
     if cmd == "options" or cmd == "config" or cmd == "opt" then
         ns.OpenOptions()
 
-    elseif cmd == "snared" then
-        ns.Escape:CaptureCurrent()
-
     elseif cmd == "snares" then
         ns.Escape:DumpCaptured()
 
@@ -28,7 +25,7 @@ SlashCmdList.SALVE = function(msg)
         else
             local state = ns.db.learnMode
                 and ("ON for " .. tostring(ns.Sound.activeScopeName)
-                    .. " (auto-off when you leave or reload)") or "off"
+                    .. " (persists across zones and reloads)") or "off"
             ns.Print("learn mode is " .. state
                 .. " — use |cffffd100/salve learn on|r or |cffffd100off|r")
         end
@@ -58,7 +55,8 @@ SlashCmdList.SALVE = function(msg)
         ns.Print("|cffffd100/salve lock|r | |cffffd100unlock|r — hide or show the drag handle")
         ns.Print("|cffffd100/salve reset|r — put the panel back in the middle")
         ns.Print("|cffffd100/salve debug|r — print a diagnostic report")
-        ns.Print("|cffffd100/salve learn on|r | |cffffd100off|r | |cffffd100status|r — temporary aura logging")
+        ns.Print("|cffffd100/salve learn on|r | |cffffd100off|r | |cffffd100status|r — persistent, opt-in aura logging")
+        ns.Print("|cffffd100/salve snares|r — list auto-captured root and snare spell IDs")
         ns.Print("|cffffd100/salve learned|r | |cffffd100learned clear|r — list or clear recorded auras")
         ns.Print("|cffffd100/salve help|r — show this command list")
 

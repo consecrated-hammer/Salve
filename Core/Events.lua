@@ -76,6 +76,17 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     elseif event == "SPELL_UPDATE_CHARGES" then
         ns.Binding:RefreshCooldowns()
 
+    elseif event == "LOSS_OF_CONTROL_ADDED" then
+        -- Unlike aura data, the loss-of-control API supplies the ROOT/SNARE
+        -- classification and spell ID. This captures movement effects during a
+        -- pull without any manual command.
+        local unit, effectIndex = arg1, arg2
+        -- Older clients sent only an index and exposed player-only data.
+        if type(unit) == "number" and effectIndex == nil then
+            effectIndex, unit = unit, "player"
+        end
+        ns.Escape:CaptureLossOfControl(unit, effectIndex)
+
     elseif event == "PLAYER_REGEN_ENABLED" then
         -- ☠ Release a drag that crossed into combat FIRST. Until this runs the
         --   panel is still following the cursor, and a rebuild would anchor
@@ -100,6 +111,7 @@ for _, e in ipairs({
     -- ☠ Deliberately NOT SPELL_UPDATE_COOLDOWN: it fires on every GCD. See the
     --   UNIT_SPELLCAST_SUCCEEDED branch above.
     "SPELL_UPDATE_CHARGES",
+    "LOSS_OF_CONTROL_ADDED",
     "PLAYER_REGEN_ENABLED",
 }) do
     frame:RegisterEvent(e)

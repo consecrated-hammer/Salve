@@ -197,8 +197,8 @@ end
 
 function Sound:PruneLearned(instanceID, scopeKey)
     if not instanceID or instanceID <= 0 then return end
-    local bucket = ns.db and ns.db.learned
-        and ns.db.learned[scopeKey or ("instance:" .. instanceID)]
+    local bucket = ns.learned and ns.learned.auras
+        and ns.learned.auras[scopeKey or ("instance:" .. instanceID)]
     if not bucket or type(bucket.spells) ~= "table" then return end
     for spellID in pairs(bucket.spells) do
         if self:KnownCurated(instanceID, spellID) then bucket.spells[spellID] = nil end
@@ -282,7 +282,7 @@ function Sound:ActiveRecords()
         for _, record in ipairs(instance.debuffs) do add(record) end
     end
 
-    local bucket = ns.db and ns.db.learned and ns.db.learned[self.activeScopeKey]
+    local bucket = ns.learned and ns.learned.auras and ns.learned.auras[self.activeScopeKey]
     if bucket and type(bucket.spells) == "table" then
         for _, record in pairs(bucket.spells) do add(record) end
     end
@@ -505,7 +505,7 @@ function Sound:SetLearning(on, quiet)
     if quiet then return end
     if ns.db.learnMode then
         ns.Print("learn mode ON for " .. self.activeScopeName
-            .. " — it turns off automatically when you leave")
+            .. " — stays on across zones and reloads; use /salve learn off to stop it")
     else
         ns.Print("learn mode off")
     end
@@ -544,7 +544,7 @@ function Sound:Learn(unit)
         local dispelType = plain(aura.dispelName)
         if type(spellID) == "number" and VALID_DISPEL[dispelType] and cures[dispelType]
             and not self:KnownCurated(self.activeInstanceID, spellID) then
-            local learned = ns.db.learned
+            local learned = ns.learned.auras
             local bucket = learned[self.activeScopeKey]
             if type(bucket) ~= "table" or type(bucket.spells) ~= "table" then
                 bucket = {
@@ -572,7 +572,7 @@ end
 
 function Sound:DumpLearned()
     local scopeKeys = {}
-    for scopeKey, bucket in pairs((ns.db and ns.db.learned) or {}) do
+    for scopeKey, bucket in pairs((ns.learned and ns.learned.auras) or {}) do
         if type(scopeKey) == "string" and type(bucket) == "table"
             and type(bucket.spells) == "table" and next(bucket.spells) then
             scopeKeys[#scopeKeys + 1] = scopeKey
@@ -586,7 +586,7 @@ function Sound:DumpLearned()
     end
 
     for _, scopeKey in ipairs(scopeKeys) do
-        local bucket = ns.db.learned[scopeKey]
+        local bucket = ns.learned.auras[scopeKey]
         ns.Print(("learned in %s (%s):"):format(bucket.name or "unknown location", scopeKey))
         local spellIDs = {}
         for spellID in pairs(bucket.spells) do spellIDs[#spellIDs + 1] = spellID end
@@ -600,7 +600,7 @@ function Sound:DumpLearned()
 end
 
 function Sound:ClearLearned()
-    ns.db.learned = {}
+    ns.learned.auras = {}
     self:RequestRefresh()
     ns.Print("learned spell IDs cleared")
 end

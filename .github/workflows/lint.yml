@@ -24,6 +24,7 @@ jobs:
           lua tests/test_config.lua
           lua tests/test_aura_binding.lua
           lua tests/test_bindings.lua
+          lua tests/test_escape.lua
           lua tests/test_sound.lua
           lua tests/test_options.lua
           lua tests/test_slash.lua

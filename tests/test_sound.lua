@@ -12,8 +12,8 @@ local ns = {
         soundChannel = "Master",
         soundFile = nil,
         learnMode = false,
-        learned = {},
     },
+    learned = { auras = {}, movement = {} },
     knownDispels = {
         { cures = { Magic = true } },
     },
@@ -193,7 +193,7 @@ ns.Sound:FlushPendingLearning()
 equal(auraReads, 2, "deferred unit is scanned after combat")
 equal(next(ns.Sound.pendingLearnUnits), nil, "deferred learning queue drains")
 ns.Sound:Learn("raid1")
-equal(ns.db.learned["map:42"].spells[2001].name, "Spider Venom",
+equal(ns.learned.auras["map:42"].spells[2001].name, "Spider Venom",
     "outdoor discovery stored in map bucket")
 
 C_UnitAuras.GetAuraDataByIndex = function()

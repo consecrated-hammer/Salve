@@ -7,6 +7,20 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-08-17
+
+### Fixed
+
+- Aura logging now clearly states that it remains enabled until turned off,
+  rather than incorrectly describing the old session-only behaviour. The
+  settings UI, slash-command feedback and documentation explain that it records
+  readable group aura metadata, cannot learn private auras, and is optional to
+  keep normal operation free of aura-event listeners.
+- With learning enabled, roots and snares reported by Blizzard's
+  loss-of-control feed are captured automatically for group members. The manual
+  `/salve snared` command has been removed; it was not usable while healing a
+  Mythic+ pull.
+
 ## [1.3.0] - 2026-08-17
 
 ### Added
@@ -153,6 +167,7 @@ Beta release.
 - Opt-in, group-scoped `/salve learn` diagnostics for readable catalogue gaps.
 
 [1.3.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.3.0
+[1.3.1]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.3.1
 [1.2.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.2.0
 [1.1.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.1.0
 [1.0.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.0.0

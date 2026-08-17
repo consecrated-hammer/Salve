@@ -57,17 +57,15 @@ ns.defaults = {
     soundChannel  = "Master",
     soundFile     = nil,
 
-    -- Learning is a diagnostic capture mode, never normal combat work. It is
-    -- deliberately opt-in, session-only, and scoped to the current location
-    -- and group units in Sound.lua.
+    -- Learning is an opt-in capture mode. It persists until the user turns it
+    -- off, while its discoveries are scoped by location and group units in
+    -- Sound.lua.
     learnMode     = false,
 
-    -- Movement-impairment category. `escapes` is the set of your own spells you
-    -- have opted in to (keyed by spell ID); `learnedMovement` is the set of
-    -- root/snare spell IDs captured with /salve snared.
+    -- Movement-impairment category. `escapes` is the set of your own spells
+    -- you have opted in to. Learned discoveries deliberately live in the
+    -- separate SalveLearnedDB saved-variable block, not in preferences.
     escapes         = {},
-    learnedMovement = {},
-    learned       = {},
 
     -- Saved-variable migrations. Increment only when an old shape needs an
     -- explicit conversion; ordinary new defaults do not need a bump.
@@ -173,6 +171,31 @@ function ns.InitConfig()
     SalveDB.visibility.mounted = nil
     SalveDB.visibility.notMounted = nil
 
+    -- Keep discoveries separate from preferences so a helper can share the
+    -- SalveLearnedDB block without exposing layout, bindings or minimap data.
+    -- Move existing discoveries over losslessly on the first load after this
+    -- change; a partially synced profile may already have both tables.
+    SalveLearnedDB = type(SalveLearnedDB) == "table" and SalveLearnedDB or {}
+    SalveLearnedDB.auras = type(SalveLearnedDB.auras) == "table" and SalveLearnedDB.auras or {}
+    SalveLearnedDB.movement = type(SalveLearnedDB.movement) == "table" and SalveLearnedDB.movement or {}
+    for scopeKey, bucket in pairs(type(SalveDB.learned) == "table" and SalveDB.learned or {}) do
+        local target = SalveLearnedDB.auras[scopeKey]
+        if type(target) ~= "table" then
+            SalveLearnedDB.auras[scopeKey] = bucket
+        elseif type(bucket.spells) == "table" then
+            target.spells = type(target.spells) == "table" and target.spells or {}
+            for spellID, record in pairs(bucket.spells) do
+                if target.spells[spellID] == nil then target.spells[spellID] = record end
+            end
+        end
+    end
+    for spellID, name in pairs(type(SalveDB.learnedMovement) == "table" and SalveDB.learnedMovement or {}) do
+        if SalveLearnedDB.movement[spellID] == nil then SalveLearnedDB.movement[spellID] = name end
+    end
+    SalveDB.learned = nil
+    SalveDB.learnedMovement = nil
+    SalveLearnedDB.schemaVersion = 1
+
     -- ☠ Learning PERSISTS across logout and /reload. It used to reset itself,
     --   on the theory that a forgotten listener was a hazard -- but in practice
     --   the traffic is light, and for movement-impairing effects learning is
@@ -182,6 +205,7 @@ function ns.InitConfig()
     --   never accumulated anything.
 
     ns.db = SalveDB
+    ns.learned = SalveLearnedDB
     return ns.db
 end
 
