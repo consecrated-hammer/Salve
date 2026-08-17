@@ -60,7 +60,7 @@ jobs:
             echo "::error::Salve.toc needs X-ReleaseDate in YYYY-MM-DD form."
             exit 1
           fi
-          if ! grep -Fq "## [$tag] — $release_date" CHANGELOG.md; then
+          if ! grep -Fq "## [$tag] - $release_date" CHANGELOG.md; then
             echo "::error::X-ReleaseDate $release_date does not match CHANGELOG.md for [$tag]."
             exit 1
           fi
