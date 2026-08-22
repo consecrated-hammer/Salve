@@ -7,6 +7,61 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-08-22
+
+### Added
+
+- `/salve debug copy` opens a selectable diagnostics report with cooldown-cast,
+  duration-object and widget-application evidence.
+- Added newly discovered, verified dispellable spells to the Season 2
+  load-on-demand catalogue. With alerts enabled, the configured sound can now
+  trigger when one of these auras is first applied to a current group member in
+  its matching location; stack increases and removals do not trigger it.
+
+### Changed
+
+- Moved Salve's six settings pages into a position-persistent movable window;
+  Blizzard's AddOns list retains a small Salve launcher page. Appearance and
+  Visibility now use compact sections, a five-player live-preview toolbar and
+  dependent controls that disappear when they do not apply. Clear-cell class
+  colours now live with the other inactive-unit settings, and Overall scale is
+  now the more explicit UI scale.
+- Added Blizzard-style Fill and Frames grow from dropdowns. Row layouts can
+  grow from the left or right, while column layouts can grow from the top or
+  bottom; the selected edge remains fixed as the roster grows.
+- Show Salve now uses Blizzard's native dropdown and menu styling, including its
+  standard dropdown indicator, while retaining combinable visibility rules.
+- Aura learning is now always active. Salve records only readable, location-
+  scoped group aura metadata in its separate learned-data block; private auras
+  remain inaccessible. The former setting and on/off commands have been removed
+  from the normal interface.
+- Reworked the Dispels page so every detected dispel and experimental
+  snare removal has its mouse binding on the same row. Snare-removal actions can
+  now be bound directly to Salve cells; personal actions light only the player's
+  cell, while party-wide actions can light and cast on any group member.
+- Replaced the miniature Settings preview with a full-size test panel at
+  Salve's actual saved screen position. Group size, clear or dispellable state,
+  cooldown state and appearance controls update it immediately through the same
+  box styling and layout code as the live panel. The dispellable state lights a
+  realistic one or two group members rather than the whole roster. It closes
+  with the settings window and automatically gets out of the way when combat
+  starts, but remains visible while navigating between settings pages.
+
+### Fixed
+
+- Fixed equal-count talent replacements, such as Blink changing to Shimmer,
+  refreshing the available actions and secure bindings immediately.
+- Disabling an unbound experimental snare removal no longer freezes the
+  automatic dispel bindings into a custom profile.
+- Fixed the Dispels page initially omitting root/snare escape spells until the
+  player visited another Settings page. Its sections now reflow from the actual
+  detected dispels, escapes and bindings instead of reserving blank rows.
+- Restored the real dispel cooldown sweep removed in 1.3.2 without bringing
+  back global-cooldown noise. Only a successful, readable player dispel arms a
+  refresh, deferred one event-loop tick so Blizzard supplies the spell's own
+  duration object. Live validation showed Cleanse Toxins' eight-second cooldown
+  while ordinary casts remained ignored.
+
 ## [1.3.2] - 2026-08-17
 
 ### Added
@@ -179,8 +234,10 @@ Beta release.
   IDs and only schools the current character can remove.
 - Opt-in, group-scoped `/salve learn` diagnostics for readable catalogue gaps.
 
-[1.3.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.3.0
+[1.4.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.4.0
+[1.3.2]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.3.2
 [1.3.1]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.3.1
+[1.3.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.3.0
 [1.2.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.2.0
 [1.1.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.1.0
 [1.0.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.0.0

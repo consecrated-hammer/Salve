@@ -1,13 +1,28 @@
 local addonName, ns = ...
 local O = ns.Options
 
+local function section(parent)
+    local frame = CreateFrame("Frame", nil, parent)
+    frame:SetSize(560, 1)
+    frame.salveRefresh = parent.salveRefresh
+    frame.salveRefreshAll = parent.salveRefreshAll
+    return frame
+end
+
 O.NewPage({
     name = "Visibility",
-    description = "When Salve is on screen, and how units with nothing to dispel look.",
-}, function(panel, y)
+    description = "When Salve is on screen, and how inactive units look.",
+}, function(panel)
     local db = ns.db
+    local sections = {}
 
-    _, y = O.Header(panel, "Show the frame", y)
+    local function add(frame, height)
+        sections[#sections + 1] = { frame = frame, height = height }
+    end
+
+    local display = section(panel)
+    local dy = -8
+    _, dy = O.Header(display, "Display", dy)
 
     local function hasConditions()
         for _, condition in ipairs(ns.VIS_CONDITIONS) do
@@ -25,11 +40,20 @@ O.NewPage({
     end
 
     local items = {
-        { label = "Always",
-          get = function() return db.visibilityMode ~= "NEVER" and not hasConditions() end,
-          set = function() setBaseMode("ALWAYS") end },
-        { label = "Never", get = function() return db.visibilityMode == "NEVER" end,
-          set = function() setBaseMode("NEVER") end },
+        {
+            label = "Always",
+            radio = true,
+            get = function()
+                return db.visibilityMode ~= "NEVER" and not hasConditions()
+            end,
+            set = function() setBaseMode("ALWAYS") end,
+        },
+        {
+            label = "Never",
+            radio = true,
+            get = function() return db.visibilityMode == "NEVER" end,
+            set = function() setBaseMode("NEVER") end,
+        },
         { label = "Show when any of these match", heading = true },
     }
 
@@ -40,91 +64,94 @@ O.NewPage({
             get = function()
                 return db.visibilityMode ~= "NEVER" and db.visibility[key]
             end,
-            set = function(v)
+            set = function(value)
                 db.visibilityMode = "ALWAYS"
-                db.visibility[key] = v or nil
+                db.visibility[key] = value or nil
                 ns.RequestRebuildSoon(0.05)
             end,
         }
     end
 
-    _, y = O.MultiSelect(panel, "Show Salve",
-        "Tick more than one rule and any match will show Salve.", y,
-        { items = items, summary = function() return ns.Visibility:Summary() end })
+    _, dy = O.MultiSelect(display, "Show Salve",
+        "Choose Always or Never, or tick several rules; any matching rule will show Salve.",
+        dy, { items = items, summary = function() return ns.Visibility:Summary() end })
+    add(display, -dy + 4)
 
-    _, y = O.Header(panel, "Units with nothing to dispel", y)
-
-    _, y = O.Check(panel, "Keep their cells on screen",
-        "Off hides empty cells. Their click areas stay in place during combat.", y,
+    local inactive = section(panel)
+    local iy = -8
+    _, iy = O.Header(inactive, "Inactive units", iy)
+    _, iy = O.Check(inactive, "Show units with nothing to dispel",
+        "Off makes inactive cells transparent. Their click areas stay in place during combat.",
+        iy,
         function() return db.showWhenClean end,
-        function(v) ns.Set("showWhenClean", v) end)
+        function(value) ns.Set("showWhenClean", value) end)
 
-    local faded
-    faded, y = O.Slider(panel, "Clear cell opacity",
-        "How visible a cell is when there is nothing to dispel.", y,
+    local inactiveDetails = section(inactive)
+    inactiveDetails:SetPoint("TOPLEFT", inactive, "TOPLEFT", 0, iy)
+    local idy = 0
+    _, idy = O.Slider(inactiveDetails, "Opacity",
+        "Higher values make inactive cells more prominent.", idy,
         0, 1, 0.05,
         function() return db.cleanAlpha end,
-        function(v) ns.Set("cleanAlpha", v) end,
-        function(v) return string.format("%d%%", math.floor(v * 100 + 0.5)) end)
+        function(value) ns.Set("cleanAlpha", value) end,
+        function(value) return string.format("%d%%", math.floor(value * 100 + 0.5)) end)
+    _, idy = O.Check(inactiveDetails, "Use class colours",
+        "Dispellable debuffs still use Blizzard's dispel colours.", idy,
+        function() return db.useClassColours end,
+        function(value) ns.Set("useClassColours", value) end)
+    local inactiveBaseHeight = -iy + 4
+    local inactiveDetailsHeight = -idy
 
-    local fadeNote = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-    fadeNote:SetPoint("TOPLEFT", 16, y + 6)
-    fadeNote:SetText("100% looks the same as a unit you can dispel.")
-    y = y - 18
-
-    panel.salveRefresh[#panel.salveRefresh + 1] = function()
-        O.SetEnabled(faded, db.showWhenClean)
-        fadeNote:SetTextColor(db.showWhenClean and 0.5 or 0.35,
-            db.showWhenClean and 0.5 or 0.35,
-            db.showWhenClean and 0.5 or 0.35)
-    end
-
-    _, y = O.Header(panel, "Moving and access", y)
-
-    local showHandle
-    showHandle, y = O.Check(panel, "Show drag handle",
-        "Drag the gold handle to move Salve. Right-click it for settings.", y,
+    local position = section(panel)
+    local py = -8
+    _, py = O.Header(position, "Position", py)
+    _, py = O.Check(position, "Show drag handle",
+        "Drag the gold handle to move Salve. Right-click it for settings.", py,
         function() return db.showHandle end,
-        function(v) ns.Set("showHandle", v) end)
+        function(value) ns.Set("showHandle", value) end)
 
-    local handlePosition
-    handlePosition, y = O.Cycle(panel, "Drag handle anchor",
-        "Choose which edge of the grid holds the handle.", y,
+    local handleDetails = section(position)
+    handleDetails:SetPoint("TOPLEFT", position, "TOPLEFT", 0, py)
+    local hdy = 0
+    _, hdy = O.Cycle(handleDetails, "Handle position",
+        "Choose which edge of the grid holds the handle.", hdy,
         { "LEFT", "TOPLEFT", "TOP", "TOPRIGHT", "RIGHT", "BOTTOMRIGHT", "BOTTOM", "BOTTOMLEFT" },
         { "Left", "Top left", "Top centre", "Top right", "Right", "Bottom right", "Bottom centre", "Bottom left" },
         function() return db.handlePosition end,
-        function(v) ns.Set("handlePosition", v) end)
+        function(value) ns.Set("handlePosition", value) end)
+    local positionBaseHeight = -py
+    local handleDetailsHeight = -hdy
 
-    panel.salveRefresh[#panel.salveRefresh + 1] = function()
-        O.SetEnabled(handlePosition, db.showHandle)
-    end
-
-    _, y = O.Check(panel, "Show minimap button",
-        "Left-click opens settings. Drag it around the minimap to move it.", y,
-        function() return db.showMinimap end,
-        function(v) ns.Set("showMinimap", v) end)
-
-    _, y = O.Check(panel, "Show startup message",
-        "Print Salve's version in chat after login or /reload.", y,
-        function() return db.showStartupMessage end,
-        function(v) ns.Set("showStartupMessage", v) end)
-
-    local reset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    reset:SetSize(160, 22)
-    reset:SetPoint("TOPLEFT", 16, y - 4)
-    reset:SetText("Reset frame position")
-    O.AttachHint(reset, "Reset frame position", "Move Salve back to the centre of the screen.")
-    reset:SetScript("OnClick", function()
-        ns.db.point = { "CENTER", "CENTER", 0, -140 }
+    local resetPosition = CreateFrame("Button", nil, position, "UIPanelButtonTemplate")
+    resetPosition:SetSize(160, 22)
+    resetPosition:SetText("Reset frame position")
+    O.AttachHint(resetPosition, "Reset frame position",
+        "Move Salve back to the centre of the screen.")
+    resetPosition:SetScript("OnClick", function()
+        db.point = { "CENTER", "CENTER", 0, -140 }
         ns.Panel:ApplyPosition()
     end)
-    y = y - 40
 
-    _, y = O.PageReset(panel, y, function()
+    local other = section(panel)
+    local oy = -8
+    _, oy = O.Header(other, "Other", oy)
+    _, oy = O.Check(other, "Show minimap button",
+        "Left-click opens settings. Drag it around the minimap to move it.", oy,
+        function() return db.showMinimap end,
+        function(value) ns.Set("showMinimap", value) end)
+    _, oy = O.Check(other, "Show startup message",
+        "Print Salve's version in chat after login or /reload.", oy,
+        function() return db.showStartupMessage end,
+        function(value) ns.Set("showStartupMessage", value) end)
+    add(other, -oy + 4)
+
+    local reset = section(panel)
+    local _, ry = O.PageReset(reset, -4, function()
         db.visibilityMode = ns.defaults.visibilityMode
         db.visibility = {}
         ns.Set("showWhenClean", ns.defaults.showWhenClean)
         ns.Set("cleanAlpha", ns.defaults.cleanAlpha)
+        ns.Set("useClassColours", ns.defaults.useClassColours)
         ns.Set("showHandle", ns.defaults.showHandle)
         ns.Set("handlePosition", ns.defaults.handlePosition)
         ns.Set("showMinimap", ns.defaults.showMinimap)
@@ -138,5 +165,41 @@ O.NewPage({
         ns.RequestRebuildSoon(0.05)
         if ns.Minimap then ns.Minimap:Update() end
     end)
-    return y
+    add(reset, -ry)
+
+    local pageBottom
+    local function reflow()
+        inactiveDetails:SetShown(db.showWhenClean)
+        local inactiveHeight = inactiveBaseHeight
+            + (db.showWhenClean and inactiveDetailsHeight or 0)
+        inactive:SetHeight(inactiveHeight)
+
+        handleDetails:SetShown(db.showHandle)
+        local resetY = -positionBaseHeight
+            - (db.showHandle and handleDetailsHeight or 0) - 4
+        resetPosition:ClearAllPoints()
+        resetPosition:SetPoint("TOPLEFT", position, "TOPLEFT", 16, resetY)
+        local positionHeight = -resetY + 36
+        position:SetHeight(positionHeight)
+
+        sections[2] = { frame = inactive, height = inactiveHeight }
+        sections[3] = { frame = position, height = positionHeight }
+
+        local y = -8
+        for _, entry in ipairs(sections) do
+            entry.frame:ClearAllPoints()
+            entry.frame:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, y)
+            entry.frame:SetHeight(entry.height)
+            y = y - entry.height
+        end
+        pageBottom = y - 8
+        panel.salveSetBottom(pageBottom)
+    end
+
+    -- Insert the two dynamic sections between Display and Other.
+    table.insert(sections, 2, { frame = inactive, height = inactiveBaseHeight })
+    table.insert(sections, 3, { frame = position, height = positionBaseHeight + 36 })
+    panel.salveRefresh[#panel.salveRefresh + 1] = reflow
+    reflow()
+    return pageBottom
 end)

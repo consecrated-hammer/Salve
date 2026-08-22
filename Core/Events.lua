@@ -3,13 +3,14 @@ local addonName, ns = ...
 -- ============================================================
 -- Event routing
 -- ============================================================
--- Note what is NOT here in normal operation: UNIT_AURA. Salve does not react to
--- aura changes -- the engine drives every lit box directly. The cooldown path
+-- Salve's visible dispel state never reacts to UNIT_AURA: the engine drives
+-- every lit box directly. Dedicated per-unit listeners observe only readable
+-- metadata for the always-on, location-scoped learning catalogue. The
+-- cooldown path
 -- only forwards the dispel's opaque Duration object into Blizzard cooldown
 -- widgets; it never reads an aura or branches on secret combat state.
 --
--- UNIT_AURA uses dedicated per-unit listener frames ONLY while opt-in learn
--- mode is on. ns.Sound:SetLearning owns those registrations.
+-- UNIT_AURA uses dedicated per-unit listener frames owned by ns.Sound.
 
 local frame = CreateFrame("Frame", "SalveEventFrame")
 
@@ -51,12 +52,28 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
 
     elseif event == "PLAYER_SPECIALIZATION_CHANGED"
         or event == "SPELLS_CHANGED" then
-        if ns.UpdateDispelSpell() then
+        local dispelChanged = ns.UpdateDispelSpell()
+        local escapeChanged = ns.Escape:Update()
+        if dispelChanged or escapeChanged then
             if ns.Options.RefreshDispel then ns.Options.RefreshDispel() end
-            ns.Escape:Update()
-            ns.Sound:OnDispelChanged()
+            if dispelChanged then
+                ns.Sound:OnDispelChanged()
+            end
             if ns.Options.RefreshTroubleshooting then ns.Options.RefreshTroubleshooting() end
             ns.RequestRebuild()
+        end
+
+    elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
+        -- Only a successful player dispel should start the sweep. Refreshing on
+        -- SPELL_UPDATE_COOLDOWN makes every ordinary cast paint the GCD over
+        -- the boxes. Do not refresh synchronously here either: Retail can fire
+        -- UNIT_SPELLCAST_SUCCEEDED before the dispel's own cooldown has replaced
+        -- the GCD-shaped duration object. One event-loop tick lets Blizzard
+        -- commit the real Cleanse/Purify/etc. cooldown first.
+        if ns.Binding:ObserveDispelCast(arg1, arg3) then
+            C_Timer.After(0, function()
+                ns.Binding:RefreshCooldowns("deferred player dispel")
+            end)
         end
 
     elseif event == "LOSS_OF_CONTROL_ADDED" then
@@ -69,6 +86,11 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             effectIndex, unit = unit, "player"
         end
         ns.Escape:CaptureLossOfControl(unit, effectIndex)
+
+    elseif event == "PLAYER_REGEN_DISABLED" then
+        -- Test cells are intentionally non-secure, but a preview must never
+        -- cover the real clickable panel once combat begins.
+        if ns.Preview then ns.Preview:Stop() end
 
     elseif event == "PLAYER_REGEN_ENABLED" then
         -- ☠ Release a drag that crossed into combat FIRST. Until this runs the
@@ -91,8 +113,19 @@ for _, e in ipairs({
     "GROUP_ROSTER_UPDATE",
     "PLAYER_SPECIALIZATION_CHANGED",
     "SPELLS_CHANGED",
+    -- Deliberately not SPELL_UPDATE_COOLDOWN: it fires on every GCD. The
+    -- player-only UNIT_SPELLCAST_SUCCEEDED registration below is the gate.
     "LOSS_OF_CONTROL_ADDED",
+    "PLAYER_REGEN_DISABLED",
     "PLAYER_REGEN_ENABLED",
 }) do
     frame:RegisterEvent(e)
+end
+
+-- Filter at registration so group members' casts never enter Lua. The handler
+-- then narrows this further to Salve's known dispel spell IDs.
+if frame.RegisterUnitEvent then
+    frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
+else
+    frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 end

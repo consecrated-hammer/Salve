@@ -102,7 +102,7 @@ function Escape:Update()
     local _, class = UnitClass("player")
     local candidates = ns.ESCAPE_SPELLS[class] or {}
 
-    local before = #ns.knownEscapes
+    local before = ns.knownEscapes
     local list = {}
 
     for _, entry in ipairs(candidates) do
@@ -118,7 +118,11 @@ function Escape:Update()
     end
 
     ns.knownEscapes = list
-    return #list ~= before
+    if #list ~= #before then return true end
+    for i, spell in ipairs(list) do
+        if not before[i] or before[i].id ~= spell.id then return true end
+    end
+    return false
 end
 
 -- Only the ones you have ticked. Nothing is on by default -- see the header.
@@ -194,8 +198,8 @@ end
 -- ID. That is the automatic learning path used here; guessing from every
 -- non-dispellable aura would fill the list with harmless effects.
 --
--- Learning mode captures roots and snares automatically, including on group
--- members, from that loss-of-control feed.
+-- Always-on learning captures roots and snares automatically, including on
+-- group members, from that loss-of-control feed.
 local function capture(id, name)
     if type(id) ~= "number" or ns.learned.movement[id] then return false end
     ns.learned.movement[id] = type(name) == "string" and name or true
@@ -205,7 +209,7 @@ local function capture(id, name)
 end
 
 function Escape:CaptureLossOfControl(unit, effectIndex)
-    if not (ns.db and ns.db.learnMode and C_LossOfControl) then return false end
+    if not (ns.db and C_LossOfControl) then return false end
     if type(effectIndex) ~= "number" then return false end
 
     local getter = C_LossOfControl.GetActiveLossOfControlDataByUnit
@@ -235,7 +239,7 @@ function Escape:DumpCaptured()
     for id in pairs((ns.learned and ns.learned.movement) or {}) do ids[#ids + 1] = id end
     table.sort(ids)
     if #ids == 0 then
-        ns.Print("nothing captured yet — enable learning and keep playing")
+        ns.Print("nothing captured yet — keep playing content with roots or snares")
         return
     end
     ns.Print(("%d captured, all active:"):format(#ids))

@@ -1,9 +1,9 @@
 ## Interface: 120100
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 1.3.2
-## X-ReleaseDate: 2026-08-17
-## Notes: Compact dispel panel. One click to remove Curse, Disease, Poison and Magic debuffs from your party or raid.
+## Version: 1.4.0
+## X-ReleaseDate: 2026-08-22
+## Notes: Compact clickable group-dispel panel built for Midnight's private aura rules.
 ## Category-enUS: Raid
 ## SavedVariables: SalveDB, SalveLearnedDB
 ## AllowAddOnTableAccess: 1
@@ -54,9 +54,12 @@ Features\Escape.lua
 Features\Sound.lua
 
 # ☠ Box.lua and Handle.lua before Panel.lua: Panel builds both from Create().
+# Preview.lua comes after all three because its full-size test panel shares
+# their box styling, geometry and handle placement.
 UI\Box.lua
 UI\Handle.lua
 UI\Panel.lua
+UI\Preview.lua
 # Optional LibDataBroker launcher. Registers nothing when LibStub is absent, and
 # never owns the minimap button -- read the header before changing that.
 UI\Broker.lua

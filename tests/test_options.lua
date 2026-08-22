@@ -11,7 +11,7 @@ local ns = {
     DISPELLABLE_FILTER = "HARMFUL",
     db = {
         soundEnabled = false,
-        learnMode = false,
+        learnMode = true,
         bindings = {},
     },
     knownDispels = {
@@ -19,7 +19,11 @@ local ns = {
     },
     Options = {
         NewPage = function(spec, build)
-            pages[#pages + 1] = { name = spec.name, build = build }
+            pages[#pages + 1] = {
+                name = spec.name,
+                title = spec.title,
+                build = build,
+            }
         end,
     },
     Sound = {
@@ -47,6 +51,9 @@ local ns = {
                     UpdateAllAuras = true,
                 },
             }
+        end,
+        CooldownDiagnosticLines = function()
+            return { "Cooldown casts: 1 seen, 1 readable, 1 matched" }
         end,
     },
     Bindings = {
@@ -79,53 +86,14 @@ equal(#pages, 6, "six options pages registered")
 for i, name in ipairs({ "Salve", "Visibility", "Dispels", "Troubleshooting", "Commands", "About" }) do
     equal(pages[i].name, name, "page order " .. i)
 end
-
-local config = {
-    columns = 5,
-    boxWidth = 20,
-    boxHeight = 20,
-    spacing = 1,
-    scale = 1,
-    orientation = "HORIZONTAL",
-}
-local solo = ns.Options.PreviewLayout(1, config, 500, 80)
-equal(solo.count, 1, "solo preview")
-equal(solo.across, 1, "solo width")
-
-local party = ns.Options.PreviewLayout(5, config, 500, 80)
-equal(party.across, 5, "party preview fills row")
-equal(party.down, 1, "party preview has one row")
-
-local raid = ns.Options.PreviewLayout(40, config, 500, 80)
-equal(raid.across, 5, "raid preview respects columns")
-equal(raid.down, 8, "raid preview wraps all members")
-if raid.gridWidth > 500 or raid.gridHeight > 80 then
-    error("raid preview did not fit its viewport")
-end
-
-config.columns = 1
-config.boxWidth = 300
-config.boxHeight = 150
-config.spacing = 12
-config.scale = 2
-local extreme = ns.Options.PreviewLayout(40, config, 500, 80)
-if extreme.gridWidth > 500.001 or extreme.gridHeight > 80.001 then
-    error("extreme raid preview did not shrink to fit")
-end
-
-config.columns = 5
-config.boxWidth = 20
-config.boxHeight = 20
-config.spacing = 1
-config.scale = 1
-config.orientation = "VERTICAL"
-local vertical = ns.Options.PreviewLayout(40, config, 500, 80)
-equal(vertical.across, 8, "vertical raid grows across")
-equal(vertical.down, 5, "vertical raid respects rows per column")
+equal(pages[1].title, "Appearance", "root page has task-focused heading")
 
 local report = ns.Options.BuildDiagnosticReport()
 if not report:find("Version: 0.1.0", 1, true) then error("report omits version") end
 if not report:find("Aura engine: ready", 1, true) then error("report omits engine state") end
+if not report:find("Cooldown casts: 1 seen", 1, true) then
+    error("copy report omits cooldown diagnostics")
+end
 if report:find("|c", 1, true) then error("copy report contains chat colour escapes") end
 
 -- ☠ ASSERT CONSISTENCY, NOT A LITERAL DATE. This used to pin 2026-08-16, so

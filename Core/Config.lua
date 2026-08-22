@@ -15,6 +15,7 @@ ns.defaults = {
     boxHeight     = 20,
     spacing       = 1,
     point         = { "CENTER", "CENTER", 0, -140 },
+    settingsPoint = { "CENTER", "CENTER", 0, 0 },
 
     -- Appearance
     showNames     = false,
@@ -37,14 +38,18 @@ ns.defaults = {
     showStartupMessage = true,
 
     -- Behaviour
-    -- Click bindings. Empty means "use the defaults" (left = primary dispel,
-    -- plus right = secondary only when it is a genuinely different spell),
-    -- which is how a fresh install and a spec change both stay sensible.
-    bindings      = {},
+    -- Click bindings. Fresh/restored profiles use automatic defaults (left =
+    -- primary dispel, plus right = a distinct secondary). bindingsCustom lets
+    -- an intentionally empty edited list remain empty instead of springing
+    -- back to defaults after the last row is cleared.
+    bindings       = {},
+    bindingsCustom = false,
 
     -- HORIZONTAL fills a row then wraps to the next; VERTICAL fills a column
     -- then wraps to the next. `columns` is the wrap point either way.
     orientation   = "HORIZONTAL",
+    horizontalGrowth = "RIGHT",
+    verticalGrowth   = "DOWN",
 
     -- ALWAYS | NEVER, combined with the conditions below. See
     -- Features/Visibility.lua for why this is a state driver and not Show/Hide.
@@ -57,10 +62,10 @@ ns.defaults = {
     soundChannel  = "Master",
     soundFile     = nil,
 
-    -- Learning is an opt-in capture mode. It persists until the user turns it
-    -- off, while its discoveries are scoped by location and group units in
-    -- Sound.lua.
-    learnMode     = false,
+    -- Compatibility state for older code and diagnostics. Aura learning is a
+    -- core feature now and is normalized on at every load rather than exposed
+    -- as a preference.
+    learnMode     = true,
 
     -- Movement-impairment category. `escapes` is the set of your own spells
     -- you have opted in to. Learned discoveries deliberately live in the
@@ -69,7 +74,7 @@ ns.defaults = {
 
     -- Saved-variable migrations. Increment only when an old shape needs an
     -- explicit conversion; ordinary new defaults do not need a bump.
-    schemaVersion = 4,
+    schemaVersion = 6,
 
     -- Minimap button
     showMinimap   = true,
@@ -151,6 +156,21 @@ function ns.InitConfig()
         SalveDB.schemaVersion = 4
     end
 
+    if oldSchema < 5 then
+        SalveDB.schemaVersion = 5
+    end
+
+    if oldSchema < 6 then
+        SalveDB.bindingsCustom = type(SalveDB.bindings) == "table"
+            and #SalveDB.bindings > 0
+        SalveDB.schemaVersion = 6
+    end
+
+    -- Learning supplies the coverage that encounter-journal data cannot,
+    -- especially for trash roots and snares. It is always active in 1.4.0;
+    -- preserve the key only as an internal compatibility signal.
+    SalveDB.learnMode = true
+
     -- Normalize on every load, not only at the schema boundary. A profile can
     -- reach schema 4 before an older synced Options file finishes writing its
     -- duplicate rows. Secure attributes can hold only one action per mouse
@@ -214,7 +234,8 @@ end
 local GEOMETRY = {
     columns = true, boxWidth = true, boxHeight = true, spacing = true,
     scale = true, showNames = true, showStacks = true, orientation = true,
-    bindings = true,
+    horizontalGrowth = true, verticalGrowth = true,
+    bindings = true, escapes = true,
     -- ☠ visibilityMode belongs here even though it changes no geometry: the
     --   state driver is only (re)registered from Panel:Rebuild, so treating it
     --   as a restyle left the old driver installed. Choosing Never did nothing
@@ -245,4 +266,5 @@ function ns.Set(key, value)
         ns.Handle:Update()
     end
     if key == "showMinimap" and ns.Minimap then ns.Minimap:Update() end
+    if ns.Preview and ns.Preview.active then ns.Preview:Refresh() end
 end

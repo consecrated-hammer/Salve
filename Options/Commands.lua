@@ -8,7 +8,7 @@ local commands = {
     { "/salve reset", "Move Salve back to the centre" },
     { "/salve version", "Print the loaded version and revision" },
     { "/salve debug", "Print a diagnostic report; probe also works" },
-    { "/salve learn on | off | status", "Control persistent, opt-in aura logging" },
+    { "/salve debug copy", "Open a selectable diagnostic report for copy/paste" },
     { "/salve snares", "List auto-captured root and snare spell IDs for sharing" },
     { "/salve learned", "List recorded auras" },
     { "/salve learned clear", "Clear recorded auras" },

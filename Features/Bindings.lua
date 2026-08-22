@@ -102,23 +102,112 @@ end
 
 -- ── Resolution ─────────────────────────────────────────────────────────────
 
+local function knownSpell(spellID)
+    for _, s in ipairs(ns.knownDispels or {}) do
+        if s.id == spellID then return s, "DISPEL" end
+    end
+    for _, s in ipairs(ns.knownEscapes or {}) do
+        if s.id == spellID then return s, "ESCAPE" end
+    end
+end
+
 local function spellFor(entry)
     if entry.role == ns.ROLE_PRIMARY then
-        return ns.spellName
+        return ns.spellName, ns.spellID, "DISPEL"
     elseif entry.role == ns.ROLE_SECONDARY then
-        return ns.secondaryName or ns.spellName
-    elseif entry.spell then
-        for _, s in ipairs(ns.knownDispels or {}) do
-            if s.id == entry.spell then return s.name end
+        if ns.secondaryName then
+            return ns.secondaryName, ns.secondaryID, "DISPEL"
         end
-        -- Known last session, gone this one (a respec). Fall back rather than
-        -- leaving the button silently dead.
-        return ns.spellName
+        return ns.spellName, ns.spellID, "DISPEL"
+    elseif entry.spell then
+        local spell, kind = knownSpell(entry.spell)
+        if not spell then return nil end
+        -- An escape checkbox controls both the movement overlay and whether its
+        -- click action is armed. A stale saved binding must never silently cast
+        -- a spell the player has explicitly disabled.
+        if kind == "ESCAPE"
+            and not (ns.db and ns.db.escapes and ns.db.escapes[spell.id]) then
+            return nil
+        end
+        return spell.name, spell.id, kind
     end
+end
+
+function Bindings:SpellID(entry)
+    if entry.role == ns.ROLE_PRIMARY then return ns.spellID end
+    if entry.role == ns.ROLE_SECONDARY then return ns.secondaryID or ns.spellID end
+    return entry.spell
+end
+
+function Bindings:KeysForSpell(spellID)
+    local keys = {}
+    for _, entry in ipairs(self:List()) do
+        if self:SpellID(entry) == spellID and entry.key then
+            keys[#keys + 1] = entry.key
+        end
+    end
+    return keys
+end
+
+-- One row in Options owns one action. Rebinding replaces every old chord for
+-- that spell, which keeps the page truthful instead of hiding duplicate
+-- bindings behind a single button.
+function Bindings:SetSpellBinding(spellID, key)
+    if type(spellID) ~= "number" or not attributeParts(key or "") then
+        return false, "invalid mouse binding"
+    end
+
+    local list = self:Materialise()
+    for _, entry in ipairs(list) do
+        if entry.key == key and self:SpellID(entry) ~= spellID then
+            local what = self:Describe(entry)
+            return false, self:Label(key) .. " is already assigned to " .. what
+        end
+    end
+
+    local kept = {}
+    for _, entry in ipairs(list) do
+        if self:SpellID(entry) ~= spellID then kept[#kept + 1] = entry end
+    end
+
+    local replacement = { key = key, spell = spellID }
+    if spellID == ns.spellID then
+        replacement.spell = nil
+        replacement.role = ns.ROLE_PRIMARY
+    elseif spellID == ns.secondaryID then
+        replacement.spell = nil
+        replacement.role = ns.ROLE_SECONDARY
+    end
+    kept[#kept + 1] = replacement
+    ns.db.bindings = kept
+    ns.db.bindingsCustom = true
+    return true
+end
+
+function Bindings:ClearSpellBinding(spellID)
+    local found = false
+    for _, entry in ipairs(self:List()) do
+        if self:SpellID(entry) == spellID then
+            found = true
+            break
+        end
+    end
+    -- Do not turn automatic defaults into a frozen custom list merely because
+    -- an unrelated, currently unbound action was disabled in the options.
+    if not found then return false end
+
+    local kept = {}
+    for _, entry in ipairs(self:Materialise()) do
+        if self:SpellID(entry) ~= spellID then kept[#kept + 1] = entry end
+    end
+    ns.db.bindings = kept
+    ns.db.bindingsCustom = true
+    return true
 end
 
 function Bindings:List()
     local list = ns.db and ns.db.bindings
+    if ns.db and ns.db.bindingsCustom then return list or {} end
     if not list or #list == 0 then return self:Defaults() end
     return list
 end
@@ -133,7 +222,14 @@ end
 --   Written out here rather than relying on CopyTable's depth, which is a
 --   Blizzard global whose behaviour is not ours to depend on.
 function Bindings:Materialise()
-    if ns.db.bindings and #ns.db.bindings > 0 then return ns.db.bindings end
+    if ns.db.bindingsCustom then
+        ns.db.bindings = ns.db.bindings or {}
+        return ns.db.bindings
+    end
+    if ns.db.bindings and #ns.db.bindings > 0 then
+        ns.db.bindingsCustom = true
+        return ns.db.bindings
+    end
 
     local copy = {}
     for i, entry in ipairs(self:Defaults()) do
@@ -143,6 +239,7 @@ function Bindings:Materialise()
     end
 
     ns.db.bindings = copy
+    ns.db.bindingsCustom = true
     return copy
 end
 
@@ -200,18 +297,11 @@ function Bindings:Describe(entry)
     if entry.action == "TARGET" then return "Target the unit", nil end
     if entry.action == "NONE"   then return "Do nothing", nil end
 
-    local name = spellFor(entry)
+    local name, spellID = spellFor(entry)
     if not name then return "no dispel known", nil end
 
-    local icon
-    for _, s in ipairs(ns.knownDispels or {}) do
-        if s.name == name then
-            if C_Spell and C_Spell.GetSpellTexture then
-                icon = C_Spell.GetSpellTexture(s.id)
-            end
-            break
-        end
-    end
+    local icon = spellID and C_Spell and C_Spell.GetSpellTexture
+        and C_Spell.GetSpellTexture(spellID)
 
     local suffix = entry.role == ns.ROLE_PRIMARY and " (automatic)"
         or entry.role == ns.ROLE_SECONDARY and " (automatic)" or ""

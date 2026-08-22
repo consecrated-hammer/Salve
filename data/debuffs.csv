@@ -45,6 +45,7 @@ Salve_Data_Midnight_S2,2521,381515,Stormslam,Magic,Mythic Dungeon Tools 4b8b0b7 
 Salve_Data_Midnight_S2,2521,391031,Stormcloud Barrier,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
 Salve_Data_Midnight_S2,2521,392641,Rolling Thunder,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
 Salve_Data_Midnight_S2,2521,1305234,Cold Claws,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
+Salve_Data_Midnight_S2,2694,1302867,Festering Gash,Disease,in-game learning,12.1.0 live,true
 Salve_Data_Midnight_S2,2813,474515,Heartstop Poison,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
 Salve_Data_Midnight_S2,2813,1201554,Seduction,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
 Salve_Data_Midnight_S2,2813,1216538,Fel Detonation,Magic,Mythic Dungeon Tools 4b8b0b7 spell metadata,12.1.0 live,true
@@ -89,3 +90,4 @@ Salve_Data_Midnight_S2,3004,1287036,Poisonous Bite,Poison,wago.tools DB2 Journal
 Salve_Data_Midnight_S2,3004,1295173,Exploding Infection,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
 Salve_Data_Midnight_S2,3004,1301800,Acidic Burst,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
 Salve_Data_Midnight_S2,3004,1305650,Anguished Cry,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
+Salve_Data_Midnight_S2,3038,1287861,Venomblade Slash,Poison,in-game learning,12.1.0 live,true

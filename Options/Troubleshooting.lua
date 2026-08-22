@@ -33,7 +33,7 @@ local function buildReport()
             .. " (" .. tostring(ns.Sound.activeInstanceID or 0) .. ")",
         "Data: " .. moduleStatus(),
         "Sound enabled: " .. yesNo(ns.db.soundEnabled),
-        "Aura logging: " .. yesNo(ns.db.learnMode),
+        "Aura learning: always on",
         "Cures: " .. ns.CuresText(ns.Sound:CurrentCures()),
         "Spell IDs: " .. tostring(#ns.Sound:ActiveRecords()),
         "Sound registrations: " .. tostring(ns.Sound.registered)
@@ -53,6 +53,11 @@ local function buildReport()
 
     lines[#lines + 1] = "Buttons initialised: " .. tostring(ns.Binding.boundCount or 0)
     lines[#lines + 1] = "Containers built: " .. tostring(ns.Binding.containersBuilt or 0)
+    if ns.Binding.CooldownDiagnosticLines then
+        for _, line in ipairs(ns.Binding:CooldownDiagnosticLines()) do
+            lines[#lines + 1] = line
+        end
+    end
     if ns.Binding.lastFailure then
         lines[#lines + 1] = "Last binding failure: " .. tostring(ns.Binding.lastFailure)
     end
@@ -141,6 +146,8 @@ local function showCopyReport()
     copyFrame.edit:HighlightText()
 end
 
+O.ShowDiagnosticReport = showCopyReport
+
 O.NewPage({
     name = "Troubleshooting",
     description = "Use this when a debuff is missing or Salve looks wrong.",
@@ -191,25 +198,13 @@ O.NewPage({
     copy:SetScript("OnClick", showCopyReport)
     y = y - 48
 
-    _, y = O.Header(panel, "Aura logging", y)
-
-    _, y = O.Check(panel, "Learn missed debuffs and movement effects",
-        "Stays enabled until you turn it off. Adds aura listeners, readable-aura scans, and automatic root/snare capture; private auras still cannot be recorded.", y,
-        function() return ns.db.learnMode end,
-        function(v) ns.Sound:SetLearning(v) end)
+    _, y = O.Header(panel, "Aura learning", y)
 
     local note = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-    note:SetPoint("TOPLEFT", 16, y + 4)
+    note:SetPoint("TOPLEFT", 16, y)
     note:SetWidth(520)
     note:SetJustifyH("LEFT")
-    note:SetText("What this means: Salve records readable dispellable aura names, IDs and schools from your group into the separate SalveLearnedDB block in its saved data, scoped to each location. It also captures Blizzard-reported roots and snares automatically while you play — no slash command needed in a Mythic+. It remains on across zones and sessions. It starts off only so you choose whether to record that group data; once enabled, leave it on to improve coverage. Private auras still cannot be learned.")
-    y = y - 110
-
-    _, y = O.PageReset(panel, y, function()
-        -- Learned records are useful evidence, not a page preference. Resetting
-        -- this page only stops the optional listener for the current session.
-        ns.Sound:SetLearning(false, true)
-        refreshStatus()
-    end)
+    note:SetText("Salve always records readable dispellable aura names, IDs and schools from your group in the separate SalveLearnedDB saved-data block, scoped to each location. It also captures Blizzard-reported roots and snares automatically. Private auras cannot be learned. Use /salve learned clear to remove the recorded catalogue.")
+    y = y - 82
     return y
 end)

@@ -13,6 +13,7 @@ local ns = {
         List = function() return {} end,
         Describe = function() return "test" end,
         Label = function() return "test" end,
+        IsDispelSpell = function(_, spellID) return spellID == 4987 end,
     },
     knownDispels = {
         { cures = { Magic = true, Disease = true } },
@@ -126,9 +127,19 @@ equal(appliedDuration, cooldownDurationObject,
 
 local refreshedDuration = {}
 C_Spell.GetSpellCooldownDuration = function() return refreshedDuration end
-ns.Binding:RefreshCooldowns()
+equal(ns.Binding:ObserveDispelCast("player", 12345), false,
+    "ordinary cast is not treated as a dispel")
+equal(ns.Binding:ObserveDispelCast("player", 4987), true,
+    "known player dispel is recognized")
+ns.Binding:RefreshCooldowns("test dispel")
 equal(appliedDuration, refreshedDuration,
     "cooldown event refreshes existing native cooldown widgets")
+equal(ns.Binding.cooldownDebug.matchedDispelCasts, 1,
+    "matched dispel is retained for diagnostics")
+equal(ns.Binding.cooldownDebug.lastDurationState, "object returned",
+    "duration-object result is retained for diagnostics")
+equal(ns.Binding.cooldownDebug.lastSucceeded, 1,
+    "successful widget application is retained for diagnostics")
 equal(capturedOptions.style, 3, "preserve-asset style passed")
 equal(capturedOptions.showWhenHarmful, true, "harmful dispels shown")
 equal(capturedOptions.showWhenHelpful, false, "helpful effects excluded")

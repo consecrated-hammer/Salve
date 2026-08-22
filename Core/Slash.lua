@@ -18,17 +18,9 @@ SlashCmdList.SALVE = function(msg)
         ns.Escape:DumpCaptured()
 
     elseif cmd == "learn" then
-        if arg == "on" then
-            ns.Sound:SetLearning(true)
-        elseif arg == "off" then
-            ns.Sound:SetLearning(false)
-        else
-            local state = ns.db.learnMode
-                and ("ON for " .. tostring(ns.Sound.activeScopeName)
-                    .. " (persists across zones and reloads)") or "off"
-            ns.Print("learn mode is " .. state
-                .. " — use |cffffd100/salve learn on|r or |cffffd100off|r")
-        end
+        ns.Print("aura learning is always on for "
+            .. tostring(ns.Sound.activeScopeName or "the current location")
+            .. "; |cffffd100/salve learned|r lists what has been recorded")
 
     elseif cmd == "learned" then
         if arg == "clear" then ns.Sound:ClearLearned() else ns.Sound:DumpLearned() end
@@ -37,8 +29,12 @@ SlashCmdList.SALVE = function(msg)
         ns.Print("version " .. tostring(ns.VERSION) .. "  revision " .. tostring(ns.REVISION))
 
     elseif cmd == "debug" or cmd == "probe" then
-        ns.Binding:Report()
-        ns.Sound:Report()
+        if arg == "copy" and ns.Options and ns.Options.ShowDiagnosticReport then
+            ns.Options.ShowDiagnosticReport()
+        else
+            ns.Binding:Report()
+            ns.Sound:Report()
+        end
 
     elseif cmd == "unlock" or cmd == "handle" then
         ns.SetLocked(false)
@@ -58,8 +54,8 @@ SlashCmdList.SALVE = function(msg)
         ns.Print("|cffffd100/salve lock|r | |cffffd100unlock|r — hide or show the drag handle")
         ns.Print("|cffffd100/salve reset|r — put the panel back in the middle")
         ns.Print("|cffffd100/salve debug|r — print a diagnostic report")
+        ns.Print("|cffffd100/salve debug copy|r — open a selectable diagnostic report")
         ns.Print("|cffffd100/salve version|r — print the loaded version and revision")
-        ns.Print("|cffffd100/salve learn on|r | |cffffd100off|r | |cffffd100status|r — persistent, opt-in aura logging")
         ns.Print("|cffffd100/salve snares|r — list auto-captured root and snare spell IDs")
         ns.Print("|cffffd100/salve learned|r | |cffffd100learned clear|r — list or clear recorded auras")
         ns.Print("|cffffd100/salve help|r — show this command list")

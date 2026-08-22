@@ -11,7 +11,7 @@ local ns = {
         soundEnabled = false,
         soundChannel = "Master",
         soundFile = nil,
-        learnMode = false,
+        learnMode = true,
     },
     learned = { auras = {}, movement = {} },
     knownDispels = {
@@ -110,12 +110,13 @@ end
 
 ns.Sound:DiscoverModules()
 ns.Sound:ActivateCurrentInstance()
-equal(loadCalls, 0, "disabled mode does not load data")
-equal(ns.Sound.registered, 0, "disabled mode registers nothing")
+equal(loadCalls, 1, "always-on learning loads current data module")
+equal(ns.Sound.registered, 0, "sound disabled registers no alerts")
+equal(#createdFrames, 3, "always-on learning creates one listener per party unit")
 
 ns.db.soundEnabled = true
 ns.Sound:ActivateCurrentInstance()
-equal(loadCalls, 1, "enabled mode loads current module")
+equal(loadCalls, 2, "enabling sound refreshes the current module")
 equal(loadedName, "Salve_Data_Test", "highest-priority module wins")
 equal(#ns.Sound:ActiveRecords(), 1, "records filtered by cure type and verification")
 equal(ns.Sound.registered, 3, "one spell registered for current party tokens")
@@ -125,7 +126,6 @@ equal(added[3].unit, "party2", "party includes second member")
 equal(added[1].soundFileName, "Interface\\AddOns\\Salve\\Media\\DispelAlert.ogg",
     "default native sound uses Salve's bundled filename payload")
 
-ns.db.learnMode = true
 ns.Sound:UpdateLearnRegistration()
 equal(#createdFrames, 3, "learning creates one listener per party unit")
 equal(createdFrames[1].unit, "player", "first listener scopes player")
@@ -154,9 +154,12 @@ ns.db.soundEnabled = false
 ns.Sound:OnSettingChanged("soundEnabled")
 equal(ns.Sound.registered, 0, "disabling sound clears registrations")
 ns.Sound:SetLearning(false, true)
-equal(ns.Sound.activeModule, nil, "sound and learning off make data dormant")
+equal(ns.db.learnMode, true, "compatibility call cannot disable learning")
+equal(ns.Sound.activeModule, "Salve_Data_Test",
+    "learning keeps current data active when sound is disabled")
 for index = 1, 5 do
-    equal(createdFrames[index].event, nil, "disabled learning listener " .. index)
+    equal(createdFrames[index].event, "UNIT_AURA",
+        "always-on learning listener " .. index)
 end
 
 ns.Sound.lastFailure = "old transient failure"
@@ -202,8 +205,8 @@ end
 ns.Sound:Learn("raid1")
 equal(ns.Sound.pendingLearnUnits.raid1, true, "unexpected secret lookup is contained")
 ns.Sound:SetLearning(false, true)
-equal(next(ns.Sound.pendingLearnUnits), nil, "disabling learning clears deferred units")
-ns.Sound:SetLearning(true, true)
+equal(ns.Sound.pendingLearnUnits.raid1, true,
+    "compatibility call cannot discard deferred learning")
 
 currentMapID, currentMapName = 43, "Westfall"
 ns.Sound:ActivateCurrentInstance()

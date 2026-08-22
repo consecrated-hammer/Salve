@@ -92,6 +92,51 @@ end
 
 Binding.caps = nil
 Binding.cooldowns = setmetatable({}, { __mode = "k" })
+Binding.cooldownDebug = {
+    castEvents = 0,
+    readableCastIDs = 0,
+    matchedDispelCasts = 0,
+    refreshes = 0,
+    lastCastID = nil,
+    lastCastState = "none seen",
+    lastRefreshReason = "none",
+    lastDurationState = "not requested",
+    lastApplied = 0,
+    lastSucceeded = 0,
+}
+
+-- UNIT_SPELLCAST_SUCCEEDED payloads can become secret in combat. Comparing a
+-- secret spell ID against a Lua number throws, so diagnose and fail closed
+-- before Bindings:IsDispelSpell performs any equality checks.
+function Binding:ObserveDispelCast(unit, spellID)
+    local debug = self.cooldownDebug
+    debug.castEvents = debug.castEvents + 1
+    debug.lastCastID = nil
+
+    if unit ~= "player" then
+        debug.lastCastState = "ignored non-player unit"
+        return false
+    end
+    if issecretvalue and issecretvalue(spellID) then
+        debug.lastCastState = "spell ID was secret"
+        return false
+    end
+    if type(spellID) ~= "number" then
+        debug.lastCastState = "spell ID was not numeric"
+        return false
+    end
+
+    debug.readableCastIDs = debug.readableCastIDs + 1
+    debug.lastCastID = spellID
+    if not ns.Bindings:IsDispelSpell(spellID) then
+        debug.lastCastState = "readable non-dispel"
+        return false
+    end
+
+    debug.matchedDispelCasts = debug.matchedDispelCasts + 1
+    debug.lastCastState = "matched known dispel"
+    return true
+end
 
 local function cooldownDuration()
     if not ns.spellID then return nil end
@@ -124,16 +169,41 @@ function Binding:RegisterCooldown(cooldown)
     applyCooldown(cooldown, duration)
 end
 
-function Binding:RefreshCooldowns()
+function Binding:RefreshCooldowns(reason)
     -- The duration object may contain secret values. Never inspect it: forward
     -- the object intact to Blizzard's cooldown widget, whose native setter is
     -- explicitly allowed to consume it in combat.
     self.lastCooldownFailure = nil
+    local debug = self.cooldownDebug
+    debug.refreshes = debug.refreshes + 1
+    debug.lastRefreshReason = reason or "unspecified"
     local duration, err = cooldownDuration()
     if err then self.lastCooldownFailure = err end
+    debug.lastDurationState = err and ("error: " .. tostring(err))
+        or (duration and "object returned" or "no object returned")
+    local applied, succeeded = 0, 0
     for cooldown in pairs(self.cooldowns) do
-        applyCooldown(cooldown, duration)
+        applied = applied + 1
+        if applyCooldown(cooldown, duration) then succeeded = succeeded + 1 end
     end
+    debug.lastApplied = applied
+    debug.lastSucceeded = succeeded
+end
+
+function Binding:CooldownDiagnosticLines()
+    local debug = self.cooldownDebug
+    return {
+        "Cooldown casts: " .. tostring(debug.castEvents)
+            .. " seen, " .. tostring(debug.readableCastIDs) .. " readable, "
+            .. tostring(debug.matchedDispelCasts) .. " matched",
+        "Last cooldown cast: " .. tostring(debug.lastCastState)
+            .. (debug.lastCastID and (" (" .. tostring(debug.lastCastID) .. ")") or ""),
+        "Cooldown refreshes: " .. tostring(debug.refreshes)
+            .. " (last: " .. tostring(debug.lastRefreshReason) .. ")",
+        "Last cooldown duration: " .. tostring(debug.lastDurationState)
+            .. "; widgets " .. tostring(debug.lastSucceeded)
+            .. "/" .. tostring(debug.lastApplied),
+    }
 end
 
 -- Everything Attach's sequence actually depends on. A client missing any of
@@ -208,6 +278,9 @@ function Binding:Report()
     for _ in pairs(self.cooldowns) do cooldownCount = cooldownCount + 1 end
     ns.Print("  cooldown widgets: " .. tostring(cooldownCount)
         .. " (primary spell " .. tostring(ns.spellID or "none") .. ")")
+    for _, line in ipairs(self:CooldownDiagnosticLines()) do
+        ns.Print("  " .. line:sub(1, 1):lower() .. line:sub(2))
+    end
     if self.lastCooldownFailure then
         ns.Print("  |cffff4444cooldown failure:|r " .. self.lastCooldownFailure)
     end

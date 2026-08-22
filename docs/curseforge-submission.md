@@ -4,15 +4,20 @@ Public page: https://www.curseforge.com/wow/addons/salve
 
 ## Summary
 
-A compact clickable dispel panel built for WoW: Midnight's private aura rules.
+A compact clickable group-dispel panel built for WoW: Midnight's private aura
+rules.
 
 ## Description
 
-Use `README.md` from **Why Salve exists** through **Limitations**. It already
-contains the player-facing explanation, setup, commands and honest sound-data
-limits without implementation detail.
+Use `README.md` from **Why Salve exists** through **What it does**, skip the
+**Screenshots** section, then continue from **How it works** through
+**Limitations**. This keeps the CurseForge description text-only for 1.4 while
+retaining the player-facing explanation, setup, commands and honest limits.
 
-## Manual screenshot upload order
+## Deferred screenshots
+
+Not part of the 1.4 release review. When screenshots resume, upload in this
+order:
 
 - [ ] `screenshots/panel-unit-names.png` — Compact group panel with names.
 - [ ] `screenshots/panel-dispellable-cells.png` — Cells lit by dispel type.
@@ -34,6 +39,10 @@ Retake after loading 1.1.0 before uploading; these captures show old build text:
 
 ## Manual project fields
 
+- [ ] Replace the live project summary with the **Summary** above.
+- [ ] Replace the live v1.1 description with the text-only 1.4 description
+  assembled above; do not retain its obsolete no-aura-listener, `/salve probe`
+  or fixed Blizzard Settings claims.
 - [ ] Upload `Textures/Salve-curseforge-400.png` as the project icon.
 - [ ] Set game version to Retail / 12.1.0.
 - [ ] Confirm category: Raid Frames or Buffs & Debuffs.

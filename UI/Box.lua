@@ -43,6 +43,9 @@ local function StyleCooldownText(box)
         or (point:find("RIGHT", 1, true) and -3 or 0)
     local y = point:find("TOP", 1, true) and -1
         or (point:find("BOTTOM", 1, true) and 1 or 0)
+    -- Centre + Middle benefits from a small optical nudge. Edge alignments
+    -- already have deliberate padding and should not move.
+    if point == "CENTER" then x, y = 2, -1 end
     text:SetPoint(point, cooldown, point, x, y)
 end
 
@@ -102,14 +105,7 @@ local function HideBoxTooltip(box)
     if GameTooltip:IsOwned(box) then GameTooltip:Hide() end
 end
 
-function Box.Create(index, parent)
-    local box = CreateFrame("Button", "SalveBox" .. index, parent,
-        "SecureActionButtonTemplate")
-    box:RegisterForClicks("AnyDown")
-
-    box:HookScript("OnEnter", ShowBoxTooltip)
-    box:HookScript("OnLeave", HideBoxTooltip)
-
+local function CreateVisuals(box, registerCooldown)
     -- Dim plate behind everything: what you see when the unit is clean. Use
     -- Blizzard's status-bar artwork instead of a flat colour so bare 20x20
     -- boxes still have a little depth when unit names are hidden.
@@ -160,7 +156,7 @@ function Box.Create(index, parent)
         box.dispelCooldown:SetMinimumCountdownDuration(0)
     end
     if box.dispelCooldown.EnableMouse then box.dispelCooldown:EnableMouse(false) end
-    ns.Binding:RegisterCooldown(box.dispelCooldown)
+    if registerCooldown then ns.Binding:RegisterCooldown(box.dispelCooldown) end
     StyleCooldownText(box)
 
     -- ☠ THE NAME LIVES ON ITS OWN FRAME, NOT ON THE BOX. The engine's aura
@@ -182,11 +178,74 @@ function Box.Create(index, parent)
     box.name:SetJustifyV("MIDDLE")
     StyleNameText(box)
 
+    return box
+end
+
+function Box.Create(index, parent)
+    local box = CreateFrame("Button", "SalveBox" .. index, parent,
+        "SecureActionButtonTemplate")
+    box:RegisterForClicks("AnyDown")
+
+    box:HookScript("OnEnter", ShowBoxTooltip)
+    box:HookScript("OnLeave", HideBoxTooltip)
+
+    CreateVisuals(box, true)
+
     box.hl = box:CreateTexture(nil, "HIGHLIGHT")
     box.hl:SetAllPoints()
     box.hl:SetColorTexture(1, 1, 1, 0.18)
 
     return box
+end
+
+-- Test-mode boxes live on UIParent, not inside Settings. They deliberately use
+-- the SAME Salve-owned plate, border, name and cooldown construction as the
+-- secure live boxes. Only the aura fill and stack are synthetic: Blizzard's
+-- AuraContainer owns those on live boxes and does not expose an API for addons
+-- to inject a fake aura into it.
+function Box.CreatePreview(parent)
+    local box = CreateFrame("Frame", nil, parent)
+    CreateVisuals(box, false)
+
+    box.previewFill = box:CreateTexture(nil, "ARTWORK")
+    box.previewFill:SetAllPoints(box)
+    box.previewFill:SetColorTexture(1, 1, 1, 1)
+
+    box.previewStack = box.textLayer:CreateFontString(nil, "OVERLAY",
+        "NumberFontNormalSmall")
+    box.previewStack:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", -1, 0)
+
+    return box
+end
+
+function Box.RestylePreview(box, name, classKey)
+    local db = ns.db
+
+    box.name:SetJustifyH(db.nameJustifyH or "LEFT")
+    box.name:SetJustifyV(db.nameJustifyV or "MIDDLE")
+    StyleNameText(box)
+
+    if db.showNames then
+        box.name:SetText(name or "")
+        local c = classKey and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classKey]
+        if c then
+            box.name:SetTextColor(c.r, c.g, c.b)
+        else
+            box.name:SetTextColor(1, 1, 1)
+        end
+    else
+        box.name:SetText("")
+    end
+
+    local plateColour = db.useClassColours and classKey
+        and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classKey]
+    if plateColour then
+        box.plate:SetVertexColor(plateColour.r, plateColour.g, plateColour.b, 1)
+    else
+        box.plate:SetVertexColor(0.18, 0.18, 0.18, 1)
+    end
+    box.plate:SetAlpha(db.showWhenClean and db.cleanAlpha or 0)
+    StyleCooldownText(box)
 end
 
 -- Secure attributes. Out of combat only -- callers guard.

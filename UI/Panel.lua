@@ -7,11 +7,92 @@ local MAX_BOXES = 40
 
 Panel.boxes = {}
 
+-- The frame itself is anchored to the edge selected by Grid flow. Reversing
+-- cell coordinates alone would change roster order but still make a growing
+-- frame expand across the edge the player lined up with another addon.
+function Panel:GrowthAnchor()
+    if ns.db.orientation == "VERTICAL" then
+        return ns.db.verticalGrowth == "UP" and "BOTTOMLEFT" or "TOPLEFT"
+    end
+    return ns.db.horizontalGrowth == "LEFT" and "TOPRIGHT" or "TOPLEFT"
+end
+
+function Panel:SavePositionFromFrame(frame)
+    if not frame then return false end
+    local anchor = self:GrowthAnchor()
+    local left, right = frame:GetLeft(), frame:GetRight()
+    local top, bottom = frame:GetTop(), frame:GetBottom()
+    if not (left and right and top and bottom) then return false end
+
+    local x = anchor == "TOPRIGHT" and right or left
+    local y = anchor == "BOTTOMLEFT" and bottom or top
+    ns.db.point = { anchor, "BOTTOMLEFT", x, y }
+    return true
+end
+
+function Panel:NormalizeGrowthAnchor(frame)
+    if not frame then return false end
+    local point, _, relativePoint = frame:GetPoint()
+    local desired = self:GrowthAnchor()
+    if point == desired and relativePoint == "BOTTOMLEFT" then return true end
+    if not self:SavePositionFromFrame(frame) then return false end
+    local saved = ns.db.point
+    frame:ClearAllPoints()
+    frame:SetPoint(saved[1], UIParent, saved[2], saved[3], saved[4])
+    return true
+end
+
+-- One geometry function owns both live and test panels. The test panel is not
+-- a scaled drawing inside Settings: it is laid out in UIParent with these exact
+-- box dimensions, gaps, wrap rules and overall scale.
+function Panel:Layout(count)
+    local db = ns.db
+    local cols = math.max(1, db.columns)
+    local across, down
+    if db.orientation == "VERTICAL" then
+        across, down = math.ceil(count / cols), math.min(count, cols)
+    else
+        across, down = math.min(count, cols), math.ceil(count / cols)
+    end
+    return {
+        count = count,
+        columns = cols,
+        width = db.boxWidth,
+        height = db.boxHeight,
+        spacing = db.spacing,
+        scale = db.scale,
+        orientation = db.orientation,
+        horizontalGrowth = db.horizontalGrowth or "RIGHT",
+        verticalGrowth = db.verticalGrowth or "DOWN",
+        across = across,
+        down = down,
+        frameWidth = across * db.boxWidth + math.max(0, across - 1) * db.spacing,
+        frameHeight = down * db.boxHeight + math.max(0, down - 1) * db.spacing,
+    }
+end
+
+function Panel:PlaceBox(box, index, layout)
+    local n0 = index - 1
+    local col, row
+    if layout.orientation == "VERTICAL" then
+        col, row = math.floor(n0 / layout.columns), n0 % layout.columns
+        if layout.verticalGrowth == "UP" then row = layout.down - 1 - row end
+    else
+        col, row = n0 % layout.columns, math.floor(n0 / layout.columns)
+        if layout.horizontalGrowth == "LEFT" then col = layout.across - 1 - col end
+    end
+
+    box:SetSize(layout.width, layout.height)
+    box:ClearAllPoints()
+    box:SetPoint("TOPLEFT", box:GetParent(), "TOPLEFT",
+        col * (layout.width + layout.spacing),
+        -row * (layout.height + layout.spacing))
+end
+
 -- ── Roster ─────────────────────────────────────────────────────────────────
 
 local function unitList()
     local units = {}
-    local db = ns.db
 
     -- ☠ No show/hide decisions here. Which GROUP you are in decides how many
     --   boxes exist; WHETHER the panel is on screen is Features/Visibility.lua's
@@ -66,13 +147,10 @@ end
 function Panel:Rebuild()
     if not self.frame or InCombatLockdown() then return end
 
-
-    local db       = ns.db
+    self:NormalizeGrowthAnchor(self.frame)
     local failures = 0
     local units    = ns.CanDispel() and unitList() or {}
-    local cols  = math.max(1, db.columns)
-    local w, h  = db.boxWidth, db.boxHeight
-    local pad   = db.spacing
+    local layout = self:Layout(#units)
 
     for i = 1, MAX_BOXES do
         local box  = self.boxes[i]
@@ -82,20 +160,7 @@ function Panel:Rebuild()
             ns.Box.Bind(box, unit)
             ns.Box.Restyle(box)
 
-            -- HORIZONTAL fills across then wraps down; VERTICAL fills down then
-            -- wraps across. `cols` is the wrap point in both cases.
-            local n0 = i - 1
-            local col, row
-            if db.orientation == "VERTICAL" then
-                col, row = math.floor(n0 / cols), n0 % cols
-            else
-                col, row = n0 % cols, math.floor(n0 / cols)
-            end
-
-            box:SetSize(w, h)
-            box:ClearAllPoints()
-            box:SetPoint("TOPLEFT", self.frame, "TOPLEFT",
-                col * (w + pad), -row * (h + pad))
+            self:PlaceBox(box, i, layout)
             box:Show()
 
             -- Hand the box to the engine. After this it runs without us.
@@ -114,19 +179,10 @@ function Panel:Rebuild()
     end
 
     local n = #units
-    self.frame:SetScale(db.scale)
+    self.frame:SetScale(layout.scale)
 
     if n > 0 then
-        -- The wrap axis swaps with the orientation, so the frame's extent does
-        -- too: horizontal grows wide then tall, vertical grows tall then wide.
-        local across, down
-        if db.orientation == "VERTICAL" then
-            across, down = math.ceil(n / cols), math.min(n, cols)
-        else
-            across, down = math.min(n, cols), math.ceil(n / cols)
-        end
-        self.frame:SetSize(across * w + (across - 1) * pad,
-                           down * h + (down - 1) * pad)
+        self.frame:SetSize(layout.frameWidth, layout.frameHeight)
     end
 
     -- ☠ Visibility is a STATE DRIVER, not Show()/Hide(). The panel is protected,
@@ -180,4 +236,5 @@ function Panel:ApplyPosition()
     local p = ns.db.point
     self.frame:ClearAllPoints()
     self.frame:SetPoint(p[1], UIParent, p[2], p[3], p[4])
+    self:NormalizeGrowthAnchor(self.frame)
 end

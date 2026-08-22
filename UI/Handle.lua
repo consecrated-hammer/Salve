@@ -16,9 +16,8 @@ local Handle = ns.Handle
 
 local SIZE = 10
 
-function Handle:Position()
-    if not self.frame or not ns.Panel or not ns.Panel.frame then return end
-    local h, parent = self.frame, ns.Panel.frame
+function Handle:PositionFrame(h, parent)
+    if not h or not parent then return end
     local position = ns.db.handlePosition or "TOPLEFT"
     local halfCell = (ns.db.boxWidth or 20) / 2
 
@@ -42,6 +41,11 @@ function Handle:Position()
         -- corner. That keeps the default useful even for unusual grid shapes.
         h:SetPoint("BOTTOM", parent, "TOPLEFT", halfCell, 1)
     end
+end
+
+function Handle:Position()
+    if not self.frame or not ns.Panel or not ns.Panel.frame then return end
+    self:PositionFrame(self.frame, ns.Panel.frame)
 end
 
 function Handle:Create(parent)
@@ -124,8 +128,13 @@ function Handle:Release()
     if not panel or InCombatLockdown() then return false end
 
     panel:StopMovingOrSizing()
-    local point, _, rel, x, y = panel:GetPoint()
-    ns.db.point = { point, rel, x, y }
+    if ns.Panel and ns.Panel.SavePositionFromFrame then
+        ns.Panel:SavePositionFromFrame(panel)
+        ns.Panel:ApplyPosition()
+    else
+        local point, _, rel, x, y = panel:GetPoint()
+        ns.db.point = { point, rel, x, y }
+    end
     ns.pendingDragStop = false
     return true
 end

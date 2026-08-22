@@ -1,6 +1,6 @@
 {
   "interface": 120100,
-  "version": "1.3.2",
+  "version": "1.4.0",
   "modules": [
     {
       "folder": "Salve_Data_Midnight_S1",
@@ -31,6 +31,7 @@
         { "id": 1762, "name": "Kings' Rest" },
         { "id": 1877, "name": "Temple of Sethraliss" },
         { "id": 2521, "name": "Ruby Life Pools" },
+        { "id": 2694, "name": "Harandar" },
         { "id": 2813, "name": "Murder Row" },
         { "id": 2825, "name": "Den of Nalorakk" },
         { "id": 2859, "name": "The Blinding Vale" },
@@ -38,7 +39,8 @@
         { "id": 2923, "name": "Voidscar Arena" },
         { "id": 2987, "name": "The Tidebound Grotto" },
         { "id": 2993, "name": "Altar of Rezan" },
-        { "id": 3004, "name": "The Venomous Abyss" }
+        { "id": 3004, "name": "The Venomous Abyss" },
+        { "id": 3038, "name": "Gnarldor Isle" }
       ]
     }
   ]

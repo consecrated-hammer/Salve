@@ -320,6 +320,24 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
             },
         },
     },
+    [2694] = {
+        name = "Harandar",
+        season = "Midnight Season 2",
+        seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1302867,
+                dispelType = "Disease",
+                name = "Festering Gash",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+        },
+    },
     [2813] = {
         name = "Murder Row",
         season = "Midnight Season 2",
@@ -820,6 +838,24 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
                 provenance = {
                     source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
                     build = "12.1.0.69299",
+                },
+            },
+        },
+    },
+    [3038] = {
+        name = "Gnarldor Isle",
+        season = "Midnight Season 2",
+        seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1287861,
+                dispelType = "Poison",
+                name = "Venomblade Slash",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
                 },
             },
         },

@@ -3,9 +3,9 @@ local addonName, ns = ...
 -- ============================================================
 -- Options plumbing
 -- ============================================================
--- Salve registers into Blizzard's own Options > AddOns tree rather than putting
--- up a floating window: one main category and a subcategory per page, so the
--- pages stay separate files without inventing a nav rail of our own.
+-- Blizzard's Options > AddOns tree holds a small Salve launcher. The actual
+-- pages live in Salve's movable window so it can sit beside the frames being
+-- configured without inheriting Blizzard Settings' fixed position and width.
 --
 -- Widget creation follows Speedster's defensive shape -- pcall the Blizzard
 -- template, fall back to the plain one -- because InterfaceOptionsCheckButton-
@@ -199,29 +199,102 @@ function Options.CyclePair(panel, heading, y, left, right)
         btn.salveTitle = title
 
         local function render()
+            local values = type(spec.values) == "function"
+                and spec.values() or spec.values
+            local labels = type(spec.labels) == "function"
+                and spec.labels() or spec.labels
             local current = spec.get()
-            for i, value in ipairs(spec.values) do
+            for i, value in ipairs(values) do
                 if value == current then
-                    btn:SetText(spec.labels[i])
+                    btn:SetText(labels[i])
                     return
                 end
             end
-            btn:SetText(spec.labels[1])
+            btn:SetText(labels[1])
         end
 
         btn:SetScript("OnClick", function()
+            local values = type(spec.values) == "function"
+                and spec.values() or spec.values
             local current = spec.get()
-            for i, value in ipairs(spec.values) do
+            for i, value in ipairs(values) do
                 if value == current then
-                    spec.set(spec.values[(i % #spec.values) + 1])
+                    spec.set(values[(i % #values) + 1])
                     render()
                     refreshAll(panel)
                     return
                 end
             end
-            spec.set(spec.values[1])
+            spec.set(values[1])
             render()
             refreshAll(panel)
+        end)
+
+        attachHint(btn, heading .. " — " .. spec.label, spec.hint)
+        attachTitleHint(panel, title, heading .. " — " .. spec.label, spec.hint)
+        panel.salveRefresh[#panel.salveRefresh + 1] = render
+        render()
+        return btn
+    end
+
+    local leftButton = makeChoice(PAD_L, left)
+    local rightButton = makeChoice(206, right)
+    return leftButton, rightButton, y - 66
+end
+
+-- Two compact Blizzard dropdowns under one heading. Use this where the choice
+-- describes direction or mode rather than a simple on/off-style cycle: the
+-- standard chevron makes it obvious that the current word is selectable, and
+-- avoids relying on arrow glyphs that are absent from some WoW fonts.
+function Options.DropdownPair(panel, heading, y, left, right)
+    local groupTitle = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    groupTitle:SetPoint("TOPLEFT", PAD_L, y)
+    groupTitle:SetText(heading)
+
+    local function makeChoice(x, spec)
+        local title = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        title:SetPoint("TOPLEFT", x, y - 20)
+        title:SetText(spec.label)
+
+        local btn = CreateFrame("DropdownButton", nil, panel,
+            "WowStyle1DropdownTemplate")
+        btn:SetSize(150, 22)
+        btn:SetPoint("TOPLEFT", x, y - 34)
+        btn.salveTitle = title
+
+        local function choices()
+            local values = type(spec.values) == "function"
+                and spec.values() or spec.values
+            local labels = type(spec.labels) == "function"
+                and spec.labels() or spec.labels
+            return values, labels
+        end
+
+        local function render()
+            local values, labels = choices()
+            local current = spec.get()
+            local text = labels[1] or "—"
+            for i, value in ipairs(values) do
+                if value == current then
+                    text = labels[i]
+                    break
+                end
+            end
+            if btn.SetDefaultText then btn:SetDefaultText(text) end
+            if btn.SetText then btn:SetText(text) end
+        end
+
+        btn:SetupMenu(function(_, rootDescription)
+            local values, labels = choices()
+            for i, value in ipairs(values) do
+                rootDescription:CreateRadio(labels[i], function()
+                    return spec.get() == value
+                end, function()
+                    spec.set(value)
+                    render()
+                    refreshAll(panel)
+                end)
+            end
         end)
 
         attachHint(btn, heading .. " — " .. spec.label, spec.hint)
@@ -264,10 +337,16 @@ function Options.DynamicCycle(panel, label, hint, y, optionsFn, get, set)
         if #values == 0 then return end
         local cur = get()
         for i, v in ipairs(values) do
-            if v == cur then set(values[(i % #values) + 1]) render() return end
+            if v == cur then
+                set(values[(i % #values) + 1])
+                render()
+                refreshAll(panel)
+                return
+            end
         end
         set(values[1])
         render()
+        refreshAll(panel)
     end)
 
     btn.salveTitle = title
@@ -280,12 +359,11 @@ function Options.DynamicCycle(panel, label, hint, y, optionsFn, get, set)
     return btn, y - (ROW_GAP + 18)
 end
 
--- A dropdown that opens a panel of checkboxes rather than a single-choice menu:
--- a base mode at the top, then conditions that combine. Hand-built because
--- Blizzard's dropdown API churned in 12.0 and a custom panel is both stabler
--- and the only way to get the two-part layout.
+-- A native Blizzard dropdown that can mix mutually exclusive base modes with
+-- combinable conditions. Retail's current MenuDescription API supports both,
+-- so there is no reason for Salve to imitate the menu or draw its own chevron.
 function Options.MultiSelect(panel, label, hint, y, spec)
-    local btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    local btn = CreateFrame("DropdownButton", nil, panel, "WowStyle1DropdownTemplate")
     btn:SetSize(210, 22)
     btn:SetPoint("TOPLEFT", 16, y - 16)
 
@@ -293,95 +371,32 @@ function Options.MultiSelect(panel, label, hint, y, spec)
     title:SetPoint("BOTTOMLEFT", btn, "TOPLEFT", 2, 2)
     title:SetText(label)
 
-    local arrow = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    arrow:SetPoint("RIGHT", -6, 0)
-    arrow:SetText("|cffffd100v|r")
-
-    -- The drop-down body. Parented to UIParent at a high strata so it floats
-    -- over the settings panel rather than being clipped by it.
-    local menu = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-    menu:SetFrameStrata("FULLSCREEN_DIALOG")
-    menu:SetPoint("TOPLEFT", btn, "BOTTOMLEFT", 0, -2)
-    menu:SetWidth(230)
-    menu:EnableMouse(true)
-    menu:Hide()
-
-    local bg = menu:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints()
-    bg:SetColorTexture(0.05, 0.05, 0.06, 0.97)
-    for _, e in ipairs({ { "TOPLEFT", "TOPRIGHT", true }, { "BOTTOMLEFT", "BOTTOMRIGHT", true },
-                         { "TOPLEFT", "BOTTOMLEFT", false }, { "TOPRIGHT", "BOTTOMRIGHT", false } }) do
-        local t = menu:CreateTexture(nil, "OVERLAY")
-        t:SetColorTexture(0.35, 0.35, 0.38, 1)
-        t:SetPoint(e[1]); t:SetPoint(e[2])
-        if e[3] then t:SetHeight(1) else t:SetWidth(1) end
+    local function render()
+        local text = spec.summary()
+        if btn.SetDefaultText then btn:SetDefaultText(text) end
+        if btn.SetText then btn:SetText(text) end
     end
 
-    local rows, my = {}, -8
-
-    local function addRow(text, get, set, isHeading)
-        if isHeading then
-            local h = menu:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-            h:SetPoint("TOPLEFT", 10, my)
-            h:SetText(text)
-            h:SetTextColor(0.6, 0.6, 0.65)
-            my = my - 18
-            return
-        end
-
-        local row = CreateFrame("Button", nil, menu)
-        row:SetPoint("TOPLEFT", 6, my)
-        row:SetPoint("TOPRIGHT", -6, my)
-        row:SetHeight(22)
-
-        local box = row:CreateTexture(nil, "ARTWORK")
-        box:SetSize(14, 14)
-        box:SetPoint("LEFT", 6, 0)
-
-        local fs = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        fs:SetPoint("LEFT", box, "RIGHT", 8, 0)
-        fs:SetText(text)
-
-        local hl = row:CreateTexture(nil, "HIGHLIGHT")
-        hl:SetAllPoints()
-        hl:SetColorTexture(1, 1, 1, 0.07)
-
-        row.Render = function()
-            if get() then
-                box:SetColorTexture(0.28, 0.80, 0.62, 1)
+    btn:SetupMenu(function(_, rootDescription)
+        for _, item in ipairs(spec.items) do
+            if item.heading then
+                rootDescription:CreateDivider()
+                rootDescription:CreateTitle(item.label)
+            elseif item.radio then
+                rootDescription:CreateRadio(item.label, item.get, function()
+                    item.set(true)
+                    refreshAll(panel)
+                    render()
+                end)
             else
-                box:SetColorTexture(0.16, 0.16, 0.18, 1)
+                rootDescription:CreateCheckbox(item.label, item.get, function()
+                    item.set(not item.get())
+                    refreshAll(panel)
+                    render()
+                end)
             end
         end
-
-        row:SetScript("OnClick", function()
-            set(not get())
-            for _, r in ipairs(rows) do r.Render() end
-            if panel.salveRefreshAll then panel.salveRefreshAll() end
-        end)
-
-        rows[#rows + 1] = row
-        my = my - 22
-    end
-
-    for _, item in ipairs(spec.items) do
-        addRow(item.label, item.get, item.set, item.heading)
-    end
-    menu:SetHeight(-my + 8)
-
-    local function render()
-        btn:SetText(spec.summary())
-        for _, r in ipairs(rows) do r.Render() end
-    end
-
-    btn:SetScript("OnClick", function()
-        menu:SetShown(not menu:IsShown())
-        render()
     end)
-
-    -- Close when the settings page goes away, or it would float over whatever
-    -- the player opens next.
-    panel:HookScript("OnHide", function() menu:Hide() end)
 
     btn.salveTitle = title
     attachHint(btn, label, hint)
@@ -453,17 +468,19 @@ function Options.NewPage(spec, build)
 end
 
 function Options.BuildAll()
-    for _, page in ipairs(Options.queue) do
-        Options.CreatePage(page)
-    end
+    Options.CreateWindow()
+    Options.CreateLauncher()
     Options.queue = {}
 end
 
--- Builds a canvas panel and registers it. The FIRST page registered becomes the
--- parent category; the rest become subcategories under it.
-function Options.CreatePage(spec)
+-- Builds one content page inside Salve's movable window. Blizzard Settings
+-- remains only as a familiar launcher; owning the actual window lets Salve be
+-- positioned beside the frames it is configuring.
+function Options.CreatePage(spec, parent)
     local name, build = spec.name, spec.build
-    local panel = CreateFrame("Frame", "SalveOptions" .. name:gsub("%s", ""))
+    local panel = CreateFrame("Frame", "SalveOptions" .. name:gsub("%s", ""), parent)
+    panel:SetAllPoints(parent)
+    panel:Hide()
     panel.name = name
     panel.salveRefresh = {}
 
@@ -494,6 +511,7 @@ function Options.CreatePage(spec)
     local content = CreateFrame("Frame", nil, scroll)
     content:SetSize(560, 1)
     scroll:SetScrollChild(content)
+    content.salveOwner = panel
     scroll:EnableMouseWheel(true)
     scroll:SetScript("OnMouseWheel", function(self, delta)
         local range = self:GetVerticalScrollRange() or 0
@@ -529,47 +547,156 @@ function Options.CreatePage(spec)
     local bottomY = build(content, -8)
     content.salveSetBottom(bottomY or -600)
 
-    -- Blizzard shows a canvas panel without telling it to refresh, so pull the
-    -- saved values back in on every open. Otherwise a value changed by a slash
-    -- command shows stale here.
+    -- Pull saved values back in on every page visit. Values may also change
+    -- through slash commands, the minimap menu or another page.
     panel:SetScript("OnShow", function(self)
         self.salveRefreshAll()
     end)
 
-    if Settings and Settings.RegisterCanvasLayoutCategory then
-        if not Options.rootCategory then
-            local cat = Settings.RegisterCanvasLayoutCategory(panel, "Salve", "Salve")
-            -- ☠ The ID is what OpenToCategory needs; the category object alone
-            --   is not enough on every client build.
-            cat.ID = cat.ID or "Salve"
-            Settings.RegisterAddOnCategory(cat)
-            Options.rootCategory = cat
-            Options.rootID = cat:GetID() or cat.ID
-        else
-            local sub = Settings.RegisterCanvasLayoutSubcategory(
-                Options.rootCategory, panel, name)
-            Options.categories[name] = sub
-        end
-    elseif InterfaceOptions_AddCategory then
-        -- Pre-Settings clients: flat list, one entry per page.
-        if Options.rootCategory then panel.parent = "Salve" end
-        InterfaceOptions_AddCategory(panel)
-        Options.rootCategory = Options.rootCategory or panel
-    end
-
     return panel
 end
 
-function ns.OpenOptions()
-    if Settings and Settings.OpenToCategory and ns.Options.rootID then
-        -- ☠ Called twice on purpose. A known Blizzard quirk: the first call
-        --   opens the panel, the second actually selects the category.
-        Settings.OpenToCategory(ns.Options.rootID)
-        Settings.OpenToCategory(ns.Options.rootID)
-    elseif InterfaceOptionsFrame_OpenToCategory and ns.Options.rootCategory then
-        InterfaceOptionsFrame_OpenToCategory(ns.Options.rootCategory)
-        InterfaceOptionsFrame_OpenToCategory(ns.Options.rootCategory)
-    else
-        ns.Print("could not open the options panel on this client")
+function Options.ShowPage(name)
+    if not Options.window then return end
+    name = name or Options.selectedPage or "Salve"
+    if not Options.pages[name] then name = "Salve" end
+    Options.selectedPage = name
+    for pageName, page in pairs(Options.pages) do
+        page:SetShown(pageName == name)
+        local button = Options.pageButtons[pageName]
+        if button then button:SetEnabled(pageName ~= name) end
     end
+end
+
+function Options.CreateWindow()
+    if Options.window then return Options.window end
+
+    local frame = CreateFrame("Frame", "SalveSettingsFrame", UIParent,
+        "BackdropTemplate")
+    frame:SetSize(790, 620)
+    frame:SetFrameStrata("DIALOG")
+    frame:SetClampedToScreen(true)
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 12,
+    })
+    frame:SetBackdropColor(0.035, 0.035, 0.04, 0.98)
+    frame:SetBackdropBorderColor(0.58, 0.43, 0.22, 1)
+
+    local saved = ns.db.settingsPoint or { "CENTER", "CENTER", 0, 0 }
+    frame:SetPoint(saved[1], UIParent, saved[2], saved[3], saved[4])
+
+    local titleBar = CreateFrame("Button", nil, frame)
+    titleBar:SetPoint("TOPLEFT", 8, -8)
+    titleBar:SetPoint("TOPRIGHT", -34, -8)
+    titleBar:SetHeight(30)
+    titleBar:RegisterForDrag("LeftButton")
+    titleBar:SetScript("OnDragStart", function()
+        frame:StartMoving()
+    end)
+    titleBar:SetScript("OnDragStop", function()
+        frame:StopMovingOrSizing()
+        local point, _, relativePoint, x, y = frame:GetPoint()
+        ns.db.settingsPoint = { point, relativePoint, x, y }
+    end)
+
+    local icon = titleBar:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(28, 28)
+    icon:SetPoint("LEFT", 8, 0)
+    icon:SetTexture("Interface\\AddOns\\Salve\\Textures\\SalveTransparent")
+    local title = titleBar:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("LEFT", icon, "RIGHT", 8, 0)
+    title:SetText("Salve settings")
+
+    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", -5, -5)
+    close:SetScript("OnClick", function() frame:Hide() end)
+
+    local divider = frame:CreateTexture(nil, "ARTWORK")
+    divider:SetColorTexture(0.3, 0.3, 0.33, 0.8)
+    divider:SetPoint("TOPLEFT", 160, -44)
+    divider:SetPoint("BOTTOMLEFT", 160, 12)
+    divider:SetWidth(1)
+
+    local host = CreateFrame("Frame", nil, frame)
+    host:SetPoint("TOPLEFT", 170, -44)
+    host:SetPoint("BOTTOMRIGHT", -10, 10)
+
+    Options.window = frame
+    Options.host = host
+    Options.pages = {}
+    Options.pageButtons = {}
+
+    for index, spec in ipairs(Options.queue) do
+        local page = Options.CreatePage(spec, host)
+        Options.pages[spec.name] = page
+
+        local button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+        button:SetSize(136, 28)
+        button:SetPoint("TOPLEFT", 14, -50 - (index - 1) * 34)
+        button:SetText(spec.title or spec.name)
+        button:SetScript("OnClick", function() Options.ShowPage(spec.name) end)
+        Options.pageButtons[spec.name] = button
+    end
+
+    frame:SetScript("OnShow", function()
+        Options.ShowPage(Options.selectedPage)
+    end)
+    frame:SetScript("OnHide", function()
+        if ns.Preview then ns.Preview:Stop() end
+    end)
+    frame:Hide()
+
+    if UISpecialFrames then
+        UISpecialFrames[#UISpecialFrames + 1] = "SalveSettingsFrame"
+    end
+    return frame
+end
+
+function Options.CreateLauncher()
+    if Options.rootCategory then return end
+    local panel = CreateFrame("Frame", "SalveOptionsLauncher")
+    panel.name = "Salve"
+
+    local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", 16, -16)
+    title:SetText("Salve")
+
+    local open = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    open:SetSize(210, 28)
+    open:SetPoint("TOPLEFT", 16, -54)
+    open:SetText("Open Salve settings")
+    open:SetScript("OnClick", function() ns.OpenOptions() end)
+
+    local build = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    build:SetPoint("TOPLEFT", 16, -98)
+    build:SetText("Version " .. tostring(ns.VERSION or "unknown")
+        .. "  •  " .. tostring(ns.REVISION or "unknown"))
+
+    if Settings and Settings.RegisterCanvasLayoutCategory then
+        local category = Settings.RegisterCanvasLayoutCategory(panel, "Salve", "Salve")
+        category.ID = category.ID or "Salve"
+        Settings.RegisterAddOnCategory(category)
+        Options.rootCategory = category
+        Options.rootID = category:GetID() or category.ID
+    elseif InterfaceOptions_AddCategory then
+        InterfaceOptions_AddCategory(panel)
+        Options.rootCategory = panel
+    end
+end
+
+function ns.OpenOptions(pageName)
+    if not ns.Options.window then
+        ns.Print("settings are not ready yet")
+        return
+    end
+    if SettingsPanel and SettingsPanel.IsShown and SettingsPanel:IsShown() then
+        if HideUIPanel then HideUIPanel(SettingsPanel) else SettingsPanel:Hide() end
+    end
+    ns.Options.ShowPage(pageName)
+    ns.Options.window:Show()
+    ns.Options.window:Raise()
 end

@@ -1,6 +1,20 @@
 local addonName, ns = ...
 local O = ns.Options
 
+-- Pure layout calculation shared by the live page and regression tests. Rows
+-- are counted from current game state, never from a guessed maximum.
+function O.DispelLayout(knownTop, dispelCount, escapeCount)
+    local knownRows = math.max(1, dispelCount or 0)
+    local escapeRows = math.max(1, escapeCount or 0)
+    local layout = {}
+    layout.knownNoteY = knownTop - knownRows * 32 - 2
+    layout.escapeHeaderY = knownTop - knownRows * 32 - 28
+    layout.escapeNoteY = layout.escapeHeaderY - 28
+    layout.escapeTop = layout.escapeHeaderY - 74
+    layout.buttonsTop = layout.escapeTop - escapeRows * 32 - 12
+    return layout
+end
+
 -- ── Key capture prompt ─────────────────────────────────────────────────────
 -- Click a binding's button, then press whatever you want it to be. Built once
 -- and reused; shared by every row.
@@ -72,257 +86,169 @@ end
 
 O.NewPage({
     name = "Dispels",
-    description = "What each click does, and when Salve makes a sound.",
+    description = "Your dispels, movement-removal bindings, and alerts.",
 }, function(panel, y)
     _, y = O.Header(panel, "Your dispels", y)
 
     local knownTop = y
     local knownRows = {}
     local knownNote = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-    knownNote:SetPoint("TOPLEFT", 16, knownTop - 86)
-    knownNote:SetText("Detected from your current specialisation.")
-    y = y - 110
+    knownNote:SetText("Detected from your current specialisation. Click a binding to change it.")
 
-    _, y = O.Header(panel, "Getting out of roots and snares", y)
+    local escapeHeader
+    escapeHeader, y = O.Header(panel, "Your snare removals — EXPERIMENTAL", y)
 
     local escapeNote = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-    escapeNote:SetPoint("TOPLEFT", 16, y)
     escapeNote:SetWidth(520)
     escapeNote:SetJustifyH("LEFT")
     escapeNote:SetText("Roots and snares carry no dispel school, so the normal filter "
-        .. "never sees them. Tick the spells you actually count as an escape. "
-        .. "Party-wide ones light anyone's cell; personal ones light only yours.\n"
-        .. "With learning enabled, Salve captures the effects automatically while you play.")
-    y = y - 46
-
+        .. "never sees them. Enable only spells you count as a removal, then bind "
+        .. "them here. Party-wide spells light anyone's cell; personal spells light only yours.")
     local escapeRows = {}
+    local escapeEmpty = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     local escapeTop = y
-
-    local function redrawEscapes()
-        for _, r in ipairs(escapeRows) do r:Hide() end
-        local list = ns.knownEscapes or {}
-
-        for i, spell in ipairs(list) do
-            local row = escapeRows[i]
-            if not row then
-                row = CreateFrame("Frame", nil, panel)
-                row:SetSize(500, 26)
-                row.check = O.CheckButton(row)
-                row.check:SetPoint("LEFT", 14, 0)
-                row.icon = row:CreateTexture(nil, "ARTWORK")
-                row.icon:SetSize(20, 20)
-                row.icon:SetPoint("LEFT", row.check, "RIGHT", 4, 0)
-                row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                row.text = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-                row.text:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
-                row.text:SetWidth(430)
-                row.text:SetJustifyH("LEFT")
-                escapeRows[i] = row
-            end
-
-            row:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, escapeTop - (i - 1) * 28)
-            row.icon:SetTexture(C_Spell and C_Spell.GetSpellTexture
-                and C_Spell.GetSpellTexture(spell.id)
-                or "Interface\\Icons\\INV_Misc_QuestionMark")
-
-            local scope = spell.scope == ns.ESCAPE_ALLY and "|cff66ddaaparty-wide|r"
-                or "|cff888888personal|r"
-            row.text:SetText(("%s  %s  |cff999999%s|r")
-                :format(spell.name, scope, spell.note or ""))
-
-            row.check:SetChecked(ns.db.escapes[spell.id] and true or false)
-            row.check:SetScript("OnClick", function(self)
-                ns.db.escapes[spell.id] = self:GetChecked() and true or nil
-                -- Curated movement IDs live in the instance data addon. Load
-                -- it as soon as an escape makes that overlay relevant.
-                if ns.Sound then ns.Sound:ActivateCurrentInstance() end
-                ns.RequestRebuildSoon(0.05)
-            end)
-            row:Show()
-        end
-
-        if #list == 0 then
-            local row = escapeRows[1]
-            if not row then
-                row = CreateFrame("Frame", nil, panel)
-                row:SetSize(500, 26)
-                row.text = row:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-                row.text:SetPoint("LEFT", 16, 0)
-                escapeRows[1] = row
-            end
-            row:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, escapeTop)
-            if row.check then row.check:Hide() end
-            if row.icon then row.icon:Hide() end
-            row.text:SetText("No known escape on this specialisation.")
-            row:Show()
-        end
-    end
-
-    panel.salveRefresh[#panel.salveRefresh + 1] = redrawEscapes
-    y = escapeTop - math.max(1, 3) * 28 - 12
-
-    _, y = O.Header(panel, "Click bindings", y)
-
-    local rowsTop = y
-    local rows = {}
+    local reflow
+    local redrawAll
     local pageBottom
 
-    -- Forward declaration: redraw calls this, and it needs the controls that are
-    -- created below the list.
-    local reflow
+    local restore = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    restore:SetSize(180, 22)
+    restore:SetText("Restore binding defaults")
+    O.AttachHint(restore, "Restore binding defaults",
+        "Bind the primary dispel to left click and a distinct secondary dispel to right click.")
+    restore:SetScript("OnClick", function()
+        ns.db.bindings = {}
+        ns.db.bindingsCustom = false
+        ns.RequestRebuildSoon(0.05)
+        if redrawAll then redrawAll() end
+    end)
 
-    -- Rebuilt on every open and after every edit: both the binding list and the
-    -- spells it resolves to can change underneath this page.
-    local function redraw()
+    local function createActionRow(storage, index, hasCheckbox)
+        local row = storage[index]
+        if row then return row end
+        row = CreateFrame("Frame", nil, panel)
+        row:SetSize(540, 30)
+
+        if hasCheckbox then
+            row.check = O.CheckButton(row)
+            row.check:SetPoint("LEFT", 14, 0)
+        end
+
+        row.icon = row:CreateTexture(nil, "ARTWORK")
+        row.icon:SetSize(22, 22)
+        row.icon:SetPoint("LEFT", hasCheckbox and row.check or row, hasCheckbox and "RIGHT" or "LEFT",
+            hasCheckbox and 4 or 16, 0)
+        row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+
+        row.text = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        row.text:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
+        row.text:SetWidth(hasCheckbox and 292 or 306)
+        row.text:SetJustifyH("LEFT")
+
+        row.bind = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+        row.bind:SetSize(hasCheckbox and 124 or 140, 22)
+        row.bind:SetPoint("RIGHT", row, "RIGHT", -34, 0)
+        row.clear = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+        row.clear:SetSize(24, 22)
+        row.clear:SetPoint("LEFT", row.bind, "RIGHT", 6, 0)
+        row.clear:SetText("x")
+        O.AttachHint(row.bind, "Change binding",
+            "Press a mouse button. Hold Shift, Ctrl or Alt to include it.")
+        O.AttachHint(row.clear, "Clear binding", "Leave this spell unbound.")
+
+        storage[index] = row
+        return row
+    end
+
+    local function configureBinding(row, spellID, enabled)
+        local keys = ns.Bindings:KeysForSpell(spellID)
+        row.bind:Show()
+        if enabled then
+            row.bind:SetText(keys[1] and ns.Bindings:Label(keys[1]) or "Unbound")
+        else
+            row.bind:SetText("Enable first")
+        end
+        O.SetEnabled(row.bind, enabled)
+        row.clear:SetShown(enabled and #keys > 0)
+
+        row.bind:SetScript("OnClick", function()
+            if not enabled then return end
+            promptForKey(function(key)
+                local ok, message = ns.Bindings:SetSpellBinding(spellID, key)
+                if not ok then ns.Print(message) return end
+                ns.RequestRebuildSoon(0.05)
+                redrawAll()
+            end)
+        end)
+        row.clear:SetScript("OnClick", function()
+            ns.Bindings:ClearSpellBinding(spellID)
+            ns.RequestRebuildSoon(0.05)
+            redrawAll()
+        end)
+    end
+
+    redrawAll = function()
         for _, row in ipairs(knownRows) do row:Hide() end
-        for i, spell in ipairs(ns.knownDispels or {}) do
-            local row = knownRows[i]
-            if not row then
-                row = CreateFrame("Frame", nil, panel)
-                row:SetSize(500, 26)
-                row.icon = row:CreateTexture(nil, "ARTWORK")
-                row.icon:SetSize(22, 22)
-                row.icon:SetPoint("LEFT", 16, 0)
-                row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                row.text = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-                row.text:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
-                row.text:SetJustifyH("LEFT")
-                knownRows[i] = row
-            end
-            row:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, knownTop - (i - 1) * 28)
+        local dispels = ns.knownDispels or {}
+        for i, spell in ipairs(dispels) do
+            local row = createActionRow(knownRows, i, false)
+            row:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, knownTop - (i - 1) * 32)
             row.icon:SetTexture(C_Spell and C_Spell.GetSpellTexture
                 and C_Spell.GetSpellTexture(spell.id)
                 or "Interface\\Icons\\INV_Misc_QuestionMark")
             row.icon:Show()
-            row.text:ClearAllPoints()
-            row.text:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
-            row.text:SetText(spell.name .. "  |cff999999"
-                .. ns.CuresText(spell.cures) .. "|r")
+            row.text:SetText(spell.name .. "  |cff999999" .. ns.CuresText(spell.cures) .. "|r")
+            configureBinding(row, spell.id, true)
             row:Show()
         end
-        if #(ns.knownDispels or {}) == 0 then
-            local row = knownRows[1]
-            if not row then
-                row = CreateFrame("Frame", nil, panel)
-                row:SetSize(500, 26)
-                row.icon = row:CreateTexture(nil, "ARTWORK")
-                row.icon:SetSize(22, 22)
-                row.icon:SetPoint("LEFT", 16, 0)
-                row.text = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-                row.text:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
-                knownRows[1] = row
-            end
+        if #dispels == 0 then
+            local row = createActionRow(knownRows, 1, false)
             row:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, knownTop)
             row.icon:Hide()
-            row.text:ClearAllPoints()
-            row.text:SetPoint("LEFT", 16, 0)
             row.text:SetText("|cffff4444No dispel on this specialisation.|r")
+            row.bind:Hide()
+            row.clear:Hide()
             row:Show()
         end
 
-        for _, r in ipairs(rows) do r:Hide() end
-
-        local list = ns.Bindings:List()
-        for i, entry in ipairs(list) do
-            local row = rows[i]
-            if not row then
-                row = CreateFrame("Frame", nil, panel)
-                row:SetSize(500, 30)
-
-                row.icon = row:CreateTexture(nil, "ARTWORK")
-                row.icon:SetSize(24, 24)
-                row.icon:SetPoint("LEFT", 16, 0)
-                row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-
-                row.spell = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-                row.spell:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
-                row.spell:SetWidth(210)
-                row.spell:SetJustifyH("LEFT")
-
-                row.bind = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-                row.bind:SetSize(150, 22)
-                row.bind:SetPoint("LEFT", row.spell, "RIGHT", 8, 0)
-
-                row.remove = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-                row.remove:SetSize(24, 22)
-                row.remove:SetPoint("LEFT", row.bind, "RIGHT", 6, 0)
-                row.remove:SetText("x")
-                O.AttachHint(row.bind, "Change binding",
-                    "Press a mouse button. Hold Shift, Ctrl or Alt to include it.")
-                O.AttachHint(row.remove, "Remove binding", "Remove this mouse binding.")
-
-                rows[i] = row
-            end
-
-            row:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, rowsTop - (i - 1) * 32)
-            row:Show()
-
-            local what, icon = ns.Bindings:Describe(entry)
-            row.icon:SetTexture(icon or "Interface\\Icons\\INV_Misc_QuestionMark")
-            row.spell:SetText(what:gsub(" %(automatic%)$", " |cff888888— automatic|r"))
-            row.bind:SetText(ns.Bindings:Label(entry.key))
-
-            row.bind:SetScript("OnClick", function()
-                promptForKey(function(key)
-                    -- Materialise the defaults before editing, or the first edit
-                    -- would be written into the shared default table.
-                    local list = ns.Bindings:Materialise()
-                    for otherIndex, entry in ipairs(list) do
-                        if otherIndex ~= i and entry.key == key then
-                            ns.Print(ns.Bindings:Label(key) .. " is already assigned")
-                            return
-                        end
-                    end
-                    list[i].key = key
-                    ns.RequestRebuildSoon(0.05)
-                    redraw()
-                end)
-            end)
-            row.remove:SetScript("OnClick", function()
-                table.remove(ns.Bindings:Materialise(), i)
+        for _, row in ipairs(escapeRows) do row:Hide() end
+        escapeEmpty:Hide()
+        local escapes = ns.knownEscapes or {}
+        for i, spell in ipairs(escapes) do
+            local row = createActionRow(escapeRows, i, true)
+            local spellID = spell.id
+            local enabled = ns.db.escapes[spellID] and true or false
+            row:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, escapeTop - (i - 1) * 32)
+            row.icon:SetTexture(C_Spell and C_Spell.GetSpellTexture
+                and C_Spell.GetSpellTexture(spellID)
+                or "Interface\\Icons\\INV_Misc_QuestionMark")
+            local scope = spell.scope == ns.ESCAPE_ALLY and "|cff66ddaaparty-wide|r"
+                or "|cff888888personal|r"
+            row.text:SetText(spell.name .. "  " .. scope)
+            O.AttachHint(row, spell.name, spell.note or "Movement-removal candidate.")
+            row.check:SetChecked(enabled)
+            row.check:SetScript("OnClick", function(self)
+                local active = self:GetChecked() and true or false
+                ns.db.escapes[spellID] = active and true or nil
+                if not active then ns.Bindings:ClearSpellBinding(spellID) end
+                if active and ns.Sound then ns.Sound:ActivateCurrentInstance() end
                 ns.RequestRebuildSoon(0.05)
-                redraw()
+                redrawAll()
             end)
+            configureBinding(row, spellID, enabled)
+            row:Show()
         end
-
-        -- Push the Add button and diagnostics below however many rows there are.
-        if reflow then reflow(#list) end
+        if #escapes == 0 then
+            escapeEmpty:SetText("No known snare removal on this specialisation.")
+            escapeEmpty:Show()
+        end
+        if reflow then reflow() end
     end
 
-    local add = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    add:SetSize(150, 22)
-    add:SetText("Add a binding")
-    O.AttachHint(add, "Add a binding", "Add another mouse click.")
-    add:SetScript("OnClick", function()
-        promptForKey(function(key)
-            local list = ns.Bindings:Materialise()
-            for _, entry in ipairs(list) do
-                if entry.key == key then
-                    ns.Print(ns.Bindings:Label(key) .. " is already assigned")
-                    return
-                end
-            end
-            list[#list + 1] = { key = key, role = ns.ROLE_PRIMARY }
-            ns.RequestRebuildSoon(0.05)
-            redraw()
-        end)
-    end)
-
-    local restore = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    restore:SetSize(150, 22)
-    restore:SetText("Restore defaults")
-    O.AttachHint(restore, "Restore defaults",
-        "Put the best detected dispel on left click, plus right click when needed.")
-    restore:SetScript("OnClick", function()
-        ns.db.bindings = {}
-        ns.RequestRebuildSoon(0.05)
-        redraw()
-    end)
-
-    -- Everything below the binding list lives in one footer, so an arbitrarily
-    -- long custom binding list moves the complete alert section.
+    -- Everything below the action rows lives in one footer so detected class
+    -- spells move the complete alert section together.
     local footer = CreateFrame("Frame", nil, panel)
-    footer:SetSize(560, 205)
+    footer:SetSize(560, 1)
     footer.salveRefresh = panel.salveRefresh
     footer.salveRefreshAll = panel.salveRefreshAll
 
@@ -334,45 +260,88 @@ O.NewPage({
         function() return ns.db.soundEnabled end,
         function(v) ns.Set("soundEnabled", v) end)
 
+    local alertDetails = CreateFrame("Frame", nil, footer)
+    alertDetails:SetSize(560, 1)
+    alertDetails:SetPoint("TOPLEFT", footer, "TOPLEFT", 0, fy)
+    alertDetails.salveRefresh = panel.salveRefresh
+    alertDetails.salveRefreshAll = panel.salveRefreshAll
+
     local channel
-    channel, fy = O.Cycle(footer, "Sound channel",
-        "Master is audible even when game sound effects are muted.", fy,
+    local alertY = 0
+    channel, alertY = O.Cycle(alertDetails, "Sound channel",
+        "Master is audible even when game sound effects are muted.", alertY,
         { "Master", "SFX", "Dialog" },
         { "Master", "Sound effects", "Dialog" },
         function() return ns.db.soundChannel end,
         function(v) ns.Set("soundChannel", v) end)
 
-    local test = CreateFrame("Button", nil, footer, "UIPanelButtonTemplate")
+    local test = CreateFrame("Button", nil, alertDetails, "UIPanelButtonTemplate")
     test:SetSize(70, 22)
     test:SetPoint("LEFT", channel, "RIGHT", 18, 0)
     test:SetText("Test")
     O.AttachHint(test, "Test sound", "Play the selected alert now.")
     test:SetScript("OnClick", function() ns.Sound:Test() end)
 
-    _, fy = O.PageReset(footer, fy - 8, function()
-        ns.Set("bindings", {})
+    local alertDetailsHeight = -alertY
+    local resetFrame = CreateFrame("Frame", nil, footer)
+    resetFrame:SetSize(560, 1)
+    resetFrame.salveRefresh = panel.salveRefresh
+    resetFrame.salveRefreshAll = panel.salveRefreshAll
+    local _, resetY = O.PageReset(resetFrame, -4, function()
+        ns.db.bindings = {}
+        ns.db.bindingsCustom = false
+        ns.RequestRebuildSoon(0.05)
+        ns.Set("escapes", {})
         ns.Set("soundEnabled", ns.defaults.soundEnabled)
         ns.Set("soundChannel", ns.defaults.soundChannel)
         ns.Set("soundFile", ns.defaults.soundFile)
-        redraw()
+        redrawAll()
     end)
+    local resetHeight = -resetY
 
-    function reflow(rowCount)  -- luacheck: ignore (declared local above)
-        local bottom = rowsTop - rowCount * 32 - 8
-        add:ClearAllPoints()
-        add:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, bottom)
+    function reflow()  -- luacheck: ignore (declared local above)
+        local layout = O.DispelLayout(knownTop, #(ns.knownDispels or {}),
+            #(ns.knownEscapes or {}))
+
+        knownNote:ClearAllPoints()
+        knownNote:SetPoint("TOPLEFT", panel, "TOPLEFT", 16,
+            layout.knownNoteY)
+
+        escapeHeader:ClearAllPoints()
+        escapeHeader:SetPoint("TOPLEFT", panel, "TOPLEFT", 16,
+            layout.escapeHeaderY)
+        escapeNote:ClearAllPoints()
+        escapeNote:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, layout.escapeNoteY)
+        escapeTop = layout.escapeTop
+
+        for index, row in ipairs(escapeRows) do
+            row:ClearAllPoints()
+            row:SetPoint("TOPLEFT", panel, "TOPLEFT", 0,
+                escapeTop - (index - 1) * 32)
+        end
+        escapeEmpty:ClearAllPoints()
+        escapeEmpty:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, escapeTop)
+
+        local bottom = layout.buttonsTop
         restore:ClearAllPoints()
-        restore:SetPoint("LEFT", add, "RIGHT", 8, 0)
+        restore:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, bottom)
 
         footer:ClearAllPoints()
         footer:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, bottom - 40)
-        pageBottom = bottom - 255
+        alertDetails:SetShown(ns.db.soundEnabled)
+        local footerY = fy
+        if ns.db.soundEnabled then footerY = footerY - alertDetailsHeight end
+        resetFrame:ClearAllPoints()
+        resetFrame:SetPoint("TOPLEFT", footer, "TOPLEFT", 0, footerY - 8)
+        local footerHeight = -footerY + 8 + resetHeight
+        footer:SetHeight(footerHeight)
+        pageBottom = bottom - 40 - footerHeight
         if panel.salveSetBottom then panel.salveSetBottom(pageBottom) end
     end
 
-    redraw()
+    redrawAll()
 
-    panel.salveRefresh[#panel.salveRefresh + 1] = redraw
-    ns.Options.RefreshDispel = redraw
+    panel.salveRefresh[#panel.salveRefresh + 1] = redrawAll
+    ns.Options.RefreshDispel = redrawAll
     return pageBottom
 end)

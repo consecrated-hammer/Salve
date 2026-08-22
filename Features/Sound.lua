@@ -229,8 +229,7 @@ end
 -- ── Active-instance selection and registration ────────────────────────────
 
 function Sound:NeedsData()
-    return ns.db and (ns.db.soundEnabled or ns.db.learnMode
-        or (ns.Escape and ns.Escape.Active and ns.Escape:Active()))
+    return ns.db ~= nil
 end
 
 function Sound:ActivateCurrentInstance()
@@ -244,10 +243,10 @@ function Sound:ActivateCurrentInstance()
     self.activeScopeKey, self.activeScopeName, self.activeScopeType, self.activeScopeID =
         currentScope(self.activeInstanceName, self.activeInstanceID)
 
-    -- ☠ Changing zone RE-SCOPES learning; it does not switch it off. Turning
-    --   it off here defeated the whole point for movement data, which only
+    -- ☠ Changing zone RE-SCOPES learning; it never switches it off. Doing so
+    --   defeated the whole point for movement data, which only
     --   accumulates by running dungeons.
-    if ns.db.learnMode and self.learningScopeKey ~= self.activeScopeKey then
+    if self.learningScopeKey ~= self.activeScopeKey then
         local oldScope = self.learningScopeKey
         self.learningScopeKey = self.activeScopeKey
         if oldScope and self.activeScopeName then
@@ -412,11 +411,6 @@ function Sound:FlushPending()
 end
 
 function Sound:FlushPendingLearning()
-    if not (ns.db and ns.db.learnMode) then
-        self.pendingLearnUnits = {}
-        return
-    end
-
     local pending = self.pendingLearnUnits
     self.pendingLearnUnits = {}
     for unit in pairs(pending) do
@@ -459,7 +453,7 @@ function Sound:Test(quietSuccess)
     return false
 end
 
--- ── Opt-in learning ───────────────────────────────────────────────────────
+-- ── Always-on learning ────────────────────────────────────────────────────
 
 function Sound:UpdateLearnRegistration()
     -- Stop using the main event frame for aura traffic. A dedicated frame per
@@ -470,8 +464,6 @@ function Sound:UpdateLearnRegistration()
         listener:UnregisterEvent("UNIT_AURA")
     end
     self.learnUnits = {}
-    if not (ns.db and ns.db.learnMode) then return end
-
     local units = self:CurrentUnitTokens()
     for index, unit in ipairs(units) do
         self.learnUnits[unit] = true
@@ -491,29 +483,21 @@ function Sound:UpdateLearnRegistration()
     end
 end
 
-function Sound:SetLearning(on, quiet)
-    ns.db.learnMode = on and true or false
-    if ns.db.learnMode then
-        self.activeInstanceName, self.activeInstanceID = currentInstance()
-        self.activeScopeKey, self.activeScopeName, self.activeScopeType, self.activeScopeID =
-            currentScope(self.activeInstanceName, self.activeInstanceID)
-        self.learningScopeKey = self.activeScopeKey
-    else
-        self.learningScopeKey = nil
-        self.pendingLearnUnits = {}
-    end
+function Sound:SetLearning(_, quiet)
+    -- Compatibility entry point for old slash commands and callers. Learning
+    -- is no longer a preference and cannot be switched off.
+    ns.db.learnMode = true
+    self.activeInstanceName, self.activeInstanceID = currentInstance()
+    self.activeScopeKey, self.activeScopeName, self.activeScopeType, self.activeScopeID =
+        currentScope(self.activeInstanceName, self.activeInstanceID)
+    self.learningScopeKey = self.activeScopeKey
     self:ActivateCurrentInstance()
     if quiet then return end
-    if ns.db.learnMode then
-        ns.Print("learn mode ON for " .. self.activeScopeName
-            .. " — stays on across zones and reloads; use /salve learn off to stop it")
-    else
-        ns.Print("learn mode off")
-    end
+    ns.Print("aura learning is always on for " .. self.activeScopeName)
 end
 
 function Sound:Learn(unit)
-    if not (ns.db and ns.db.learnMode and self.learnUnits and self.learnUnits[unit]) then return end
+    if not (ns.db and self.learnUnits and self.learnUnits[unit]) then return end
     if not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then return end
 
     -- Midnight makes aura lookups secret while the observed unit is in combat.
@@ -530,7 +514,7 @@ function Sound:Learn(unit)
     for index = 1, 40 do
         -- The combat checks cover the known restriction. Keep the API call
         -- protected too: a future secret-value rule or unusual unit state must
-        -- never turn optional learning into a user-visible Lua error.
+        -- never turn learning into a user-visible Lua error.
         local ok, result = pcall(C_UnitAuras.GetAuraDataByIndex,
             unit, index, ns.DISPELLABLE_FILTER)
         if not ok then
@@ -582,7 +566,7 @@ function Sound:DumpLearned()
     table.sort(scopeKeys)
 
     if #scopeKeys == 0 then
-        ns.Print("nothing learned — use |cffffd100/salve learn on|r in content with readable auras")
+        ns.Print("nothing learned yet — keep playing content with readable auras")
         return
     end
 
@@ -611,7 +595,7 @@ end
 function Sound:StatusText()
     local loader
     if not self:NeedsData() then
-        loader = "data dormant (sound and learning are off)"
+        loader = "no active data"
     else
         loader = self.activeModule or "no matching data module"
     end
@@ -624,13 +608,13 @@ end
 function Sound:Report()
     ns.Print("sound report")
     ns.Print("  enabled: " .. (ns.db.soundEnabled and "yes" or "no"))
-    ns.Print("  learning: " .. (ns.db.learnMode and "yes" or "no"))
+    ns.Print("  learning: always on")
     ns.Print("  instance: " .. tostring(self.activeInstanceName) .. " ("
         .. tostring(self.activeInstanceID) .. ")")
     ns.Print("  learning scope: " .. tostring(self.activeScopeName) .. " ("
         .. tostring(self.activeScopeKey) .. ")")
     local moduleStatus = self.activeModule or "none"
-    if not self:NeedsData() then moduleStatus = "dormant (sound and learning are off)" end
+    if not self:NeedsData() then moduleStatus = "no active data" end
     ns.Print("  module: " .. moduleStatus)
     ns.Print("  cures: " .. ns.CuresText(self:CurrentCures()))
     ns.Print("  actionable IDs: " .. tostring(#self:ActiveRecords()))
