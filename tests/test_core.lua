@@ -12,7 +12,7 @@ InCombatLockdown = function() return combatLocked end
 IsEncounterInProgress = function() return encounterActive end
 C_AddOns = {
     GetAddOnMetadata = function(_, key)
-        return key == "Version" and "1.4.1" or nil
+        return key == "Version" and "1.4.2" or nil
     end,
 }
 

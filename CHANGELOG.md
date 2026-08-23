@@ -5,7 +5,13 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.4.2] - 2026-08-23
+
+### Fixed
+
+- An old disabled or no-longer-known snare-removal action can no longer reserve
+  a mouse chord. Binding an enabled movement removal now replaces that inert
+  row instead of reporting `no dispel known` as a binding conflict.
 
 ## [1.4.1] - 2026-08-23
 
