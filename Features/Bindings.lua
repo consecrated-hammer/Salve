@@ -160,14 +160,23 @@ function Bindings:SetSpellBinding(spellID, key)
     local list = self:Materialise()
     for _, entry in ipairs(list) do
         if entry.key == key and self:SpellID(entry) ~= spellID then
-            local what = self:Describe(entry)
-            return false, self:Label(key) .. " is already assigned to " .. what
+            -- A disabled escape or stale spell entry deliberately resolves to
+            -- no action. It must not reserve a mouse chord: otherwise a
+            -- player cannot bind an enabled movement removal to (for example)
+            -- right click while an old, disabled escape still owns that key.
+            local name = spellFor(entry)
+            if name then
+                local what = self:Describe(entry)
+                return false, self:Label(key) .. " is already assigned to " .. what
+            end
         end
     end
 
     local kept = {}
     for _, entry in ipairs(list) do
-        if self:SpellID(entry) ~= spellID then kept[#kept + 1] = entry end
+        local replacesThisSpell = self:SpellID(entry) == spellID
+        local replacesUnarmedChord = entry.key == key and not spellFor(entry)
+        if not replacesThisSpell and not replacesUnarmedChord then kept[#kept + 1] = entry end
     end
 
     local replacement = { key = key, spell = spellID }

@@ -67,7 +67,20 @@ equal(message, "Left click is already assigned to Cleanse (automatic)",
 
 ns.Bindings:ClearSpellBinding(1044)
 equal(#ns.Bindings:KeysForSpell(1044), 0, "escape binding can be cleared")
+
+ns.knownEscapes = {
+    { id = 1044, name = "Blessing of Freedom" },
+    { id = 1022, name = "Blessing of Protection" },
+}
+ns.db.escapes[1044] = nil
+equal(ns.Bindings:SetSpellBinding(1044, "BUTTON2"), true, "disabled escape can retain a saved chord")
+equal(ns.Bindings:Describe(ns.db.bindings[#ns.db.bindings]), "no dispel known", "disabled escape reports as unarmed")
+equal(ns.Bindings:SetSpellBinding(1022, "BUTTON2"), true, "unarmed escape does not reserve a mouse chord")
+equal(#ns.Bindings:KeysForSpell(1044), 0, "replacement removes the stale unarmed chord")
+equal(ns.Bindings:KeysForSpell(1022)[1], "BUTTON2", "replacement owns the requested chord")
+
 ns.Bindings:ClearSpellBinding(4987)
+ns.Bindings:ClearSpellBinding(1022)
 equal(#ns.Bindings:List(), 0,
     "clearing the final action does not silently restore defaults")
 
