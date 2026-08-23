@@ -12,10 +12,10 @@ function ns.GetMetadata(key)
     return GetAddOnMetadata and GetAddOnMetadata(addonName, key)
 end
 
-ns.VERSION = ns.GetMetadata("Version") or "1.4.0"
+ns.VERSION = ns.GetMetadata("Version") or "1.4.1"
 -- Development revision for distinguishing synced installs that share the same
 -- release version. Surface this in /salve debug before debugging live code.
-ns.REVISION = "1.4.0-settings12"
+ns.REVISION = "1.4.1"
 
 -- The four dispel schools, in the order the options UI lists them.
 ns.DISPEL_TYPES = { "Magic", "Curse", "Disease", "Poison" }
@@ -39,8 +39,19 @@ end
 
 local pending = false
 
+-- Blizzard can briefly release ordinary combat lockdown while an encounter is
+-- still active. AuraContainer creation remains unsafe in that window because
+-- encounter auras are still secret. Treat both states as one structural lock:
+-- the already-bound panel keeps working, and queued changes wait for the real
+-- encounter boundary instead of replacing healthy containers with rejected
+-- ones.
+function ns.StructuralChangesUnsafe()
+    if InCombatLockdown and InCombatLockdown() then return true end
+    return IsEncounterInProgress and IsEncounterInProgress() and true or false
+end
+
 function ns.RequestRebuild()
-    if InCombatLockdown() then
+    if ns.StructuralChangesUnsafe() then
         pending = true
         return
     end

@@ -433,8 +433,16 @@ function Binding:Attach(box, unit)
     -- usable, not just `container`: a client with AddAuraSlot but no SetUnit or
     -- SetEnabled would otherwise attach and silently never light up.
     if not caps.usable then return false end
-    -- Creating or enabling a container in combat is a hard error, not a pcall.
-    if InCombatLockdown() then return false end
+    -- Creating or enabling a container while combat-locked OR while an
+    -- encounter remains active is a hard error, not a pcall. Blizzard may
+    -- briefly report no combat lockdown between encounter phases while secret
+    -- aura restrictions still reject a replacement container. Preserve an
+    -- already-working attachment if a caller reaches us in that window.
+    local unsafe = ns.StructuralChangesUnsafe and ns.StructuralChangesUnsafe()
+        or (not ns.StructuralChangesUnsafe and InCombatLockdown())
+    if unsafe then
+        return box.auraContainer ~= nil and box.boundSig ~= nil
+    end
 
     -- ── Slot identity ─────────────────────────────────────────────────────
     -- Everything BAKED INTO the slot at creation time, and nothing else.
@@ -504,23 +512,78 @@ function Binding:Attach(box, unit)
     -- configuration a box has ever held, rather than one per change.
     box.containerCache = box.containerCache or {}
 
+    -- Keep the currently working container as a transactional fallback. A
+    -- replacement can be rejected transiently while aura secrecy is settling;
+    -- destroying the old attachment first made one failed upgrade turn every
+    -- cell permanently dark. The candidate becomes authoritative only after
+    -- its slot is fully built, anchored and enabled.
+    local fallbackContainer = box.auraContainer
+    local fallbackSig = box.boundSig
+    local fallbackUnit = box.boundUnit
+
     if box.auraContainer and box.boundSig then
         self:Park(box)
         box.containerCache[box.boundSig] = box.auraContainer
         box.auraContainer = nil
     end
 
+    local function restoreFallback(failure)
+        if box.auraContainer and box.auraContainer ~= fallbackContainer then
+            self:Detach(box)
+        end
+        box.containerCache[sig] = nil
+
+        if not fallbackContainer or not fallbackSig then
+            self.lastFailure = failure
+            return false
+        end
+
+        box.containerCache[fallbackSig] = nil
+        box.auraContainer = fallbackContainer
+        box.boundSig = fallbackSig
+        box.boundUnit = nil
+        box.parked = true
+
+        local unitOK = not caps.methods.SetUnit
+            or pcall(fallbackContainer.SetUnit, fallbackContainer, unit or fallbackUnit)
+        local enabledOK = unitOK and (not caps.methods.SetEnabled
+            or pcall(fallbackContainer.SetEnabled, fallbackContainer, true))
+        if not enabledOK then
+            self:Detach(box)
+            self.lastFailure = failure
+            return false
+        end
+
+        box.boundUnit = unit or fallbackUnit
+        box.parked = nil
+        if caps.methods.UpdateAllAuras then
+            pcall(fallbackContainer.UpdateAllAuras, fallbackContainer)
+        end
+        self.lastFailure = tostring(failure) .. "; previous binding preserved"
+        return true
+    end
+
     local cached = box.containerCache[sig]
     if cached then
         box.auraContainer = cached
-        box.parked        = true   -- Park disabled it; the fast path re-enables.
-        box.boundSig      = sig
-        box.boundUnit     = nil
-        return self:Attach(box, unit)
+        box.parked = true
+        box.boundSig = sig
+        box.boundUnit = nil
+        local unitOK = not caps.methods.SetUnit or pcall(cached.SetUnit, cached, unit)
+        local enabledOK = unitOK and (not caps.methods.SetEnabled
+            or pcall(cached.SetEnabled, cached, true))
+        if not enabledOK then
+            return restoreFallback("cached aura container could not be re-enabled")
+        end
+        box.containerCache[sig] = nil
+        box.boundUnit = unit
+        box.parked = nil
+        if caps.methods.UpdateAllAuras then pcall(cached.UpdateAllAuras, cached) end
+        return true
     end
 
     local c = self:Container(box)
-    if not c then return false end
+    if not c then return restoreFallback("AuraContainer could not be created") end
 
     -- ☠ EVERY STEP BELOW IS CHECKED. Ignoring a pcall result here and caching
     --   boundSig anyway left a container with no unit, or never registered for
@@ -528,8 +591,7 @@ function Binding:Attach(box, unit)
     --   permanently unlit, silently, with the fast path above hiding it. That is
     --   the exact shape a changed or partially-supported API would take.
     if caps.methods.SetUnit and not pcall(c.SetUnit, c, unit) then
-        self:Detach(box)
-        return false
+        return restoreFallback("AuraContainer rejected SetUnit")
     end
 
     box.salveVisualBindFailure = nil
@@ -540,8 +602,7 @@ function Binding:Attach(box, unit)
     if not slotOK or not slot or box.salveVisualBindFailure then
         self.lastFailure = box.salveVisualBindFailure
             or (slotOK and "AddAuraSlot returned no button" or tostring(slot))
-        self:Detach(box)
-        return false
+        return restoreFallback(self.lastFailure)
     end
 
     -- AddAuraSlot creates the button but does not place an overlay slot for the
@@ -550,8 +611,7 @@ function Binding:Attach(box, unit)
     -- bound texture with no guaranteed position over Salve's visible box.
     if not slot.SetAllPoints or not pcall(slot.SetAllPoints, slot, box) then
         self.lastFailure = "AddAuraSlot button could not be anchored to its box"
-        self:Detach(box)
-        return false
+        return restoreFallback(self.lastFailure)
     end
 
     -- Second slot: movement impairment. Added only when it could tell you
@@ -580,8 +640,7 @@ function Binding:Attach(box, unit)
 
     -- ☠ LAST. This is what registers the container for aura events.
     if caps.methods.SetEnabled and not pcall(c.SetEnabled, c, true) then
-        self:Detach(box)
-        return false
+        return restoreFallback("AuraContainer rejected SetEnabled")
     end
 
     box.boundUnit = unit

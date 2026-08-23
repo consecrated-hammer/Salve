@@ -7,6 +7,18 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-08-23
+
+### Fixed
+
+- Deferred aura-container rebuilds until the active encounter has fully ended.
+  Learning a new movement effect during a pull can no longer retire working
+  dispel bindings in a brief unlocked phase and leave the panel unlit for the
+  rest of the encounter.
+- Native aura-sound registrations now observe the same encounter boundary, so
+  an intermediate combat-unlocked phase cannot clear working alerts and replace
+  them with transient registration failures.
+
 ## [1.4.0] - 2026-08-22
 
 ### Added
@@ -234,6 +246,7 @@ Beta release.
   IDs and only schools the current character can remove.
 - Opt-in, group-scoped `/salve learn` diagnostics for readable catalogue gaps.
 
+[1.4.1]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.4.1
 [1.4.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.4.0
 [1.3.2]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.3.2
 [1.3.1]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.3.1

@@ -42,6 +42,11 @@ local activationPending = false
 local moduleLoading = false
 local applyTimer
 
+local function registrationUnsafe()
+    if ns.StructuralChangesUnsafe then return ns.StructuralChangesUnsafe() end
+    return InCombatLockdown and InCombatLockdown() or false
+end
+
 local function plain(value)
     if issecretvalue and issecretvalue(value) then return nil end
     return value
@@ -233,7 +238,7 @@ function Sound:NeedsData()
 end
 
 function Sound:ActivateCurrentInstance()
-    if InCombatLockdown and InCombatLockdown() then
+    if registrationUnsafe() then
         activationPending = true
         return
     end
@@ -324,7 +329,7 @@ function Sound:Clear()
 end
 
 function Sound:Refresh()
-    if InCombatLockdown and InCombatLockdown() then
+    if registrationUnsafe() then
         refreshPending = true
         return
     end
@@ -387,7 +392,7 @@ function Sound:Refresh()
 end
 
 function Sound:RequestRefresh()
-    if InCombatLockdown and InCombatLockdown() then
+    if registrationUnsafe() then
         refreshPending = true
     else
         self:Refresh()

@@ -25,6 +25,8 @@ local ns = {
 
 UIParent = {}
 InCombatLockdown = function() return false end
+local encounterActive = false
+IsEncounterInProgress = function() return encounterActive end
 Enum = {
     CustomAuraButtonDispelTypeTextureStyle = { PreserveAsset = 3 },
 }
@@ -143,5 +145,28 @@ equal(ns.Binding.cooldownDebug.lastSucceeded, 1,
 equal(capturedOptions.style, 3, "preserve-asset style passed")
 equal(capturedOptions.showWhenHarmful, true, "harmful dispels shown")
 equal(capturedOptions.showWhenHelpful, false, "helpful effects excluded")
+
+ns.StructuralChangesUnsafe = function()
+    return InCombatLockdown() or IsEncounterInProgress()
+end
+local originalContainer = accepted.auraContainer
+local originalSignature = accepted.boundSig
+ns.db.boxWidth = 24
+rejectDispel = true
+equal(ns.Binding:Attach(accepted, "player"), true,
+    "rejected replacement preserves the working aura attachment")
+equal(accepted.auraContainer, originalContainer,
+    "failed replacement restores the original container")
+equal(accepted.boundSig, originalSignature,
+    "failed replacement restores the original signature")
+if not ns.Binding.lastFailure:find("previous binding preserved", 1, true) then
+    error("preserved fallback is not retained in diagnostics")
+end
+
+encounterActive = true
+equal(ns.Binding:Attach(accepted, "player"), true,
+    "active encounter preserves an existing healthy attachment")
+equal(accepted.boundSig ~= nil, true,
+    "deferred signature change does not detach the working container")
 
 print("aura binding tests passed")

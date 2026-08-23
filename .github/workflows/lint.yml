@@ -22,6 +22,7 @@ jobs:
       - name: Test sound module lifecycle
         run: |
           lua tests/test_config.lua
+          lua tests/test_core.lua
           lua tests/test_aura_binding.lua
           lua tests/test_bindings.lua
           lua tests/test_events.lua

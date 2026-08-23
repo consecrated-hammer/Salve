@@ -101,7 +101,7 @@ GetNumGroupMembers = function() return 0 end
 C_Spell = { GetSpellTexture = function() return 134400 end }
 
 local ns = {
-    VERSION = "1.4.0",
+    VERSION = "1.4.1",
     REVISION = "test-settings",
     DISPELLABLE_FILTER = "HARMFUL",
     defaults = {

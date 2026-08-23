@@ -13,6 +13,7 @@ local previewStops = 0
 local optionsRefreshes = 0
 local rebuilds = 0
 local dispelRefreshes = 0
+local pendingFlushes = 0
 
 CreateFrame = function()
     return {
@@ -41,8 +42,12 @@ local ns = {
         RefreshDispel = function() optionsRefreshes = optionsRefreshes + 1 end,
         RefreshTroubleshooting = function() end,
     },
-    Sound = { OnDispelChanged = function() dispelRefreshes = dispelRefreshes + 1 end },
+    Sound = {
+        OnDispelChanged = function() dispelRefreshes = dispelRefreshes + 1 end,
+        FlushPending = function() pendingFlushes = pendingFlushes + 1 end,
+    },
     RequestRebuild = function() rebuilds = rebuilds + 1 end,
+    FlushPending = function() pendingFlushes = pendingFlushes + 1 end,
     Binding = {
         ObserveDispelCast = function(_, unit, spellID)
             return unit == "player" and spellID == 4987
@@ -63,9 +68,18 @@ equal(registered.SPELL_UPDATE_COOLDOWN, nil,
     "global cooldown update event remains unregistered")
 equal(registered.PLAYER_REGEN_DISABLED, true,
     "combat start is registered to close preview safely")
+equal(registered.ENCOUNTER_END, true,
+    "encounter end is registered to release structural rebuilds")
 
 handler(nil, "PLAYER_REGEN_DISABLED")
 equal(previewStops, 1, "combat start closes live panel preview")
+
+handler(nil, "ENCOUNTER_END")
+equal(pendingFlushes, 0, "encounter-end rebuild waits for engine state to settle")
+equal(#timers, 1, "encounter end schedules one deferred structural flush")
+timers[1].callback()
+equal(pendingFlushes, 2,
+    "encounter end releases queued sound and panel structural work")
 
 handler(nil, "SPELLS_CHANGED")
 equal(optionsRefreshes, 1,
@@ -76,15 +90,15 @@ equal(rebuilds, 1, "escape-only spell discovery rebuilds the panel")
 
 handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast-guid", 4987)
 equal(refreshes, 0, "dispel cooldown is not read inside the early cast event")
-equal(#timers, 1, "successful player dispel schedules one deferred refresh")
-equal(timers[1].delay, 0, "dispel refresh waits one event-loop tick")
-timers[1].callback()
+equal(#timers, 2, "successful player dispel schedules one deferred refresh")
+equal(timers[2].delay, 0, "dispel refresh waits one event-loop tick")
+timers[2].callback()
 equal(refreshes, 1, "deferred dispel refresh reaches cooldown widgets")
 
 handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast-guid", 12345)
-equal(#timers, 1, "ordinary player casts do not schedule a GCD sweep")
+equal(#timers, 2, "ordinary player casts do not schedule a GCD sweep")
 
 handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "party1", "cast-guid", 4987)
-equal(#timers, 1, "another unit's dispel does not schedule a sweep")
+equal(#timers, 2, "another unit's dispel does not schedule a sweep")
 
 print("event routing tests passed")

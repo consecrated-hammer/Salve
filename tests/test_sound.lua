@@ -22,7 +22,11 @@ function ns.Print() end
 function ns.CuresText() return "test" end
 
 issecretvalue = function() return false end
+local encounterActive = false
 InCombatLockdown = function() return false end
+function ns.StructuralChangesUnsafe()
+    return InCombatLockdown() or encounterActive
+end
 local currentInstanceName, currentInstanceID = "Test Instance", 2993
 local currentMapID, currentMapName = 42, "Duskwood"
 GetInstanceInfo = function()
@@ -166,6 +170,21 @@ ns.Sound.lastFailure = "old transient failure"
 ns.db.soundEnabled = true
 ns.Sound:RequestRefresh()
 equal(ns.Sound.lastFailure, nil, "successful refresh clears stale failure")
+
+local addedBeforeEncounter = #added
+local removedBeforeEncounter = #removed
+encounterActive = true
+ns.Sound:RequestRefresh()
+equal(#added, addedBeforeEncounter,
+    "active encounter defers new aura-sound registrations")
+equal(#removed, removedBeforeEncounter,
+    "active encounter preserves working aura-sound registrations")
+encounterActive = false
+ns.Sound:FlushPending()
+equal(#removed > removedBeforeEncounter, true,
+    "queued sound refresh runs once the encounter ends")
+equal(ns.Sound.lastFailure, nil,
+    "deferred sound refresh does not report a transient rejection")
 
 local loadsBeforeChannelChange = loadCalls
 ns.Sound:OnSettingChanged("soundChannel")

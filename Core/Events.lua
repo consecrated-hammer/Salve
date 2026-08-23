@@ -92,6 +92,15 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- cover the real clickable panel once combat begins.
         if ns.Preview then ns.Preview:Stop() end
 
+    elseif event == "ENCOUNTER_END" then
+        -- IsEncounterInProgress can remain true until the event finishes.
+        -- Retry on the next tick; if ordinary combat lockdown is still active,
+        -- RequestRebuild leaves the work queued for PLAYER_REGEN_ENABLED.
+        C_Timer.After(0, function()
+            ns.Sound:FlushPending()
+            ns.FlushPending()
+        end)
+
     elseif event == "PLAYER_REGEN_ENABLED" then
         -- ☠ Release a drag that crossed into combat FIRST. Until this runs the
         --   panel is still following the cursor, and a rebuild would anchor
@@ -116,6 +125,7 @@ for _, e in ipairs({
     -- Deliberately not SPELL_UPDATE_COOLDOWN: it fires on every GCD. The
     -- player-only UNIT_SPELLCAST_SUCCEEDED registration below is the gate.
     "LOSS_OF_CONTROL_ADDED",
+    "ENCOUNTER_END",
     "PLAYER_REGEN_DISABLED",
     "PLAYER_REGEN_ENABLED",
 }) do

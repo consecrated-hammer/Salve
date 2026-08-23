@@ -145,7 +145,11 @@ end
 -- inside is cheap and runs on roster changes, not on aura ticks.
 
 function Panel:Rebuild()
-    if not self.frame or InCombatLockdown() then return end
+    if not self.frame
+        or (ns.StructuralChangesUnsafe and ns.StructuralChangesUnsafe())
+        or (not ns.StructuralChangesUnsafe and InCombatLockdown()) then
+        return
+    end
 
     self:NormalizeGrowthAnchor(self.frame)
     local failures = 0
