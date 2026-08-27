@@ -17,6 +17,19 @@ local ns = {
     knownDispels = {
         { id = 4987, name = "Cleanse", cures = { Magic = true, Disease = true } },
     },
+    learned = {
+        auras = {
+            ["instance:123"] = {
+                name = "Test Dungeon",
+                spells = {
+                    [98765] = {
+                        name = "Test Hex", dispelType = "Curse", provenance = "in-game learn",
+                    },
+                },
+            },
+        },
+        movement = { [339] = "Entangling Roots" },
+    },
     Options = {
         NewPage = function(spec, build)
             pages[#pages + 1] = {
@@ -71,25 +84,6 @@ function ns.CuresText(cures)
     return table.concat(names, ", ")
 end
 
-Enum = {
-    SpellBookSpellBank = { Player = 1 },
-    SpellBookItemType = { Spell = 1 },
-}
-C_SpellBook = {
-    GetNumSpellBookSkillLines = function() return 1 end,
-    GetSpellBookSkillLineInfo = function()
-        return { name = "Shaman", itemIndexOffset = 0, numSpellBookItems = 2 }
-    end,
-    GetSpellBookItemInfo = function(index)
-        if index == 1 then return { spellID = 17364, itemType = 1 } end
-        return { spellID = 187874, itemType = 1, isPassive = true }
-    end,
-}
-C_Spell = {
-    GetSpellInfo = function(id)
-        return { name = id == 17364 and "Stormstrike" or "Crash Lightning" }
-    end,
-}
 UnitName = function() return "Test Shaman" end
 
 for _, path in ipairs({
@@ -120,11 +114,14 @@ if report:find("|c", 1, true) then error("copy report contains chat colour escap
 
 local spells = ns.Options.BuildLearnedSpellReport()
 if not spells:find("Character: Test Shaman", 1, true) then error("spell export omits character") end
-if not spells:find("Stormstrike (spell ID 17364)", 1, true) then
-    error("spell export omits named spell ID")
+if not spells:find("Test Dungeon (instance:123)", 1, true) then
+    error("spell export omits learned aura scope")
 end
-if not spells:find("Crash Lightning (spell ID 187874; passive)", 1, true) then
-    error("spell export omits passive marker")
+if not spells:find("Test Hex (spell ID 98765; Curse; in-game learn)", 1, true) then
+    error("spell export omits learned dispel")
+end
+if not spells:find("Entangling Roots (spell ID 339; Blizzard loss-of-control)", 1, true) then
+    error("spell export omits learned movement spell")
 end
 
 -- ☠ ASSERT CONSISTENCY, NOT A LITERAL DATE. This used to pin 2026-08-16, so

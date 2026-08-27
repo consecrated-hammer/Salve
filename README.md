@@ -129,11 +129,11 @@ the selected movement removal shows an edge-only cooldown sweep, so its
 cooldown remains visible without obscuring an active dispel. Binding changes
 made during combat are safely applied when combat ends.
 
-The **Learned Spells** page has a **Copy learned spells** button. It opens a
-Ctrl+C-ready local export of every entry the current Retail spellbook exposes,
-grouped by spellbook section with names, IDs and any supplied passive/off-spec
-markers. Hidden or inactive entries remain unknown rather than being presented
-as unlearned.
+The **Learned Spells** page shows the readable dispellable auras and
+Blizzard-reported roots or snares Salve has recorded, grouped by location. Its
+**Copy learned spells** button opens that same catalogue ready for Ctrl+C. Each
+entry is a positive observation; a missing spell remains unknown rather than
+being presented as absent from an encounter.
 
 **Show units with nothing to dispel** holds the panel's shape. Turning it off
 makes inactive cells transparent. Their click areas stay in place:

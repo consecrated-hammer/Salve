@@ -1,72 +1,84 @@
 local addonName, ns = ...
 local O = ns.Options
 
--- This is intentionally a factual, local snapshot: it reports only entries
--- Retail exposes in the player spellbook at the moment it is opened. It does
--- not infer hidden abilities or treat an omitted entry as unlearned.
+-- This is Salve's learned catalogue, not the character spellbook. Every entry
+-- is a positive observation: readable dispellable auras are scoped to where
+-- they were seen, while Blizzard's loss-of-control feed supplies roots/snares.
+-- Absence is deliberately not a claim that an encounter has no other spells.
+local function sortedKeys(tableValue)
+    local keys = {}
+    for key in pairs(type(tableValue) == "table" and tableValue or {}) do
+        keys[#keys + 1] = key
+    end
+    table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+    return keys
+end
+
+local function appendAuraCatalogue(lines, learned)
+    lines[#lines + 1] = "## Learned dispellable auras"
+    local scopeKeys = {}
+    for scopeKey, bucket in pairs(type(learned.auras) == "table" and learned.auras or {}) do
+        if type(bucket) == "table" and type(bucket.spells) == "table" and next(bucket.spells) then
+            scopeKeys[#scopeKeys + 1] = scopeKey
+        end
+    end
+    table.sort(scopeKeys)
+    if #scopeKeys == 0 then
+        lines[#lines + 1] = "No readable dispellable auras recorded yet."
+        lines[#lines + 1] = ""
+        return
+    end
+
+    for _, scopeKey in ipairs(scopeKeys) do
+        local bucket = learned.auras[scopeKey]
+        lines[#lines + 1] = "### " .. tostring(bucket.name or "Unknown location")
+            .. " (" .. tostring(scopeKey) .. ")"
+        lines[#lines + 1] = ""
+        for _, spellID in ipairs(sortedKeys(bucket.spells)) do
+            local record = bucket.spells[spellID]
+            record = type(record) == "table" and record or { name = record }
+            local fields = { "spell ID " .. tostring(spellID) }
+            if type(record.dispelType) == "string" and record.dispelType ~= "" then
+                fields[#fields + 1] = record.dispelType
+            end
+            if type(record.provenance) == "string" and record.provenance ~= "" then
+                fields[#fields + 1] = record.provenance
+            end
+            lines[#lines + 1] = "- " .. tostring(record.name or "Unknown spell")
+                .. " (" .. table.concat(fields, "; ") .. ")"
+        end
+        lines[#lines + 1] = ""
+    end
+end
+
+local function appendMovementCatalogue(lines, learned)
+    lines[#lines + 1] = "## Learned roots and snares"
+    local movement = type(learned.movement) == "table" and learned.movement or {}
+    local spellIDs = sortedKeys(movement)
+    if #spellIDs == 0 then
+        lines[#lines + 1] = "No Blizzard-reported roots or snares recorded yet."
+        lines[#lines + 1] = ""
+        return
+    end
+
+    for _, spellID in ipairs(spellIDs) do
+        local name = movement[spellID]
+        lines[#lines + 1] = "- " .. tostring(name == true and "Unknown spell" or name)
+            .. " (spell ID " .. tostring(spellID) .. "; Blizzard loss-of-control)"
+    end
+    lines[#lines + 1] = ""
+end
+
 local function buildReport()
     local lines = {
         "Salve learned-spell export",
         "Character: " .. tostring(UnitName and UnitName("player") or "unknown"),
-        "Scope: entries currently exposed in Retail's player spellbook; inactive or hidden abilities may be absent.",
+        "Scope: Salve's positive observations of readable dispellable auras and Blizzard-reported roots or snares. Missing entries remain unknown.",
         "",
     }
-
-    if not (C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines
-        and C_SpellBook.GetSpellBookSkillLineInfo and C_SpellBook.GetSpellBookItemInfo
-        and Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Player) then
-        lines[#lines + 1] = "Unavailable: this WoW client does not expose the modern spellbook API."
-        return table.concat(lines, "\n")
-    end
-
-    local ok, lineCount = pcall(C_SpellBook.GetNumSpellBookSkillLines)
-    if not ok or type(lineCount) ~= "number" then
-        lines[#lines + 1] = "Unavailable: Retail did not return spellbook skill lines."
-        return table.concat(lines, "\n")
-    end
-
-    local spellType = Enum.SpellBookItemType and Enum.SpellBookItemType.Spell
-    local emitted = 0
-    for lineIndex = 1, math.min(lineCount, 128) do
-        local lineOK, line = pcall(C_SpellBook.GetSpellBookSkillLineInfo, lineIndex)
-        local offset = lineOK and line and tonumber(line.itemIndexOffset)
-        local count = lineOK and line and tonumber(line.numSpellBookItems)
-        local entries = {}
-        if offset and count and count > 0 then
-            for itemOffset = 1, math.min(count, 1024) do
-                local itemOK, item = pcall(C_SpellBook.GetSpellBookItemInfo,
-                    offset + itemOffset, Enum.SpellBookSpellBank.Player)
-                local spellID = itemOK and item and item.spellID
-                local isSpell = type(spellID) == "number"
-                    and (spellType == nil or item.itemType == spellType)
-                if isSpell then
-                    local info = C_Spell and C_Spell.GetSpellInfo and C_Spell.GetSpellInfo(spellID)
-                    local flags = {}
-                    if item.isOffSpec then flags[#flags + 1] = "off-spec" end
-                    if item.isPassive then flags[#flags + 1] = "passive" end
-                    entries[#entries + 1] = {
-                        id = spellID,
-                        name = (info and info.name) or item.name or "Unknown spell",
-                        suffix = #flags > 0 and "; " .. table.concat(flags, "; ") or "",
-                    }
-                end
-            end
-        end
-        if #entries > 0 then
-            table.sort(entries, function(a, b)
-                if a.name == b.name then return a.id < b.id end
-                return a.name < b.name
-            end)
-            lines[#lines + 1] = "## " .. tostring(line.name or ("Spellbook section " .. lineIndex))
-            lines[#lines + 1] = ""
-            for _, entry in ipairs(entries) do
-                lines[#lines + 1] = "- " .. entry.name .. " (spell ID " .. entry.id .. entry.suffix .. ")"
-                emitted = emitted + 1
-            end
-            lines[#lines + 1] = ""
-        end
-    end
-    if emitted == 0 then lines[#lines + 1] = "No spell entries were exposed by the current spellbook." end
+    local learned = type(ns.learned) == "table" and ns.learned or {}
+    appendAuraCatalogue(lines, learned)
+    appendMovementCatalogue(lines, learned)
     return table.concat(lines, "\n")
 end
 
@@ -91,7 +103,7 @@ local function showCopyReport()
 
         local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("TOPLEFT", 18, -16)
-        title:SetText("Copy learned spells")
+        title:SetText("Copy Salve-learned spells")
         local help = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
         help:SetText("Press Ctrl+C, then Escape.")
@@ -128,21 +140,41 @@ O.ShowLearnedSpellReport = showCopyReport
 
 O.NewPage({
     name = "Learned Spells",
-    description = "Copy the spellbook entries this Retail client currently exposes for your character.",
+    description = "Dispellable auras, roots and snares Salve has recorded while you play.",
 }, function(panel, y)
-    _, y = O.Header(panel, "Export learned spells", y)
+    _, y = O.Header(panel, "Salve's learned spells", y)
     local note = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     note:SetPoint("TOPLEFT", 16, y)
     note:SetWidth(520)
     note:SetJustifyH("LEFT")
-    note:SetText("This local plain-text export includes spell names, IDs, spellbook sections, and off-spec/passive markers when the client supplies them.")
-    y = y - 52
+    note:SetText("This is Salve's learned catalogue, not your spellbook. It shows only positive observations; missing spells remain unknown.")
+    y = y - 46
+
+    local list = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    list:SetPoint("TOPLEFT", 16, y)
+    list:SetWidth(520)
+    list:SetJustifyH("LEFT")
+    list:SetJustifyV("TOP")
 
     local copy = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     copy:SetSize(170, 22)
-    copy:SetPoint("TOPLEFT", 16, y)
     copy:SetText("Copy learned spells")
-    O.AttachHint(copy, "Copy learned spells", "Open the complete current spellbook list, ready for Ctrl+C.")
+    O.AttachHint(copy, "Copy learned spells", "Copy the same Salve-learned catalogue, ready for Ctrl+C.")
     copy:SetScript("OnClick", showCopyReport)
-    return y - 42
+
+    local listHeight = 42
+    local function render()
+        local report = buildReport()
+        list:SetText(report)
+        local lineCount = 1
+        for _ in report:gmatch("\n") do lineCount = lineCount + 1 end
+        listHeight = math.max(42, lineCount * 15)
+        list:SetHeight(listHeight)
+        copy:ClearAllPoints()
+        copy:SetPoint("TOPLEFT", list, "BOTTOMLEFT", 0, -14)
+        panel.salveSetBottom(-46 - listHeight - 46)
+    end
+    panel.salveRefresh[#panel.salveRefresh + 1] = render
+    render()
+    return -46 - listHeight - 46
 end)

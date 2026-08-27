@@ -5,6 +5,16 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-08-27
+
+### Fixed
+
+- **Learned Spells** now shows and copies Salve's own learned catalogue: the
+  readable dispellable auras and Blizzard-reported roots or snares it has
+  positively observed. It no longer exports the character's unrelated
+  spellbook. The visible list is grouped by location, with **Copy learned
+  spells** directly beneath it.
+
 ## [1.5.0] - 2026-08-27
 
 ### Added
@@ -278,6 +288,7 @@ Beta release.
 - Opt-in, group-scoped `/salve learn` diagnostics for readable catalogue gaps.
 
 [1.4.1]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.4.1
+[1.5.1]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.5.1
 [1.5.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.5.0
 [1.4.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.4.0
 [1.3.2]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.3.2
