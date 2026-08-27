@@ -5,6 +5,13 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2] - 2026-08-27
+
+### Changed
+
+- Moved **Copy learned spells** to the top of the **Learned Spells** page, so
+  it remains available before the potentially long learned catalogue.
+
 ## [1.5.1] - 2026-08-27
 
 ### Fixed
@@ -288,6 +295,7 @@ Beta release.
 - Opt-in, group-scoped `/salve learn` diagnostics for readable catalogue gaps.
 
 [1.4.1]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.4.1
+[1.5.2]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.5.2
 [1.5.1]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.5.1
 [1.5.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.5.0
 [1.4.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.4.0

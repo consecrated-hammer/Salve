@@ -150,17 +150,20 @@ O.NewPage({
     note:SetText("This is Salve's learned catalogue, not your spellbook. It shows only positive observations; missing spells remain unknown.")
     y = y - 46
 
+    local copy = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    copy:SetSize(170, 22)
+    copy:SetPoint("TOPLEFT", 16, y)
+    copy:SetText("Copy learned spells")
+    O.AttachHint(copy, "Copy learned spells", "Copy the same Salve-learned catalogue, ready for Ctrl+C.")
+    copy:SetScript("OnClick", showCopyReport)
+    y = y - 36
+    local listTopY = y
+
     local list = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     list:SetPoint("TOPLEFT", 16, y)
     list:SetWidth(520)
     list:SetJustifyH("LEFT")
     list:SetJustifyV("TOP")
-
-    local copy = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    copy:SetSize(170, 22)
-    copy:SetText("Copy learned spells")
-    O.AttachHint(copy, "Copy learned spells", "Copy the same Salve-learned catalogue, ready for Ctrl+C.")
-    copy:SetScript("OnClick", showCopyReport)
 
     local listHeight = 42
     local function render()
@@ -170,11 +173,9 @@ O.NewPage({
         for _ in report:gmatch("\n") do lineCount = lineCount + 1 end
         listHeight = math.max(42, lineCount * 15)
         list:SetHeight(listHeight)
-        copy:ClearAllPoints()
-        copy:SetPoint("TOPLEFT", list, "BOTTOMLEFT", 0, -14)
-        panel.salveSetBottom(-46 - listHeight - 46)
+        panel.salveSetBottom(listTopY - listHeight - 24)
     end
     panel.salveRefresh[#panel.salveRefresh + 1] = render
     render()
-    return -46 - listHeight - 46
+    return listTopY - listHeight - 24
 end)
