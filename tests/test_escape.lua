@@ -54,8 +54,11 @@ equal(ns.Escape:CaptureLossOfControl("party1", 2), true,
 equal(ns.learned.movement[12345], "Test Root", "automatic root stores spell")
 equal(rebuilds, 1, "automatic root requests panel rebuild")
 equal(#prints, 1, "automatic root reports capture")
-equal(ns.Escape:CaptureLossOfControl("party1", 2), false,
+local capturedAgain, isMovement = ns.Escape:CaptureLossOfControl("party1", 2)
+equal(capturedAgain, false,
     "automatic root de-duplicates spell")
+equal(isMovement, true,
+    "known roots remain identifiable as live movement impairments")
 
 record = { locType = "STUN", spellID = 23456, displayText = "Test Stun" }
 equal(ns.Escape:CaptureLossOfControl("party1", 2), false,
@@ -68,5 +71,18 @@ equal(ns.Escape:CaptureLossOfControl("party1", 2), true,
     "stale preference cannot disable automatic capture")
 equal(ns.learned.movement[34567], "Test Snare",
     "always-on learning stores movement effects")
+
+UnitIsUnit = function(left, right) return left == "raid2" and right == "player" end
+equal(ns.Escape:IsPlayerUnit("player"), true, "player token is recognized")
+equal(ns.Escape:IsPlayerUnit("raid2"), true, "player raid token is recognized")
+equal(ns.Escape:IsPlayerUnit("party1"), false, "other unit is not treated as the player")
+ns.db.escapes = { [212653] = true }
+equal(ns.Escape:CanWarnForUnit("player"), true,
+    "a selected personal escape warns for the player")
+equal(ns.Escape:CanWarnForUnit("party1"), false,
+    "a selected personal escape stays silent for party members")
+ns.Escape.HasAllyEscape = function() return true end
+equal(ns.Escape:CanWarnForUnit("party1"), true,
+    "an ally-targeted escape warns for party members")
 
 print("escape tests passed")

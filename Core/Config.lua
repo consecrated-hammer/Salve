@@ -71,6 +71,7 @@ ns.defaults = {
     -- you have opted in to. Learned discoveries deliberately live in the
     -- separate SalveLearnedDB saved-variable block, not in preferences.
     escapes         = {},
+    movementColour  = { r = 0.92, g = 0.20, b = 0.08, a = 0.68 },
 
     -- Saved-variable migrations. Increment only when an old shape needs an
     -- explicit conversion; ordinary new defaults do not need a bump.
@@ -235,7 +236,7 @@ local GEOMETRY = {
     columns = true, boxWidth = true, boxHeight = true, spacing = true,
     scale = true, showNames = true, showStacks = true, orientation = true,
     horizontalGrowth = true, verticalGrowth = true,
-    bindings = true, escapes = true,
+    bindings = true, escapes = true, movementColour = true,
     -- ☠ visibilityMode belongs here even though it changes no geometry: the
     --   state driver is only (re)registered from Panel:Rebuild, so treating it
     --   as a restyle left the old driver installed. Choosing Never did nothing

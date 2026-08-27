@@ -2,7 +2,7 @@
 if not Salve then return end
 
 if Salve.Escape and Salve.Escape.RegisterMovement then
-    Salve.Escape:RegisterMovement("Salve_Data_Midnight_S2", { 1302802 })
+    Salve.Escape:RegisterMovement("Salve_Data_Midnight_S2", { 1241463, 1294567, 1302802 })
 end
 
 if not Salve.Sound or not Salve.Sound.RegisterData then return end

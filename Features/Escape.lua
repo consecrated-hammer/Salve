@@ -147,6 +147,23 @@ function Escape:Active()
     return #self:Enabled() > 0
 end
 
+-- The movement cooldown indicator follows the first enabled removal in the
+-- options order. This is normally the only enabled spell (for example,
+-- Blessing of Freedom); keeping it deterministic also makes its sweep
+-- meaningful when several candidate abilities are known.
+function Escape:CooldownSpellID()
+    local first = self:Enabled()[1]
+    return first and first.id or nil
+end
+
+function Escape:IsEnabledSpell(spellID)
+    if type(spellID) ~= "number" then return false end
+    for _, spell in ipairs(self:Enabled()) do
+        if spell.id == spellID then return true end
+    end
+    return false
+end
+
 -- ── The debuffs it applies to ──────────────────────────────────────────────
 --
 -- Sources register root/snare spell IDs the same way they register dispellable
@@ -228,10 +245,28 @@ function Escape:CaptureLossOfControl(unit, effectIndex)
         return v
     end
     local locType = plain(data.locType)
-    if locType ~= "ROOT" and locType ~= "SNARE" then return false end
+    if locType ~= "ROOT" and locType ~= "SNARE" then return false, false end
 
     ns.learned.movement = ns.learned.movement or {}
-    return capture(plain(data.spellID), plain(data.displayText))
+    -- The second result describes the current effect, not whether it was new
+    -- to the catalogue. Callers use it for a live player-only warning, which
+    -- must still occur when a known root is applied again.
+    return capture(plain(data.spellID), plain(data.displayText)), true
+end
+
+function Escape:IsPlayerUnit(unit)
+    if unit == "player" then return true end
+    if type(unit) ~= "string" or not UnitIsUnit then return false end
+    local ok, same = pcall(UnitIsUnit, unit, "player")
+    return ok and same == true
+end
+
+-- A warning has the same scope as the visible movement slot. Personal escapes
+-- are useful only on the player's own cell; an enabled ally-targeted escape
+-- makes a party member's root or snare actionable as well.
+function Escape:CanWarnForUnit(unit)
+    if not self:Active() then return false end
+    return self:IsPlayerUnit(unit) or self:HasAllyEscape()
 end
 
 function Escape:DumpCaptured()

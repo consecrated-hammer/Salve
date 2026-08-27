@@ -25,19 +25,29 @@ local SPELLS = {
         { id = 213644,               Poison = true, Disease = true },  -- Cleanse Toxins
     },
     PRIEST = {
-        { id = 527,    Magic = true,                Disease = true },  -- Purify
+        -- Improved Purify is a hidden passive, so it must be checked
+        -- separately from the active spellbook entry for Purify.
+        { id = 527,    Magic = true, upgrades = {
+            { id = 390632, Disease = true },                          -- Improved Purify
+        } },                                                           -- Purify
         { id = 213634,                              Disease = true },  -- Purify Disease
     },
     DRUID = {
-        { id = 88423,  Magic = true, Poison = true, Curse = true },    -- Nature's Cure
+        { id = 88423,  Magic = true, upgrades = {
+            { id = 392378, Poison = true, Curse = true },              -- Improved Nature's Cure
+        } },                                                           -- Nature's Cure
         { id = 2782,                 Poison = true, Curse = true },    -- Remove Corruption
     },
     SHAMAN = {
-        { id = 77130,  Magic = true,                Curse = true },    -- Purify Spirit
+        { id = 77130,  Magic = true, upgrades = {
+            { id = 383016,                Curse = true },              -- Improved Purify Spirit
+        } },                                                           -- Purify Spirit
         { id = 51886,                               Curse = true },    -- Cleanse Spirit
     },
     MONK = {
-        { id = 115450, Magic = true, Poison = true, Disease = true },  -- Detox (Mistweaver)
+        { id = 115450, Magic = true, upgrades = {
+            { id = 388874, Poison = true, Disease = true },            -- Improved Detox
+        } },                                                           -- Detox (Mistweaver)
         { id = 218164,               Poison = true, Disease = true },  -- Detox
     },
     EVOKER = {
@@ -71,6 +81,43 @@ local function known(spellID)
     return false
 end
 
+-- IsPlayerSpell / IsSpellKnown can include abilities exposed for another
+-- specialization. That is useful for passive talent checks below, but it is
+-- unsafe for a secure click-to-cast button. Retail's player spellbook marks
+-- those entries as isOffSpec, so build a current-spec castable set when that
+-- API is available and retain the legacy check only for older clients.
+local function activeSpellbook()
+    if not (C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines
+        and C_SpellBook.GetSpellBookSkillLineInfo and C_SpellBook.GetSpellBookItemInfo
+        and Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Player) then
+        return nil
+    end
+
+    local ok, lineCount = pcall(C_SpellBook.GetNumSpellBookSkillLines)
+    if not ok or type(lineCount) ~= "number" then return nil end
+
+    local spells = {}
+    local spellType = Enum.SpellBookItemType and Enum.SpellBookItemType.Spell
+    for lineIndex = 1, math.min(lineCount, 128) do
+        local lineOK, lineInfo = pcall(C_SpellBook.GetSpellBookSkillLineInfo, lineIndex)
+        local offset = lineOK and lineInfo and tonumber(lineInfo.itemIndexOffset)
+        local count = lineOK and lineInfo and tonumber(lineInfo.numSpellBookItems)
+        if offset and count and count > 0 then
+            for itemOffset = 1, math.min(count, 1024) do
+                local itemOK, item = pcall(C_SpellBook.GetSpellBookItemInfo,
+                    offset + itemOffset, Enum.SpellBookSpellBank.Player)
+                local isSpell = itemOK and type(item) == "table"
+                    and (spellType == nil and type(item.spellID) == "number"
+                        or item.itemType == spellType)
+                if isSpell and item.isOffSpec ~= true and type(item.spellID) == "number" then
+                    spells[item.spellID] = true
+                end
+            end
+        end
+    end
+    return spells
+end
+
 local function nameOf(spellID)
     if C_Spell and C_Spell.GetSpellInfo then
         local info = C_Spell.GetSpellInfo(spellID)
@@ -82,6 +129,13 @@ local function coverage(entry)
     local set, n = {}, 0
     for _, t in ipairs(ns.DISPEL_TYPES) do
         if entry[t] then set[t] = true n = n + 1 end
+    end
+    for _, upgrade in ipairs(entry.upgrades or {}) do
+        if known(upgrade.id) then
+            for _, t in ipairs(ns.DISPEL_TYPES) do
+                if upgrade[t] and not set[t] then set[t] = true n = n + 1 end
+            end
+        end
     end
     return set, n
 end
@@ -102,10 +156,11 @@ function ns.UpdateDispelSpell()
 
     -- Everything the character actually has. Exposed so the options panel can
     -- offer the real list rather than a guess.
+    local castable = activeSpellbook()
     local available = {}
     ns.knownDispels = available
     for _, entry in ipairs(list) do
-        if known(entry.id) then
+        if (castable and castable[entry.id]) or (not castable and known(entry.id)) then
             local name = nameOf(entry.id)
             if name then
                 local set, n = coverage(entry)

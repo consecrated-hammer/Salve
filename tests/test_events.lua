@@ -9,11 +9,13 @@ local registered = {}
 local unitRegistration
 local timers = {}
 local refreshes = 0
+local movementRefreshes = 0
 local previewStops = 0
 local optionsRefreshes = 0
 local rebuilds = 0
 local dispelRefreshes = 0
 local pendingFlushes = 0
+local movementWarnings = 0
 
 CreateFrame = function()
     return {
@@ -37,7 +39,13 @@ C_Timer = {
 
 local ns = {
     UpdateDispelSpell = function() return false end,
-    Escape = { Update = function() return true end },
+    Escape = {
+        Update = function() return true end,
+        CaptureLossOfControl = function(_, unit, index)
+            return false, unit == "player" and index == 4
+        end,
+        CanWarnForUnit = function(_, unit) return unit == "player" end,
+    },
     Options = {
         RefreshDispel = function() optionsRefreshes = optionsRefreshes + 1 end,
         RefreshTroubleshooting = function() end,
@@ -45,14 +53,22 @@ local ns = {
     Sound = {
         OnDispelChanged = function() dispelRefreshes = dispelRefreshes + 1 end,
         FlushPending = function() pendingFlushes = pendingFlushes + 1 end,
+        PlayMovementWarning = function() movementWarnings = movementWarnings + 1 end,
     },
     RequestRebuild = function() rebuilds = rebuilds + 1 end,
     FlushPending = function() pendingFlushes = pendingFlushes + 1 end,
     Binding = {
+        ObserveMovementCast = function(_, unit, spellID)
+            return unit == "player" and spellID == 1044 and spellID or nil
+        end,
         ObserveDispelCast = function(_, unit, spellID)
             return unit == "player" and spellID == 4987
         end,
         RefreshCooldowns = function() refreshes = refreshes + 1 end,
+        RefreshMovementCooldowns = function(_, _, spellID)
+            equal(spellID, 1044, "movement cooldown receives the spell that was cast")
+            movementRefreshes = movementRefreshes + 1
+        end,
     },
     Preview = {
         Stop = function() previewStops = previewStops + 1 end,
@@ -98,7 +114,17 @@ equal(refreshes, 1, "deferred dispel refresh reaches cooldown widgets")
 handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast-guid", 12345)
 equal(#timers, 2, "ordinary player casts do not schedule a GCD sweep")
 
+handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast-guid", 1044)
+equal(#timers, 3, "movement removal schedules one deferred border-sweep refresh")
+timers[3].callback()
+equal(movementRefreshes, 1, "movement removal refreshes border-sweep widgets")
+
 handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "party1", "cast-guid", 4987)
-equal(#timers, 2, "another unit's dispel does not schedule a sweep")
+equal(#timers, 3, "another unit's dispel does not schedule a sweep")
+
+handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
+equal(movementWarnings, 1, "player movement impairment plays one warning")
+handler(nil, "LOSS_OF_CONTROL_ADDED", "party1", 4)
+equal(movementWarnings, 1, "non-actionable party movement impairments stay silent")
 
 print("event routing tests passed")

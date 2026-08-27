@@ -19,6 +19,8 @@ equal(first.escapeTop, revisit.escapeTop,
     "first visit and repeat visit use identical escape position")
 equal(first.buttonsTop, revisit.buttonsTop,
     "first visit and repeat visit use identical footer position")
+equal(first.paletteY, first.knownNoteY - 20,
+    "palette legend stays directly below the detected-dispels note")
 
 local none = ns.Options.DispelLayout(-36, 0, 0)
 local one = ns.Options.DispelLayout(-36, 1, 1)

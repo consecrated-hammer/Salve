@@ -159,6 +159,24 @@ local function CreateVisuals(box, registerCooldown)
     if registerCooldown then ns.Binding:RegisterCooldown(box.dispelCooldown) end
     StyleCooldownText(box)
 
+    -- A separate edge-only cooldown for the selected movement removal. It
+    -- deliberately has no dark swipe or countdown number, so it reads as a
+    -- border sweep rather than competing with the normal dispel cooldown.
+    box.movementCooldown = CreateFrame("Cooldown", nil, box, "CooldownFrameTemplate")
+    box.movementCooldown:SetAllPoints(box)
+    box.movementCooldown:SetFrameLevel(box:GetFrameLevel() + 13)
+    if box.movementCooldown.SetDrawSwipe then box.movementCooldown:SetDrawSwipe(false) end
+    if box.movementCooldown.SetDrawEdge then box.movementCooldown:SetDrawEdge(true) end
+    if box.movementCooldown.SetDrawBling then box.movementCooldown:SetDrawBling(false) end
+    if box.movementCooldown.SetHideCountdownNumbers then
+        box.movementCooldown:SetHideCountdownNumbers(true)
+    end
+    if box.movementCooldown.SetMinimumCountdownDuration then
+        box.movementCooldown:SetMinimumCountdownDuration(0)
+    end
+    if box.movementCooldown.EnableMouse then box.movementCooldown:EnableMouse(false) end
+    if registerCooldown then ns.Binding:RegisterMovementCooldown(box.movementCooldown) end
+
     -- ☠ THE NAME LIVES ON ITS OWN FRAME, NOT ON THE BOX. The engine's aura
     --   button is a CHILD frame of this box, and a child renders above every
     --   region of its parent -- so an opaque fill on that button covers a

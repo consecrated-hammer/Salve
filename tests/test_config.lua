@@ -14,6 +14,7 @@ local ns = {
         end,
     },
 }
+ns.RequestRebuildSoon = function() end
 
 SalveDB = {
     learnMode = true,
@@ -29,6 +30,7 @@ ns.InitConfig()
 equal(ns.db.schemaVersion, 6, "schema migrated")
 equal(ns.db.learnMode, true, "learning normalized on")
 equal(ns.db.soundEnabled, false, "alert sound defaults off")
+equal(ns.db.movementColour.r, 0.92, "movement alert colour defaults to red-orange")
 equal(ns.db.showStartupMessage, true, "startup message defaults on")
 equal(ns.db.useClassColours, false, "class-coloured clear cells default off")
 equal(ns.db.nameJustifyH, "LEFT", "unit names default left")
@@ -50,6 +52,9 @@ equal(ns.db.learnedMovement, nil, "movement discoveries removed from preferences
 ns.Set("soundEnabled", true)
 equal(soundRefreshes, 1, "sound setting refreshes native registrations")
 equal(changedKey, "soundEnabled", "sound setting identifies changed key")
+
+ns.Set("movementColour", { r = 0.1, g = 0.2, b = 0.3, a = 0.4 })
+equal(ns.db.movementColour.a, 0.4, "movement alert colour persists selected opacity")
 
 SalveDB = {
     schemaVersion = 3,

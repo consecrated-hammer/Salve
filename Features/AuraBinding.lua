@@ -86,12 +86,26 @@ local function dispelTextureStyle()
     return 3 -- current PreserveAsset value; last-resort for enum-less clients
 end
 
+local function movementColour()
+    local colour = ns.db and ns.db.movementColour or nil
+    return tonumber(colour and colour.r) or 0.92,
+        tonumber(colour and colour.g) or 0.20,
+        tonumber(colour and colour.b) or 0.08,
+        tonumber(colour and colour.a) or 0.68
+end
+
+local function movementColourSignature()
+    local r, g, b, a = movementColour()
+    return ("%.3f,%.3f,%.3f,%.3f"):format(r, g, b, a)
+end
+
 -- ── Capability probe ───────────────────────────────────────────────────────
 -- These interfaces are new in 12.1.0 and undocumented publicly. Probe once,
 -- record what this client offers, and report it from /salve debug.
 
 Binding.caps = nil
 Binding.cooldowns = setmetatable({}, { __mode = "k" })
+Binding.movementCooldowns = setmetatable({}, { __mode = "k" })
 Binding.cooldownDebug = {
     castEvents = 0,
     readableCastIDs = 0,
@@ -138,12 +152,12 @@ function Binding:ObserveDispelCast(unit, spellID)
     return true
 end
 
-local function cooldownDuration()
-    if not ns.spellID then return nil end
+local function cooldownDuration(spellID)
+    if not spellID then return nil end
     if not C_Spell or not C_Spell.GetSpellCooldownDuration then
         return nil, "C_Spell.GetSpellCooldownDuration is unavailable"
     end
-    local ok, duration = pcall(C_Spell.GetSpellCooldownDuration, ns.spellID)
+    local ok, duration = pcall(C_Spell.GetSpellCooldownDuration, spellID)
     if not ok then return nil, tostring(duration) end
     return duration
 end
@@ -164,7 +178,16 @@ end
 function Binding:RegisterCooldown(cooldown)
     if not cooldown then return end
     self.cooldowns[cooldown] = true
-    local duration, err = cooldownDuration()
+    local duration, err = cooldownDuration(ns.spellID)
+    if err then self.lastCooldownFailure = err end
+    applyCooldown(cooldown, duration)
+end
+
+function Binding:RegisterMovementCooldown(cooldown)
+    if not cooldown then return end
+    self.movementCooldowns[cooldown] = true
+    local spellID = ns.Escape and ns.Escape:CooldownSpellID()
+    local duration, err = cooldownDuration(spellID)
     if err then self.lastCooldownFailure = err end
     applyCooldown(cooldown, duration)
 end
@@ -177,7 +200,7 @@ function Binding:RefreshCooldowns(reason)
     local debug = self.cooldownDebug
     debug.refreshes = debug.refreshes + 1
     debug.lastRefreshReason = reason or "unspecified"
-    local duration, err = cooldownDuration()
+    local duration, err = cooldownDuration(ns.spellID)
     if err then self.lastCooldownFailure = err end
     debug.lastDurationState = err and ("error: " .. tostring(err))
         or (duration and "object returned" or "no object returned")
@@ -188,6 +211,24 @@ function Binding:RefreshCooldowns(reason)
     end
     debug.lastApplied = applied
     debug.lastSucceeded = succeeded
+end
+
+function Binding:ObserveMovementCast(unit, spellID)
+    if unit ~= "player" or (issecretvalue and issecretvalue(spellID)) then return nil end
+    if ns.Escape and ns.Escape:IsEnabledSpell(spellID) then return spellID end
+    return nil
+end
+
+function Binding:RefreshMovementCooldowns(reason, spellID)
+    -- A successful cast tells us exactly which enabled escape matters now.
+    -- Otherwise use the deterministic first enabled option for an initial
+    -- registration or a settings refresh.
+    spellID = spellID or (ns.Escape and ns.Escape:CooldownSpellID())
+    local duration, err = cooldownDuration(spellID)
+    if err then self.lastCooldownFailure = err end
+    for cooldown in pairs(self.movementCooldowns) do
+        applyCooldown(cooldown, duration)
+    end
 end
 
 function Binding:CooldownDiagnosticLines()
@@ -338,6 +379,13 @@ local function initializeFrame(box)
                 box.dispelCooldown:SetFrameLevel(b:GetFrameLevel() + 7)
             end)
         end
+        if box.movementCooldown then
+            pcall(function()
+                -- This sits above the native movement fill but draws only its
+                -- moving edge: the chosen movement answer is unavailable.
+                box.movementCooldown:SetFrameLevel(b:GetFrameLevel() + 9)
+            end)
+        end
 
         -- Fill: created HERE, as a child of the button. The engine tints it by
         -- dispel type and owns its visibility from AddDispelTypeTexture onward.
@@ -381,9 +429,14 @@ local function initializeFrame(box)
     end
 end
 
--- Movement-impairment overlay. A border rather than a fill, so a rooted player
--- who is ALSO dispellable still shows the dispel colour underneath -- the two
--- categories stack instead of one hiding the other.
+-- Movement-impairment overlay. This is deliberately a red-orange fill, rather
+-- than the normal dispel colour or a subtle border: it means "move yourself
+-- out" and remains recognisable at Decursive-sized cells.
+--
+-- This must NOT use AddDispelTypeTexture/SetAuraBorder. Those APIs drive art
+-- from an aura's dispel school, and roots/snares (including Entangling Roots)
+-- normally have none. The slot button itself is shown only for its native
+-- spell-ID match; ordinary child regions inherit that visibility.
 local function initializeMovementFrame(box)
     return function(b)
         pcall(function()
@@ -392,25 +445,15 @@ local function initializeMovementFrame(box)
         end)
         pcall(b.SetSize, b, box:GetWidth(), box:GetHeight())
 
-        if not b.salveEdges then
-            b.salveEdges = {}
-            for _, e in ipairs({ { "TOPLEFT", "TOPRIGHT", true }, { "BOTTOMLEFT", "BOTTOMRIGHT", true },
-                                 { "TOPLEFT", "BOTTOMLEFT", false }, { "TOPRIGHT", "BOTTOMRIGHT", false } }) do
-                local t = b:CreateTexture(nil, "OVERLAY")
-                t:SetColorTexture(1, 0.82, 0.26, 1)
-                t:SetPoint(e[1]); t:SetPoint(e[2])
-                if e[3] then t:SetHeight(2) else t:SetWidth(2) end
-                b.salveEdges[#b.salveEdges + 1] = t
-            end
+        if not b.salveMovementFill then
+            local fill = b:CreateTexture(nil, "OVERLAY")
+            fill:SetAllPoints()
+            b.salveMovementFill = fill
         end
+        b.salveMovementFill:SetColorTexture(movementColour())
 
-        -- ☠ Bound the same way the dispel fill is: the engine owns whether these
-        --   are shown, so they must be handed over, never Show()n by us.
-        if b.AddDispelTypeTexture then
-            pcall(function()
-                for _, t in ipairs(b.salveEdges) do b:AddDispelTypeTexture(t) end
-            end)
-        end
+        -- Do not register these as dispel textures: the button's native
+        -- spell-ID filter owns their visibility by parent inheritance.
     end
 end
 
@@ -469,6 +512,7 @@ function Binding:Attach(box, unit)
         ns.Escape and #ns.Escape:AllSpellIDs() or 0,
         ns.Escape and tostring(ns.Escape:Active()) or "false",
         ns.Escape and tostring(ns.Escape:HasAllyEscape()) or "false",
+        movementColourSignature(),
     }, "|")
 
     -- Fast path: same slot, possibly a different unit, possibly parked.
@@ -623,16 +667,32 @@ function Binding:Attach(box, unit)
     --   reason to exist; this is an extra. If the client rejects it, the box
     --   still dispels -- so record it and carry on rather than detaching.
     if ns.Escape and ns.Escape:Active() then
-        local mine = (unit == "player")
+        -- Raid layouts use raid1..raid40, including the player's own cell.
+        -- A literal "player" check made personal escapes disappear in raids.
+        local mine = unit == "player"
+        if not mine and UnitIsUnit then
+            local comparable, sameUnit = pcall(UnitIsUnit, unit, "player")
+            mine = comparable and sameUnit or false
+        end
         if mine or ns.Escape:HasAllyEscape() then
             local ids = ns.Escape:AllSpellIDs()
             if #ids > 0 then
-                local ok, err = pcall(c.AddAuraSlot, c, MOVE_SLOT_KEY, "HARMFUL", {
-                    candidateFilters = { includeSpellIDs = ids },
+                -- AuraContainer candidate filters take a spell-ID set, not an
+                -- array. Passing { 339 } silently does not match spell 339;
+                -- it must be { [339] = true }.
+                local idFilter = {}
+                for _, spellID in ipairs(ids) do idFilter[spellID] = true end
+                local ok, movementSlot = pcall(c.AddAuraSlot, c, MOVE_SLOT_KEY, "HARMFUL", {
+                    candidateFilters = { includeSpellIDs = idFilter },
                     initializeFrame  = initializeMovementFrame(box),
                 })
                 if not ok then
-                    self.lastMovementFailure = tostring(err)
+                    self.lastMovementFailure = tostring(movementSlot)
+                -- Just like the primary slot, the engine creates this button
+                -- but does not position it over Salve's visible box.
+                elseif not movementSlot or not movementSlot.SetAllPoints
+                    or not pcall(movementSlot.SetAllPoints, movementSlot, box) then
+                    self.lastMovementFailure = "movement aura slot could not be anchored to its box"
                 end
             end
         end

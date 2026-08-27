@@ -208,7 +208,7 @@ ns.Bindings = {
 assert(loadfile("Options/Shared.lua"))("Salve", ns)
 for _, path in ipairs({
     "Options/Salve.lua", "Options/Visibility.lua", "Options/Dispel.lua",
-    "Options/Troubleshooting.lua", "Options/Commands.lua", "Options/About.lua",
+    "Options/Troubleshooting.lua", "Options/LearnedSpells.lua", "Options/Commands.lua", "Options/About.lua",
 }) do
     assert(loadfile(path))("Salve", ns)
 end
@@ -233,7 +233,7 @@ equal(unitsLabel.shown, false, "preview details hide with live preview")
 
 local pageCount = 0
 for _ in pairs(ns.Options.pages) do pageCount = pageCount + 1 end
-equal(pageCount, 6, "all six pages live in the movable window")
+equal(pageCount, 7, "all seven pages live in the movable window")
 equal(dropdown.template, "WowStyle1DropdownTemplate",
     "Show Salve uses Blizzard's native dropdown template")
 equal(dropdown.defaultText, "Always", "native dropdown shows visibility summary")

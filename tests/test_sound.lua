@@ -40,7 +40,11 @@ IsInRaid = function() return false end
 IsInGroup = function() return true end
 GetNumSubgroupMembers = function() return 2 end
 GetNumGroupMembers = function() return 3 end
-PlaySoundFile = function() return true end
+local playedSound = {}
+PlaySoundFile = function(file, channel)
+    playedSound[#playedSound + 1] = { file = file, channel = channel }
+    return true
+end
 Enum = { UnitAuraSoundTrigger = { Added = 0 } }
 local createdFrames = {}
 CreateFrame = function()
@@ -116,10 +120,20 @@ ns.Sound:DiscoverModules()
 ns.Sound:ActivateCurrentInstance()
 equal(loadCalls, 1, "always-on learning loads current data module")
 equal(ns.Sound.registered, 0, "sound disabled registers no alerts")
+equal(ns.Sound:PlayMovementWarning(), false,
+    "movement warning respects the shared alert-sound toggle")
 equal(#createdFrames, 3, "always-on learning creates one listener per party unit")
 
 ns.db.soundEnabled = true
 ns.Sound:ActivateCurrentInstance()
+equal(ns.Sound:PlayMovementWarning(), true,
+    "movement warning plays through the selected alert path")
+equal(playedSound[#playedSound].file, 3151600,
+    "movement warning uses Blizzard's Entangling Roots end-state sound")
+equal(playedSound[#playedSound].channel, "Master",
+    "movement warning uses the configured output channel")
+equal(ns.Sound:TestMovement(true), true,
+    "movement sound test uses the movement-warning alert path")
 equal(loadCalls, 2, "enabling sound refreshes the current module")
 equal(loadedName, "Salve_Data_Test", "highest-priority module wins")
 equal(#ns.Sound:ActiveRecords(), 1, "records filtered by cure type and verification")

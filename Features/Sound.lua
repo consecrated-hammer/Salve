@@ -16,6 +16,10 @@ local Sound = ns.Sound
 -- client, while numeric FileDataIDs were accepted without producing native
 -- aura audio. This original Salve tone ships with the addon under its GPL.
 local DEFAULT_SOUND = "Interface\\AddOns\\Salve\\Media\\DispelAlert.ogg"
+-- A movement impairment needs to be unmistakable from the ordinary dispel
+-- alert. This is Blizzard's Entangling Roots end-state sound, available as a
+-- Retail FileDataID and intentionally not affected by the dispel-tone setting.
+local MOVEMENT_WARNING_SOUND = 3151600
 local DATA_META = "X-Salve-LoadOn-InstanceID"
 local PRIORITY_META = "X-Salve-Data-Priority"
 
@@ -455,6 +459,35 @@ function Sound:Test(quietSuccess)
     end
     ns.Print("|cffff4444test sound was rejected|r on " .. channel
         .. " (file " .. tostring(file) .. ")")
+    return false
+end
+
+-- Roots and snares cannot use C_UnitAuras.AddAuraSound: unlike dispels they
+-- have no per-instance curated sound registration and this warning is only for
+-- the player who can use a selected personal escape. LOSS_OF_CONTROL_ADDED is
+-- already the authoritative player event, so play the same user-selected
+-- alert once for each new movement impairment.
+function Sound:PlayMovementWarning()
+    if not (ns.db and ns.db.soundEnabled) then return false end
+    local channel = ns.db.soundChannel or "Master"
+    local ok, willPlay, handle = pcall(PlaySoundFile, MOVEMENT_WARNING_SOUND, channel)
+    if ok and willPlay then return true, handle end
+    self.lastMovementSoundFailure = tostring(willPlay or "PlaySoundFile rejected the alert")
+    return false
+end
+
+function Sound:TestMovement(quietSuccess)
+    local ok, handle = self:PlayMovementWarning()
+    if ok then
+        if not quietSuccess then
+            ns.Print("snare-removal sound accepted on " .. ((ns.db and ns.db.soundChannel) or "Master"))
+        end
+        return true, handle
+    end
+    if not quietSuccess then
+        ns.Print("snare-removal sound could not play: "
+            .. tostring(self.lastMovementSoundFailure or "sound alerts are disabled"))
+    end
     return false
 end
 

@@ -5,6 +5,31 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-08-27
+
+### Added
+
+- Movement-impairment alerts now use Blizzard's dedicated Entangling Roots
+  end-state sound, with separate test controls for dispel and movement alerts.
+- Added a configurable movement-alert colour, so roots and snares that have an
+  enabled answer are visually distinct from Blizzard's normal dispel schools.
+- Added an edge-only cooldown sweep for the selected movement removal. Casting
+  an enabled spell such as Blessing of Freedom now shows that it is unavailable
+  without obscuring a simultaneous dispel alert or its cooldown text.
+- Added a **Learned Spells** settings page. **Copy learned spells** opens a
+  Ctrl+C-ready local export of the current Retail spellbook, including names,
+  IDs, spellbook sections and supplied passive/off-spec markers.
+
+### Changed
+
+- Expanded active-specialisation detection for dispels and their passive talent
+  upgrades. Salve no longer offers an off-spec action or a school extension
+  that the current build cannot actually cast.
+- Reworked movement-removal guidance and bindings: personal removals light only
+  the player's own cell; ally-targeted removals can answer any group member.
+  The Dispels page now labels this directly and displays Blizzard's normal
+  dispel colours alongside the independent movement-alert colour.
+
 ## [1.4.2] - 2026-08-23
 
 ### Fixed
@@ -253,6 +278,7 @@ Beta release.
 - Opt-in, group-scoped `/salve learn` diagnostics for readable catalogue gaps.
 
 [1.4.1]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.4.1
+[1.5.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.5.0
 [1.4.0]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.4.0
 [1.3.2]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.3.2
 [1.3.1]: https://github.com/consecrated-hammer/Salve/releases/tag/v1.3.1

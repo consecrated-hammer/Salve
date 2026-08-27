@@ -18,9 +18,10 @@ working.
 
 Salve is built for the new rules. Blizzard decides which cells light up and
 what dispel colour they use; Salve supplies the clickable panel. It can show
-and remove debuffs your character can dispel. It cannot inspect them to rank
-individual spells, and optional sound alerts can only cover spell IDs in the
-current dungeon or raid catalogue.
+and remove debuffs your character can dispel, plus roots and snares when you
+enable a movement-removal spell that can answer them. It cannot inspect debuffs
+to rank individual spells, and optional sound alerts can only cover spell IDs
+in the current dungeon or raid catalogue.
 
 ## What it does
 
@@ -39,6 +40,10 @@ it goes on right click automatically. Every detected action can be rebound.
 **All supported dispelling classes** — Paladin, Priest, Druid, Shaman, Monk,
 Evoker and Mage. Available spells are detected automatically when you change
 specialisation.
+
+**Actionable roots and snares.** Enable a movement removal you actually use.
+Personal spells light only your cell; ally-targeted spells such as Blessing of
+Freedom can light and cast on any group member.
 
 ## Screenshots
 
@@ -92,9 +97,9 @@ hide the grip once you are happy.
 
 Type `/salve` or use **Game Menu → Options → AddOns → Salve → Open Salve
 settings**. The Blizzard page is a launcher for Salve's movable settings window,
-which remembers where you place it. Its six pages are **Appearance** (layout and
-live preview), **Visibility**, **Dispels**, **Troubleshooting**, **Commands** and
-**About**.
+which remembers where you place it. Its seven pages are **Appearance** (layout
+and live preview), **Visibility**, **Dispels**, **Troubleshooting**, **Learned
+Spells**, **Commands** and **About**.
 
 The Appearance page can show a full-size, non-clickable test panel at the addon's
 actual saved screen position. Its group-size, clear or dispellable state and
@@ -115,11 +120,20 @@ stays anchored as the roster changes, which makes it easier to line Salve up
 with unit frames.
 
 The **Dispels** page shows each detected dispel and its mouse binding on one
-line. Experimental snare removals are off by default: enable only the actions
-you consider valid, then bind them on the same row. Party-wide actions such as
+line. Movement removals are off by default: enable only the actions you
+consider valid, then bind them on the same row. Party-wide actions such as
 Blessing of Freedom can cast on the clicked member; personal actions such as
-Blink light only your own cell. Binding changes made during combat are safely
-applied when combat ends.
+Blink light only your own cell. Roots and snares use a separate configurable
+alert colour, while normal dispel schools retain Blizzard's palette. Casting
+the selected movement removal shows an edge-only cooldown sweep, so its
+cooldown remains visible without obscuring an active dispel. Binding changes
+made during combat are safely applied when combat ends.
+
+The **Learned Spells** page has a **Copy learned spells** button. It opens a
+Ctrl+C-ready local export of every entry the current Retail spellbook exposes,
+grouped by spellbook section with names, IDs and any supplied passive/off-spec
+markers. Hidden or inactive entries remain unknown rather than being presented
+as unlearned.
 
 **Show units with nothing to dispel** holds the panel's shape. Turning it off
 makes inactive cells transparent. Their click areas stay in place:
@@ -127,10 +141,12 @@ mouse input cannot be changed on a protected frame during combat.
 
 **Alert sound** is optional and off by default. When enabled, Salve loads only
 the bundled data module covering the current instance, then registers only its
-catalogued spell IDs matching schools your character can remove. Season 1,
-Season 2 and future catalogues can coexist without loading or activating one
-another. Run `/salve debug` to see the active module, spell ID count and native
-sound registrations.
+catalogued spell IDs matching schools your character can remove. Actionable
+roots and snares use a distinct Blizzard movement-alert sound; the Dispels page
+has separate test buttons for both sounds. Season 1, Season 2 and future
+catalogues can coexist without loading or activating one another. Run
+`/salve debug` to see the active module, spell ID count and native sound
+registrations.
 
 Aura learning is always active. Outdoor discoveries are keyed to the current
 map; dungeon and raid discoveries are keyed to their instance. Salve listens
@@ -151,8 +167,9 @@ These are worth stating plainly, because they are not oversights:
 - **Sound coverage is source-backed but not guaranteed complete.** Encounter
   Journal data covers boss abilities, not every trash debuff. Aura learning
   can collect readable omissions; private auras still require curated data.
-- **Dispel colours cannot be customised,** for the same reason. The game owns
-  them.
+- **Normal dispel colours cannot be customised,** for the same reason. The game
+  owns them. The independent root/snare alert colour can be changed in the
+  Dispels page.
 
 ## Licence
 

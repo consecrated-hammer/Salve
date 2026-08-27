@@ -70,7 +70,13 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- UNIT_SPELLCAST_SUCCEEDED before the dispel's own cooldown has replaced
         -- the GCD-shaped duration object. One event-loop tick lets Blizzard
         -- commit the real Cleanse/Purify/etc. cooldown first.
-        if ns.Binding:ObserveDispelCast(arg1, arg3) then
+        local movementSpellID = ns.Binding:ObserveMovementCast(arg1, arg3)
+        if movementSpellID then
+            C_Timer.After(0, function()
+                ns.Binding:RefreshMovementCooldowns("deferred player movement removal",
+                    movementSpellID)
+            end)
+        elseif ns.Binding:ObserveDispelCast(arg1, arg3) then
             C_Timer.After(0, function()
                 ns.Binding:RefreshCooldowns("deferred player dispel")
             end)
@@ -85,7 +91,10 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         if type(unit) == "number" and effectIndex == nil then
             effectIndex, unit = unit, "player"
         end
-        ns.Escape:CaptureLossOfControl(unit, effectIndex)
+        local _, isMovement = ns.Escape:CaptureLossOfControl(unit, effectIndex)
+        if isMovement and ns.Escape:CanWarnForUnit(unit) then
+            ns.Sound:PlayMovementWarning()
+        end
 
     elseif event == "PLAYER_REGEN_DISABLED" then
         -- Test cells are intentionally non-secure, but a preview must never

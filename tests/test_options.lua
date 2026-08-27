@@ -71,19 +71,41 @@ function ns.CuresText(cures)
     return table.concat(names, ", ")
 end
 
+Enum = {
+    SpellBookSpellBank = { Player = 1 },
+    SpellBookItemType = { Spell = 1 },
+}
+C_SpellBook = {
+    GetNumSpellBookSkillLines = function() return 1 end,
+    GetSpellBookSkillLineInfo = function()
+        return { name = "Shaman", itemIndexOffset = 0, numSpellBookItems = 2 }
+    end,
+    GetSpellBookItemInfo = function(index)
+        if index == 1 then return { spellID = 17364, itemType = 1 } end
+        return { spellID = 187874, itemType = 1, isPassive = true }
+    end,
+}
+C_Spell = {
+    GetSpellInfo = function(id)
+        return { name = id == 17364 and "Stormstrike" or "Crash Lightning" }
+    end,
+}
+UnitName = function() return "Test Shaman" end
+
 for _, path in ipairs({
     "Options/Salve.lua",
     "Options/Visibility.lua",
     "Options/Dispel.lua",
     "Options/Troubleshooting.lua",
+    "Options/LearnedSpells.lua",
     "Options/Commands.lua",
     "Options/About.lua",
 }) do
     assert(loadfile(path))("Salve", ns)
 end
 
-equal(#pages, 6, "six options pages registered")
-for i, name in ipairs({ "Salve", "Visibility", "Dispels", "Troubleshooting", "Commands", "About" }) do
+equal(#pages, 7, "seven options pages registered")
+for i, name in ipairs({ "Salve", "Visibility", "Dispels", "Troubleshooting", "Learned Spells", "Commands", "About" }) do
     equal(pages[i].name, name, "page order " .. i)
 end
 equal(pages[1].title, "Appearance", "root page has task-focused heading")
@@ -96,6 +118,15 @@ if not report:find("Cooldown casts: 1 seen", 1, true) then
 end
 if report:find("|c", 1, true) then error("copy report contains chat colour escapes") end
 
+local spells = ns.Options.BuildLearnedSpellReport()
+if not spells:find("Character: Test Shaman", 1, true) then error("spell export omits character") end
+if not spells:find("Stormstrike (spell ID 17364)", 1, true) then
+    error("spell export omits named spell ID")
+end
+if not spells:find("Crash Lightning (spell ID 187874; passive)", 1, true) then
+    error("spell export omits passive marker")
+end
+
 -- ☠ ASSERT CONSISTENCY, NOT A LITERAL DATE. This used to pin 2026-08-16, so
 --   every release failed here and had to edit the assertion -- which teaches
 --   you to update the test rather than ask whether the change was right. What
@@ -103,16 +134,19 @@ if report:find("|c", 1, true) then error("copy report contains chat colour escap
 --   CHANGELOG heading, which is the same thing release CI enforces.
 local toc = assert(io.open("Salve.toc", "r")):read("*a")
 
-local version = toc:match("## Version:%s*([%d%.]+)")
+local version = toc:match("## Version:%s*(%S+)")
 if not version then error("Salve.toc has no ## Version") end
 
 local releaseDate = toc:match("## X%-ReleaseDate:%s*(%d%d%d%d%-%d%d%-%d%d)")
 if not releaseDate then error("Salve.toc has no well-formed X-ReleaseDate") end
 
-local changelog = assert(io.open("CHANGELOG.md", "r")):read("*a")
-local heading = ("## [%s] - %s"):format(version, releaseDate)
-if not changelog:find(heading, 1, true) then
-    error(("CHANGELOG.md has no '%s' heading"):format(heading))
+-- Local/debug stamps intentionally do not create public release notes.
+if not version:find("-local", 1, true) then
+    local changelog = assert(io.open("CHANGELOG.md", "r")):read("*a")
+    local heading = ("## [%s] - %s"):format(version, releaseDate)
+    if not changelog:find(heading, 1, true) then
+        error(("CHANGELOG.md has no '%s' heading"):format(heading))
+    end
 end
 
 print("options tests passed")
