@@ -27,12 +27,14 @@ local chunk = assert(loadfile("Core/Config.lua"))
 chunk("Salve", ns)
 ns.InitConfig()
 
-equal(ns.db.schemaVersion, 7, "schema migrated")
+equal(ns.db.schemaVersion, 9, "schema migrated")
 equal(ns.db.learnMode, true, "learning normalized on")
 equal(ns.db.soundEnabled, false, "alert sound defaults off")
 equal(ns.db.dispelSoundEnabled, false, "dispel alert sound defaults off")
 equal(ns.db.movementSoundEnabled, false, "snare-removal sound defaults off")
 equal(ns.db.movementColour.r, 0.92, "movement alert colour defaults to red-orange")
+equal(type(ns.db.movementSweepSpellIDs), "table", "movement sweep selections default to a table")
+equal(type(ns.db.movementSweepColours), "table", "movement sweep colours default to a table")
 equal(ns.db.showStartupMessage, true, "startup message defaults on")
 equal(ns.db.useClassColours, false, "class-coloured clear cells default off")
 equal(ns.db.nameJustifyH, "LEFT", "unit names default left")
@@ -75,7 +77,7 @@ ns.InitConfig()
 -- data source, not a diagnostic, so resetting it meant that category never
 -- accumulated anything.
 equal(ns.db.learnMode, true, "learning survives UI reload")
-equal(ns.db.schemaVersion, 7, "duplicate-binding migration applied")
+equal(ns.db.schemaVersion, 9, "duplicate-binding migration applied")
 equal(#ns.db.bindings, 1, "duplicate mouse bindings collapsed")
 equal(ns.db.bindingsCustom, true, "legacy explicit bindings remain custom")
 equal(ns.db.visibility.mounted, nil, "removed mounted condition cleared")
@@ -95,5 +97,12 @@ SalveLearnedDB = nil
 ns.InitConfig()
 equal(ns.db.dispelSoundEnabled, true, "legacy sound setting enables dispel sound")
 equal(ns.db.movementSoundEnabled, true, "legacy sound setting enables snare-removal sound")
+
+SalveDB = { schemaVersion = 8, movementSweepSpellID = 1044 }
+SalveLearnedDB = nil
+ns.InitConfig()
+equal(ns.db.movementSweepSpellIDs[1044], true,
+    "legacy single sweep selection migrates into the multi-sweep set")
+equal(ns.db.movementSweepSpellID, nil, "legacy single sweep selection is cleared")
 
 print("config tests passed")

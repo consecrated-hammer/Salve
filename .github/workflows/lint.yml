@@ -25,6 +25,7 @@ jobs:
           lua tests/test_core.lua
           lua tests/test_aura_binding.lua
           lua tests/test_bindings.lua
+          lua tests/test_click_log.lua
           lua tests/test_events.lua
           lua tests/test_escape.lua
           lua tests/test_dispel_layout.lua

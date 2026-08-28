@@ -46,57 +46,79 @@ O.NewPage({
     group = "REFERENCE",
     description = "Version, credits, and questionable medical advice.",
 }, function(panel, y)
-    local info = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    info:SetPoint("TOPLEFT", 16, y)
-    info:SetWidth(520)
+    local function card(height)
+        local frame = CreateFrame("Frame", nil, panel, "BackdropTemplate")
+        frame:SetPoint("TOPLEFT", 16, y)
+        frame:SetSize(540, height)
+        frame:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            edgeSize = 1,
+        })
+        frame:SetBackdropColor(unpack(O.theme.raised))
+        frame:SetBackdropBorderColor(unpack(O.theme.edge))
+        y = y - height - 14
+        return frame
+    end
+
+    local label = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    label:SetPoint("TOPLEFT", 16, y)
+    label:SetText("ABOUT")
+    label:SetTextColor(unpack(O.theme.muted))
+    y = y - 22
+
+    local labelCard = card(72)
+    local info = labelCard:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    info:SetPoint("TOPLEFT", 12, -12)
+    info:SetWidth(516)
     info:SetJustifyH("LEFT")
     info:SetText(table.concat({
-        "|cffffd100Version|r  " .. tostring(ns.VERSION or "unknown"),
-        "|cffffd100Released|r  " .. tostring(ns.GetMetadata("X-ReleaseDate") or "unknown"),
-        "|cffffd100Author|r  " .. tostring(ns.GetMetadata("Author") or "unknown"),
-        "|cffffd100Licence|r  " .. tostring(ns.GetMetadata("X-License") or "GPL-3.0"),
+        "|cffffd100Version|r  " .. tostring(ns.VERSION or "unknown")
+            .. "    |cffffd100Released|r  " .. tostring(ns.GetMetadata("X-ReleaseDate") or "unknown"),
+        "|cffffd100Author|r  " .. tostring(ns.GetMetadata("Author") or "unknown")
+            .. "    |cffffd100Licence|r  " .. tostring(ns.GetMetadata("X-License") or "GPL-3.0"),
         "|cffffd100CurseForge|r  " .. tostring(ns.GetMetadata("X-CurseForge") or ""),
         "|cffffd100Source|r  " .. tostring(ns.GetMetadata("X-Website") or ""),
     }, "\n"))
-    y = y - 114
 
-    local credit = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-    credit:SetPoint("TOPLEFT", 16, y)
-    credit:SetWidth(520)
-    credit:SetJustifyH("LEFT")
-    credit:SetText("Decursive alert sound by John Wellesz, used under GPL v3-or-later.")
-    y = y - 36
-
-    local tip = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    tip:SetPoint("TOPLEFT", 16, y)
-    tip:SetWidth(520)
+    local noteCard = card(120)
+    local noteHeading = noteCard:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    noteHeading:SetPoint("TOPLEFT", 12, -10)
+    noteHeading:SetText("PRACTITIONER'S NOTE")
+    noteHeading:SetTextColor(unpack(O.theme.accent))
+    local tip = noteCard:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    tip:SetPoint("TOPLEFT", 12, -31)
+    tip:SetWidth(510)
     tip:SetJustifyH("LEFT")
     local lastTip
     local function showTip()
         local nextTip
         repeat nextTip = math.random(#tips) until #tips == 1 or nextTip ~= lastTip
         lastTip = nextTip
-        tip:SetText("|cffffd100Tip:|r " .. tips[nextTip])
+        tip:SetText(tips[nextTip])
     end
     panel.salveRefresh[#panel.salveRefresh + 1] = showTip
-    y = y - 44
-
-    local apply = O.Button(panel, 176, 44, "primary")
-    apply:SetPoint("TOPLEFT", 16, y)
-    apply:SetText("")
+    local apply = CreateFrame("Button", nil, noteCard, "UIPanelButtonTemplate")
+    apply:SetSize(174, 54)
+    apply:SetPoint("BOTTOMLEFT", 12, 10)
+    apply:SetText("Apply Salve")
     local applyIcon = apply:CreateTexture(nil, "ARTWORK")
     applyIcon:SetSize(32, 32)
-    applyIcon:SetPoint("LEFT", 8, 0)
+    applyIcon:SetPoint("LEFT", 6, 0)
     applyIcon:SetTexture("Interface\\AddOns\\Salve\\Textures\\SalveTransparent")
-    local applyText = apply:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    applyText:SetPoint("LEFT", applyIcon, "RIGHT", 10, 0)
-    applyText:SetText("Apply Salve")
-    O.AttachHint(apply, "Apply Salve", "Clicking this has no effect. Mostly.")
+    applyIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    if apply.Text then
+        apply.Text:ClearAllPoints()
+        apply.Text:SetPoint("CENTER", 8, 0)
+    end
+    O.AttachHint(apply, "Apply Salve", "Applies a ceremonial, entirely non-medical coat of Salve.")
     apply:SetScript("OnClick", function()
         showTip()
-        if ns.Sound:Test(true) then
-            ns.Print(applicationLines[math.random(#applicationLines)])
-        end
+        if ns.Sound and ns.Sound.Test then ns.Sound:Test(true) end
+        ns.Print(applicationLines[math.random(#applicationLines)])
     end)
-    return y - 56
+    local credit = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    credit:SetPoint("TOPLEFT", 16, y)
+    credit:SetText("Decursive alert sound by John Wellesz, used under GPL v3-or-later.")
+    return y - 24
 end)

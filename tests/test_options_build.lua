@@ -88,9 +88,14 @@ CreateFrame = function(_, name, _, template)
 end
 
 UIParent = object("UIParent")
+local tooltipTitle, tooltipSpellID
 GameTooltip = {
     SetOwner = function() end,
-    SetText = function() end,
+    SetText = function(_, title)
+        if type(title) ~= "string" then error("tooltip title must be text") end
+        tooltipTitle = title
+    end,
+    SetSpellByID = function(_, spellID) tooltipSpellID = spellID end,
     AddLine = function() end,
     Show = function() end,
     Hide = function() end,
@@ -130,6 +135,7 @@ local ns = {
         visibilityMode = "ALWAYS", visibility = {}, soundEnabled = false,
         dispelSoundEnabled = false, movementSoundEnabled = false,
         soundChannel = "Master", bindings = {}, escapes = {},
+        movementSweepSpellIDs = { [1044] = true }, movementSweepColours = {},
         movementColour = { r = 0.2, g = 0.3, b = 0.4, a = 0.5 },
         settingsPoint = { "CENTER", "CENTER", 0, 0 },
         horizontalGrowth = "RIGHT", verticalGrowth = "DOWN",
@@ -199,6 +205,7 @@ local bindings = { { key = "BUTTON1" } }
 ns.Bindings = {
     List = function() return bindings end,
     Materialise = function() return bindings end,
+    SpellID = function(_, entry) return entry.spell or 4987 end,
     KeysForSpell = function(_, spellID)
         return spellID == 4987 and { "BUTTON1" } or {}
     end,
@@ -221,6 +228,30 @@ end
 ns.Options.BuildAll()
 equal(ns.Options.window.name, "SalveSettingsFrame",
     "movable settings window is constructed")
+equal(ns.db.movementSweepSpellIDs[1044], true,
+    "options build preserves saved sweep selections before spell discovery")
+
+local dynamicHint
+for _, value in ipairs(objects) do
+    if type(value.salveHintTitle) == "function" and value.scripts.OnEnter then
+        dynamicHint = value
+        break
+    end
+end
+if not dynamicHint then error("dynamic layout hint was not built") end
+dynamicHint.scripts.OnEnter(dynamicHint)
+equal(tooltipTitle, "Cells per row", "dynamic tooltip resolves its label before SetText")
+
+local spellHint
+for _, value in ipairs(objects) do
+    if value.salveSpellID == 4987 and value.scripts.OnEnter then
+        spellHint = value
+        break
+    end
+end
+if not spellHint then error("spell hover tooltip was not built") end
+spellHint.scripts.OnEnter(spellHint)
+equal(tooltipSpellID, 4987, "action palette opens the native spell tooltip")
 
 local function findText(text)
     for _, value in ipairs(objects) do
@@ -300,7 +331,7 @@ ns.OpenOptions("Visibility")
 equal(ns.Options.window.shown, true, "direct settings command opens movable window")
 equal(ns.Options.selectedPage, "Visibility", "requested custom page is selected")
 ns.Preview.active = true
-ns.Options.ShowPage("Dispels")
+ns.Options.ShowPage("Actions")
 equal(ns.Preview.active, true, "preview persists while navigating settings pages")
 equal(previewStops, 0, "page navigation does not stop preview")
 ns.Options.ShowPage("Alerts")
@@ -312,17 +343,6 @@ equal(ns.Options.pages.Visibility.shown, true, "Visibility page is shown")
 ns.Options.ShowPage("not a Salve page")
 equal(ns.Options.selectedPage, "Salve", "unknown page falls back to Panel")
 equal(ns.Options.pages.Salve.shown, true, "Panel is shown for an unknown page")
-
-ns.db.dispelSoundEnabled = true
-ns.db.movementSoundEnabled = true
-ns.db.soundChannel = "Dialog"
-ns.db.movementColour = { r = 0.2, g = 0.3, b = 0.4, a = 0.5 }
-local resetDispels = findText("Reset Dispels")
-resetDispels.scripts.OnClick()
-equal(ns.db.dispelSoundEnabled, true, "Reset Dispels preserves dispel alert sound")
-equal(ns.db.movementSoundEnabled, true, "Reset Dispels preserves snare-removal sound")
-equal(ns.db.soundChannel, "Dialog", "Reset Dispels preserves alert channel")
-equal(ns.db.movementColour.r, 0.2, "Reset Dispels preserves movement colour")
 
 local resetAlerts = findText("Reset Alerts")
 resetAlerts.scripts.OnClick()

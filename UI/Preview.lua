@@ -26,6 +26,7 @@ local FALLBACK_DISPEL_COLOURS = {
 Preview.count = 5
 Preview.cellState = "DISPELLABLE"
 Preview.cooldownState = "COOLDOWN"
+Preview.movementSweepState = false
 
 local function knownDispelTypes()
     local known, list = {}, {}
@@ -48,6 +49,18 @@ local function dispelColour(dispelType)
         or FALLBACK_DISPEL_COLOURS.Poison
 end
 
+local function previewSweepSpellIDs()
+    local ids = {}
+    for id, enabled in pairs((ns.db and ns.db.movementSweepSpellIDs) or {}) do
+        if enabled and type(id) == "number" then ids[#ids + 1] = id end
+    end
+    table.sort(ids)
+    if #ids == 0 and ns.db and type(ns.db.movementSweepSpellID) == "number" then
+        ids[1] = ns.db.movementSweepSpellID
+    end
+    return ids
+end
+
 function Preview:NeedsDispel(index, count)
     if count <= 2 then return index == count end
     return index == 2 or index == math.min(count, 4)
@@ -57,7 +70,7 @@ end
 -- restyling as Salve's live panel. The Settings host is clipped and scales down
 -- only when the configured grid cannot fit its preview stage.
 local function renderBoxes(boxes, frame, count, layout, state, cooldownState,
-        cooldownStart)
+        cooldownStart, movementSweepState, movementSweepStart)
     local types = knownDispelTypes()
     for i, box in ipairs(boxes) do
         if i <= count then
@@ -82,6 +95,25 @@ local function renderBoxes(boxes, frame, count, layout, state, cooldownState,
             else
                 if box.dispelCooldown.Clear then box.dispelCooldown:Clear() end
                 box.dispelCooldown:Hide()
+            end
+            local sweeps = movementSweepState and i == 1 and previewSweepSpellIDs() or {}
+            local cooldowns = box.movementCooldowns or { box.movementCooldown }
+            while #cooldowns < #sweeps and ns.Box and ns.Box.CreateMovementCooldown do
+                cooldowns[#cooldowns + 1] = ns.Box.CreateMovementCooldown(box, #cooldowns + 1)
+            end
+            for index, cooldown in ipairs(cooldowns) do
+                local spellID = sweeps[index]
+                if spellID then
+                    local r, g, b, a = ns.Binding:GetMovementSweepColour(spellID)
+                    if cooldown.SetDrawSwipe then cooldown:SetDrawSwipe(false) end
+                    if cooldown.SetDrawEdge then cooldown:SetDrawEdge(true) end
+                    if cooldown.SetEdgeColor then cooldown:SetEdgeColor(r, g, b, a) end
+                    cooldown:SetCooldown(movementSweepStart - (index - 1) * 5, 25)
+                    cooldown:Show()
+                else
+                    if cooldown.Clear then cooldown:Clear() end
+                    cooldown:Hide()
+                end
             end
             box:Show()
         else
@@ -113,12 +145,23 @@ function Preview:CreateSettingsPreview(parent, top, left, width, height)
         width = width, height = height,
     }
     viewport:SetScript("OnUpdate", function(_, elapsed)
-        if not Preview.settingsPreview or Preview.cooldownState ~= "COOLDOWN" then return end
+        if not Preview.settingsPreview
+            or (Preview.cooldownState ~= "COOLDOWN" and not Preview.movementSweepState) then return end
         Preview.settingsElapsed = (Preview.settingsElapsed or 0) + elapsed
         if Preview.settingsElapsed < 0.1 then return end
         Preview.settingsElapsed = 0
-        if not Preview.cooldownStart or GetTime() - Preview.cooldownStart >= 8 then
-            Preview.cooldownStart = GetTime()
+        local now, changed = GetTime(), false
+        if Preview.cooldownState == "COOLDOWN"
+            and (not Preview.cooldownStart or now - Preview.cooldownStart >= 8) then
+            Preview.cooldownStart = now
+            changed = true
+        end
+        if Preview.movementSweepState
+            and (not Preview.movementSweepStart or now - Preview.movementSweepStart >= 25) then
+            Preview.movementSweepStart = now - 8
+            changed = true
+        end
+        if changed then
             Preview:RefreshSettingsPreview()
         end
     end)
@@ -137,8 +180,9 @@ function Preview:RefreshSettingsPreview()
     preview.frame:SetScale(layout.scale * fit)
     preview.frame:SetSize(layout.frameWidth, layout.frameHeight)
     self.cooldownStart = self.cooldownStart or GetTime()
+    self.movementSweepStart = self.movementSweepStart or (GetTime() - 8)
     renderBoxes(preview.boxes, preview.frame, count, layout, self.cellState,
-        self.cooldownState, self.cooldownStart)
+        self.cooldownState, self.cooldownStart, self.movementSweepState, self.movementSweepStart)
     preview.frame:Show()
 end
 
@@ -195,15 +239,29 @@ function Preview:Create()
     self.handle = handle
 
     frame:SetScript("OnUpdate", function(_, elapsed)
-        if not Preview.active or Preview.cooldownState ~= "COOLDOWN" then return end
+        if not Preview.active
+            or (Preview.cooldownState ~= "COOLDOWN" and not Preview.movementSweepState) then return end
         Preview.elapsed = (Preview.elapsed or 0) + elapsed
         if Preview.elapsed < 0.1 then return end
         Preview.elapsed = 0
-        if not Preview.cooldownStart or GetTime() - Preview.cooldownStart >= 8 then
-            Preview.cooldownStart = GetTime()
+        local now = GetTime()
+        if Preview.cooldownState == "COOLDOWN"
+            and (not Preview.cooldownStart or now - Preview.cooldownStart >= 8) then
+            Preview.cooldownStart = now
             for _, box in ipairs(Preview.boxes) do
                 if box:IsShown() then
                     box.dispelCooldown:SetCooldown(Preview.cooldownStart, 8)
+                end
+            end
+        end
+        if Preview.movementSweepState
+            and (not Preview.movementSweepStart or now - Preview.movementSweepStart >= 25) then
+            Preview.movementSweepStart = now - 8
+            for index, box in ipairs(Preview.boxes) do
+                if index == 1 and box:IsShown() then
+                    for sweepIndex, cooldown in ipairs(box.movementCooldowns or { box.movementCooldown }) do
+                        cooldown:SetCooldown(Preview.movementSweepStart - (sweepIndex - 1) * 5, 25)
+                    end
                 end
             end
         end
@@ -230,9 +288,13 @@ function Preview:Refresh()
         and (not self.cooldownStart or now - self.cooldownStart >= 8) then
         self.cooldownStart = now
     end
+    if self.movementSweepState
+        and (not self.movementSweepStart or now - self.movementSweepStart >= 25) then
+        self.movementSweepStart = now - 8
+    end
 
     renderBoxes(self.boxes, frame, count, layout, self.cellState,
-        self.cooldownState, self.cooldownStart)
+        self.cooldownState, self.cooldownStart, self.movementSweepState, self.movementSweepStart)
 
     self.handle:SetShown(ns.db.showHandle and true or false)
     ns.Handle:PositionFrame(self.handle, frame)

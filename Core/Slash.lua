@@ -50,15 +50,19 @@ SlashCmdList.SALVE = function(msg)
         ns.Print("panel position reset")
 
     elseif cmd == "help" then
+        ns.Print("|cff4c9a7aGeneral|r")
         ns.Print("|cffffd100/salve|r or |cffffd100/salve options|r — open the options panel")
+        ns.Print("|cffffd100/salve help|r — show this command list")
+        ns.Print("|cffffd100/salve version|r — print the loaded version and revision")
+        ns.Print("|cff4c9a7aPanel|r")
         ns.Print("|cffffd100/salve lock|r | |cffffd100unlock|r — hide or show the drag handle")
         ns.Print("|cffffd100/salve reset|r — put the panel back in the middle")
+        ns.Print("|cff4c9a7aDiagnostics|r")
         ns.Print("|cffffd100/salve debug|r — print a diagnostic report")
         ns.Print("|cffffd100/salve debug copy|r — open a selectable diagnostic report")
-        ns.Print("|cffffd100/salve version|r — print the loaded version and revision")
         ns.Print("|cffffd100/salve snares|r — list auto-captured root and snare spell IDs")
+        ns.Print("|cff4c9a7aLearning|r")
         ns.Print("|cffffd100/salve learned|r | |cffffd100learned clear|r — list or clear recorded auras")
-        ns.Print("|cffffd100/salve help|r — show this command list")
 
     else
         ns.OpenOptions()

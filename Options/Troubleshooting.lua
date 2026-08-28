@@ -39,6 +39,8 @@ local function buildReport()
         "Dispel sound: " .. yesNo(dispelSound),
         "Snare-removal sound: " .. yesNo(movementSound),
         "Aura learning: always on",
+        "Cell-click audit: " .. yesNo(ns.db.clickAuditEnabled)
+            .. " (" .. tostring(ns.ClickLog and ns.ClickLog:Count() or 0) .. " entries)",
         "Cures: " .. ns.CuresText(ns.Sound:CurrentCures()),
         "Spell IDs: " .. tostring(#ns.Sound:ActiveRecords()),
         "Sound registrations: " .. tostring(ns.Sound.registered)
@@ -96,10 +98,10 @@ end
 O.BuildDiagnosticReport = buildReport
 
 local copyFrame
-local function showCopyReport()
+local function showCopyText(titleText, content)
     if not copyFrame then
         local frame = CreateFrame("Frame", "SalveCopyReport", UIParent, "BackdropTemplate")
-        frame:SetSize(560, 360)
+        frame:SetSize(640, 360)
         frame:SetPoint("CENTER")
         frame:SetFrameStrata("FULLSCREEN_DIALOG")
         frame:SetBackdrop({
@@ -114,7 +116,7 @@ local function showCopyReport()
 
         local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("TOPLEFT", 18, -16)
-        title:SetText("Copy Salve report")
+        frame.title = title
 
         local help = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
@@ -128,7 +130,7 @@ local function showCopyReport()
         edit:SetMultiLine(true)
         edit:SetAutoFocus(false)
         edit:SetFontObject(ChatFontNormal)
-        edit:SetWidth(485)
+        edit:SetWidth(565)
         edit:SetHeight(800)
         edit:SetTextInsets(4, 4, 4, 4)
         edit:SetScript("OnEscapePressed", function() frame:Hide() end)
@@ -145,10 +147,21 @@ local function showCopyReport()
         copyFrame = frame
     end
 
-    copyFrame.edit:SetText(buildReport())
+    copyFrame.title:SetText(titleText)
+    copyFrame.edit:SetText(content)
     copyFrame:Show()
     copyFrame.edit:SetFocus()
     copyFrame.edit:HighlightText()
+end
+
+local function showCopyReport()
+    showCopyText("Copy Salve report", buildReport())
+end
+
+local function showCopyClickLog()
+    local content = ns.ClickLog and ns.ClickLog:Export()
+        or "Salve cell-click audit\nno click-log storage is available"
+    showCopyText("Copy Salve click log", content)
 end
 
 O.ShowDiagnosticReport = showCopyReport
@@ -211,5 +224,27 @@ O.NewPage({
     note:SetJustifyH("LEFT")
     note:SetText("Records readable dispellable auras and Blizzard-reported roots or snares. Private auras cannot be recorded.")
     y = y - 42
+
+    _, y = O.Header(panel, "Debug logging", y)
+    _, y = O.Check(panel, "Record armed Salve-cell clicks",
+        "Off by default. Saves timestamp, unit token, mouse binding and the selected Salve action to SalveClickLog. It cannot record a private aura's name.",
+        y, function() return ns.db.clickAuditEnabled end,
+        function(value) ns.Set("clickAuditEnabled", value) end)
+
+    local clear = O.Button(panel, 120, 22)
+    clear:SetPoint("TOPLEFT", 16, y)
+    clear:SetText("Clear click log")
+    O.AttachHint(clear, "Clear click log", "Remove saved Salve-cell click history.")
+    clear:SetScript("OnClick", function()
+        if ns.ClickLog then ns.ClickLog:Clear() end
+        refreshStatus()
+    end)
+    local copyLog = O.Button(panel, 120, 22)
+    copyLog:SetPoint("LEFT", clear, "RIGHT", 8, 0)
+    copyLog:SetText("Copy click log")
+    O.AttachHint(copyLog, "Copy click log",
+        "Open a timestamped, copy-ready export of recorded Salve-cell clicks.")
+    copyLog:SetScript("OnClick", showCopyClickLog)
+    y = y - 38
     return y
 end)

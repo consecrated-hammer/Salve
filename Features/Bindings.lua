@@ -39,6 +39,17 @@ function Bindings:Defaults()
             { key = "BUTTON2", role = ns.ROLE_SECONDARY },
         }
     end
+    -- With only one dispel, right-click becomes the first explicitly enabled
+    -- movement removal. No candidate is armed until the player binds it.
+    local enabled = ns.db and ns.db.escapes or {}
+    for _, spell in ipairs(ns.knownEscapes or {}) do
+        if enabled[spell.id] then
+            return {
+                list[1],
+                { key = "BUTTON2", spell = spell.id },
+            }
+        end
+    end
     return list
 end
 
@@ -272,6 +283,10 @@ function Bindings:Apply(box)
     end
 
     box.appliedAttrs = {}
+    -- This map is only audit metadata. It mirrors the already-fixed secure
+    -- actions so UI/Box can record a click without reading protected aura
+    -- state or inspecting secure attributes during combat.
+    box.clickAuditActions = {}
 
     local function set(attr, value)
         box:SetAttribute(attr, value)
@@ -291,10 +306,15 @@ function Bindings:Apply(box)
                 set(typeAttr, nil)
                 set(spellAttr, nil)
             else
-                local spell = spellFor(entry)
+                local spell, spellID, kind = spellFor(entry)
                 if spell then
                     set(typeAttr, "spell")
                     set(spellAttr, spell)
+                    box.clickAuditActions[entry.key] = {
+                        kind = kind,
+                        spellID = spellID,
+                        spellName = spell,
+                    }
                 end
             end
         end

@@ -175,6 +175,43 @@ local function applyCooldown(cooldown, duration)
     return ok
 end
 
+local SWEEP_COLOURS = {
+    { r = 0.95, g = 0.66, b = 0.18, a = 0.78 },
+    { r = 0.62, g = 0.35, b = 0.96, a = 0.78 },
+    { r = 0.20, g = 0.72, b = 0.96, a = 0.78 },
+    { r = 0.22, g = 0.84, b = 0.52, a = 0.78 },
+}
+
+function Binding:GetMovementSweepColour(spellID)
+    local stored = ns.db and ns.db.movementSweepColours
+    local colour = type(stored) == "table" and stored[spellID]
+    if type(colour) == "table" then
+        return tonumber(colour.r) or 1, tonumber(colour.g) or 1,
+            tonumber(colour.b) or 1, tonumber(colour.a) or 0.78
+    end
+    local fallback = SWEEP_COLOURS[(tonumber(spellID) or 0) % #SWEEP_COLOURS + 1]
+    return fallback.r, fallback.g, fallback.b, fallback.a
+end
+
+local function selectedSweepSpellIDs()
+    if not ns.Escape then return {} end
+    if ns.Escape.SweepSpellIDs then return ns.Escape:SweepSpellIDs() end
+    local spellID = ns.Escape.SweepSpellID and ns.Escape:SweepSpellID()
+        or ns.Escape:CooldownSpellID()
+    return spellID and { spellID } or {}
+end
+
+local function applyMovementCooldown(cooldown, box, spellID, duration)
+    local allowed = spellID and (not box or not ns.Escape or not ns.Escape.CanSweepForUnit
+        or ns.Escape:CanSweepForUnit(spellID, box.unit))
+    if not allowed then return applyCooldown(cooldown, nil) end
+    local r, g, b, a = Binding:GetMovementSweepColour(spellID)
+    if cooldown.SetDrawSwipe then cooldown:SetDrawSwipe(false) end
+    if cooldown.SetDrawEdge then cooldown:SetDrawEdge(true) end
+    if cooldown.SetEdgeColor then cooldown:SetEdgeColor(r, g, b, a) end
+    return applyCooldown(cooldown, duration)
+end
+
 function Binding:RegisterCooldown(cooldown)
     if not cooldown then return end
     self.cooldowns[cooldown] = true
@@ -183,13 +220,10 @@ function Binding:RegisterCooldown(cooldown)
     applyCooldown(cooldown, duration)
 end
 
-function Binding:RegisterMovementCooldown(cooldown)
+function Binding:RegisterMovementCooldown(cooldown, box)
     if not cooldown then return end
-    self.movementCooldowns[cooldown] = true
-    local spellID = ns.Escape and ns.Escape:CooldownSpellID()
-    local duration, err = cooldownDuration(spellID)
-    if err then self.lastCooldownFailure = err end
-    applyCooldown(cooldown, duration)
+    self.movementCooldowns[box or cooldown] = box or true
+    self:RefreshMovementCooldowns("movement cooldown registered")
 end
 
 function Binding:RefreshCooldowns(reason)
@@ -220,14 +254,29 @@ function Binding:ObserveMovementCast(unit, spellID)
 end
 
 function Binding:RefreshMovementCooldowns(reason, spellID)
-    -- A successful cast tells us exactly which enabled escape matters now.
-    -- Otherwise use the deterministic first enabled option for an initial
-    -- registration or a settings refresh.
-    spellID = spellID or (ns.Escape and ns.Escape:CooldownSpellID())
-    local duration, err = cooldownDuration(spellID)
-    if err then self.lastCooldownFailure = err end
-    for cooldown in pairs(self.movementCooldowns) do
-        applyCooldown(cooldown, duration)
+    local selected = selectedSweepSpellIDs()
+    local selectedSet = {}
+    for _, id in ipairs(selected) do selectedSet[id] = true end
+    if spellID and not selectedSet[spellID] then return end
+    for key, registeredBox in pairs(self.movementCooldowns) do
+        local box
+        if registeredBox ~= true then box = registeredBox end
+        local cooldowns = box and box.movementCooldowns or { key }
+        for index, id in ipairs(selected) do
+            local cooldown = cooldowns[index]
+            if not cooldown and box and ns.Box and ns.Box.CreateMovementCooldown then
+                cooldown = ns.Box.CreateMovementCooldown(box, index)
+                cooldowns[index] = cooldown
+            end
+            if cooldown then
+                local duration, err = cooldownDuration(id)
+                if err then self.lastCooldownFailure = err end
+                applyMovementCooldown(cooldown, box, id, duration)
+            end
+        end
+        for index = #selected + 1, #cooldowns do
+            applyCooldown(cooldowns[index], nil)
+        end
     end
 end
 
@@ -379,12 +428,18 @@ local function initializeFrame(box)
                 box.dispelCooldown:SetFrameLevel(b:GetFrameLevel() + 7)
             end)
         end
-        if box.movementCooldown then
-            pcall(function()
-                -- This sits above the native movement fill but draws only its
-                -- moving edge: the chosen movement answer is unavailable.
-                box.movementCooldown:SetFrameLevel(b:GetFrameLevel() + 9)
-            end)
+        if box.movementCooldowns then
+            box.movementFrameLevel = b:GetFrameLevel() + 9
+            for index, cooldown in ipairs(box.movementCooldowns) do
+                pcall(function()
+                    -- These sit above the native movement fill but draw only
+                    -- their moving edges, one colour for each chosen action.
+                    cooldown:SetFrameLevel(b:GetFrameLevel() + 9 + index)
+                end)
+            end
+        elseif box.movementCooldown then
+            box.movementFrameLevel = b:GetFrameLevel() + 9
+            pcall(function() box.movementCooldown:SetFrameLevel(b:GetFrameLevel() + 10) end)
         end
 
         -- Fill: created HERE, as a child of the button. The engine tints it by

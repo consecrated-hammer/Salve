@@ -63,6 +63,19 @@ local function StyleNameText(box)
     end
 end
 
+function Box.CreateMovementCooldown(box, index)
+    local cooldown = CreateFrame("Cooldown", nil, box, "CooldownFrameTemplate")
+    cooldown:SetAllPoints(box)
+    cooldown:SetFrameLevel((box.movementFrameLevel or (box:GetFrameLevel() + 13)) + (index or 1))
+    if cooldown.SetDrawSwipe then cooldown:SetDrawSwipe(false) end
+    if cooldown.SetDrawEdge then cooldown:SetDrawEdge(true) end
+    if cooldown.SetDrawBling then cooldown:SetDrawBling(false) end
+    if cooldown.SetHideCountdownNumbers then cooldown:SetHideCountdownNumbers(true) end
+    if cooldown.SetMinimumCountdownDuration then cooldown:SetMinimumCountdownDuration(0) end
+    if cooldown.EnableMouse then cooldown:EnableMouse(false) end
+    return cooldown
+end
+
 
 -- ── Tooltip ────────────────────────────────────────────────────────────────
 --
@@ -159,23 +172,11 @@ local function CreateVisuals(box, registerCooldown)
     if registerCooldown then ns.Binding:RegisterCooldown(box.dispelCooldown) end
     StyleCooldownText(box)
 
-    -- A separate edge-only cooldown for the selected movement removal. It
-    -- deliberately has no dark swipe or countdown number, so it reads as a
-    -- border sweep rather than competing with the normal dispel cooldown.
-    box.movementCooldown = CreateFrame("Cooldown", nil, box, "CooldownFrameTemplate")
-    box.movementCooldown:SetAllPoints(box)
-    box.movementCooldown:SetFrameLevel(box:GetFrameLevel() + 13)
-    if box.movementCooldown.SetDrawSwipe then box.movementCooldown:SetDrawSwipe(false) end
-    if box.movementCooldown.SetDrawEdge then box.movementCooldown:SetDrawEdge(true) end
-    if box.movementCooldown.SetDrawBling then box.movementCooldown:SetDrawBling(false) end
-    if box.movementCooldown.SetHideCountdownNumbers then
-        box.movementCooldown:SetHideCountdownNumbers(true)
-    end
-    if box.movementCooldown.SetMinimumCountdownDuration then
-        box.movementCooldown:SetMinimumCountdownDuration(0)
-    end
-    if box.movementCooldown.EnableMouse then box.movementCooldown:EnableMouse(false) end
-    if registerCooldown then ns.Binding:RegisterMovementCooldown(box.movementCooldown) end
+    -- One thin coloured edge per selected movement action. They draw only a
+    -- clock hand, so concurrent cooldowns stay distinguishable by colour.
+    box.movementCooldown = Box.CreateMovementCooldown(box, 1)
+    box.movementCooldowns = { box.movementCooldown }
+    if registerCooldown then ns.Binding:RegisterMovementCooldown(box.movementCooldown, box) end
 
     -- ☠ THE NAME LIVES ON ITS OWN FRAME, NOT ON THE BOX. The engine's aura
     --   button is a CHILD frame of this box, and a child renders above every
@@ -206,6 +207,12 @@ function Box.Create(index, parent)
 
     box:HookScript("OnEnter", ShowBoxTooltip)
     box:HookScript("OnLeave", HideBoxTooltip)
+    -- Attached once, out of combat. The logger records only an already-armed
+    -- Salve action and its unit token; it never asks the secret aura carrier
+    -- why the cell was visible.
+    box:HookScript("OnClick", function(self, button)
+        if ns.ClickLog then ns.ClickLog:Record(self, button) end
+    end)
 
     CreateVisuals(box, true)
 

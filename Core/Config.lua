@@ -39,11 +39,15 @@ ns.defaults = {
 
     -- Behaviour
     -- Click bindings. Fresh/restored profiles use automatic defaults (left =
-    -- primary dispel, plus right = a distinct secondary). bindingsCustom lets
+    -- primary dispel, plus right = a distinct secondary or enabled movement
+    -- removal). bindingsCustom lets
     -- an intentionally empty edited list remain empty instead of springing
     -- back to defaults after the last row is cleared.
     bindings       = {},
     bindingsCustom = false,
+    -- Optional timestamp-only history of clicks on armed Salve cells. The
+    -- entries themselves live in SalveClickLog, separate from preferences.
+    clickAuditEnabled = false,
 
     -- HORIZONTAL fills a row then wraps to the next; VERTICAL fills a column
     -- then wraps to the next. `columns` is the wrap point either way.
@@ -77,10 +81,15 @@ ns.defaults = {
     -- separate SalveLearnedDB saved-variable block, not in preferences.
     escapes         = {},
     movementColour  = { r = 0.92, g = 0.20, b = 0.08, a = 0.68 },
+    -- Each bound movement action may draw its own coloured clock-hand edge.
+    -- Colours and enabled state are stored by spell ID for every class.
+    movementSweepSpellID = nil,
+    movementSweepSpellIDs = {},
+    movementSweepColours = {},
 
     -- Saved-variable migrations. Increment only when an old shape needs an
     -- explicit conversion; ordinary new defaults do not need a bump.
-    schemaVersion = 7,
+    schemaVersion = 9,
 
     -- Minimap button
     showMinimap   = true,
@@ -179,6 +188,19 @@ function ns.InitConfig()
         SalveDB.schemaVersion = 7
     end
 
+    if oldSchema < 8 then
+        SalveDB.schemaVersion = 8
+    end
+
+    if oldSchema < 9 then
+        local legacy = SalveDB.movementSweepSpellID
+        SalveDB.movementSweepSpellIDs = type(SalveDB.movementSweepSpellIDs) == "table"
+            and SalveDB.movementSweepSpellIDs or {}
+        if type(legacy) == "number" then SalveDB.movementSweepSpellIDs[legacy] = true end
+        SalveDB.movementSweepSpellID = nil
+        SalveDB.schemaVersion = 9
+    end
+
     -- Learning supplies the coverage that encounter-journal data cannot,
     -- especially for trash roots and snares. It is always active in 1.4.0;
     -- preserve the key only as an internal compatibility signal.
@@ -197,6 +219,11 @@ function ns.InitConfig()
         end
     end
     SalveDB.bindings = deduped
+    SalveDB.movementSweepColours = type(SalveDB.movementSweepColours) == "table"
+        and SalveDB.movementSweepColours or {}
+    SalveDB.movementSweepSpellIDs = type(SalveDB.movementSweepSpellIDs) == "table"
+        and SalveDB.movementSweepSpellIDs or {}
+    SalveDB.movementSweepSpellID = nil
 
     -- These visibility choices were removed. Clear their saved values too so
     -- a profile cannot retain invisible conditions that no longer appear in
@@ -228,6 +255,10 @@ function ns.InitConfig()
     SalveDB.learned = nil
     SalveDB.learnedMovement = nil
     SalveLearnedDB.schemaVersion = 1
+
+    -- Click history is intentionally separate from both layout preferences
+    -- and learned spells. It is diagnostic evidence, not aura metadata.
+    if ns.ClickLog and ns.ClickLog.Init then ns.ClickLog:Init() end
 
     -- ☠ Learning PERSISTS across logout and /reload. It used to reset itself,
     --   on the theory that a forgotten listener was a hazard -- but in practice

@@ -24,6 +24,7 @@ local ns = {
         HasAllyEscape = function() return false end,
         AllSpellIDs = function() return { 45678 } end,
         CooldownSpellID = function() return 1044 end,
+        SweepSpellIDs = function() return { 1044 } end,
         IsEnabledSpell = function(_, spellID) return spellID == 1044 end,
     },
     CuresText = function() return "none" end,

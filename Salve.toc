@@ -1,11 +1,10 @@
 ## Interface: 120100
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 1.5.4
-## X-ReleaseDate: 2026-08-28
+## Version: 1.5.6
+## X-ReleaseDate: 2026-08-29
 ## Notes: Compact clickable group-dispel panel built for Midnight's private aura rules.
-## Category-enUS: Raid
-## SavedVariables: SalveDB, SalveLearnedDB
+## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
 ## AllowAddOnTableAccess: 1
 # ☠ No extension, and it must be a TGA or BLP. WoW does not load PNG.
 ## IconTexture: Interface\AddOns\Salve\Textures\Salve
@@ -33,6 +32,7 @@
 # Namespace and saved variables. Everything else assumes these exist.
 Core.lua
 Core\Config.lua
+Core\ClickLog.lua
 
 # What to cast. Detection is Blizzard's job (the aura filter); this is only
 # needed to give the secure button a spell name.

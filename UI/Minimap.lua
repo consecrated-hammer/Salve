@@ -46,7 +46,11 @@ function Minimap_:Create()
         if diameter <= 0 then return 80 end
         -- Keep the visible icon just outside the minimap edge at any UI scale.
         -- The old fixed 80px value only happened to fit the default minimap.
-        return diameter / 2 + b:GetWidth() / 2 - 5
+        -- Match LibDBIcon (used by DandersFrames): its 5px orbit outside the
+        -- minimap puts a 31px button's outer edge about 20px clear. Our button
+        -- is centred on the orbit, so subtract its half-width before matching
+        -- that visual distance.
+        return diameter / 2 + b:GetWidth() / 2 - 10
     end
 
     local function place(angle)

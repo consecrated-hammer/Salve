@@ -72,7 +72,9 @@ local ns = {
     },
     Bindings = {
         List = function() return { { key = "BUTTON1" } } end,
+        SpellID = function() return 4987 end,
         Describe = function() return "Cleanse (automatic)" end,
+        KeysForSpell = function() return { "BUTTON1" } end,
         Label = function() return "Left click" end,
     },
 }
@@ -101,7 +103,7 @@ for _, path in ipairs({
 end
 
 equal(#pages, 8, "eight options pages registered")
-for i, name in ipairs({ "Salve", "Dispels", "Visibility", "Alerts", "Commands", "Troubleshooting", "Learned Spells", "About" }) do
+for i, name in ipairs({ "Salve", "Actions", "Visibility", "Alerts", "Commands", "Troubleshooting", "Learned Spells", "About" }) do
     equal(pages[i].name, name, "page order " .. i)
 end
 equal(pages[1].title, "Panel", "root page has task-focused heading")

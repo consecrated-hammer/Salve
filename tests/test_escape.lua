@@ -11,11 +11,11 @@ local knownSpells = { [1953] = true }
 UnitClass = function() return "Mage", "MAGE" end
 IsPlayerSpell = function(id) return knownSpells[id] or false end
 IsSpellKnown = function() return false end
-C_Spell = {
-    GetSpellInfo = function(id)
-        return { name = id == 1953 and "Blink" or "Shimmer" }
-    end,
+local spellNames = {
+    [1953] = "Blink", [212653] = "Shimmer", [235450] = "Prismatic Barrier",
+    [192077] = "Wind Rush Totem",
 }
+C_Spell = { GetSpellInfo = function(id) return { name = spellNames[id] or "Test spell" } end }
 
 C_LossOfControl = {
     GetActiveLossOfControlDataByUnit = function(unit, index)
@@ -34,6 +34,13 @@ local ns = {
 
 assert(loadfile("Features/Escape.lua"))("Salve", ns)
 
+local divineShield
+for _, spell in ipairs(ns.ESCAPE_SPELLS.PALADIN) do
+    if spell.id == 642 then divineShield = spell break end
+end
+equal(divineShield.scope, ns.ESCAPE_SELF,
+    "Divine Shield is offered only for the Paladin's own movement impairment")
+
 equal(ns.Escape:Update(), true, "initial known escape changes the list")
 equal(ns.knownEscapes[1].id, 1953, "Blink is initially detected")
 knownSpells = { [212653] = true }
@@ -41,6 +48,21 @@ equal(ns.Escape:Update(), true,
     "equal-count talent replacement changes the known escape list")
 equal(ns.knownEscapes[1].id, 212653, "Shimmer replaces Blink")
 equal(ns.Escape:Update(), false, "unchanged escape list is stable")
+
+-- Talent-gated movement breaks must not appear merely because the ordinary
+-- class spell is known: the passive talent is the part that removes snares.
+knownSpells = { [235450] = true }
+equal(ns.Escape:Update(), true, "barrier replaces Shimmer in the detected list")
+equal(#ns.knownEscapes, 0, "barrier stays hidden without Energized Barriers")
+knownSpells = { [235450] = true, [386828] = true }
+equal(ns.Escape:Update(), true, "Energized Barriers changes the detected list")
+equal(ns.knownEscapes[1].id, 235450, "talented Mage barrier is discoverable")
+
+UnitClass = function() return "Shaman", "SHAMAN" end
+knownSpells = { [192077] = true, [462817] = true }
+equal(ns.Escape:Update(), true, "Jet Stream changes the detected class list")
+equal(ns.knownEscapes[1].scope, ns.ESCAPE_AREA,
+    "Jet Stream Wind Rush Totem is an area movement action")
 
 equal(ns.Escape:RegisterMovement("Salve_Data_Test", { 45678 }), true,
     "curated movement registration succeeds")
@@ -75,6 +97,9 @@ equal(ns.Escape:CaptureLossOfControl("party1", 2), true,
 equal(ns.learned.movement[34567], "Test Snare",
     "always-on learning stores movement effects")
 
+UnitClass = function() return "Mage", "MAGE" end
+knownSpells = { [212653] = true }
+ns.Escape:Update()
 UnitIsUnit = function(left, right) return left == "raid2" and right == "player" end
 equal(ns.Escape:IsPlayerUnit("player"), true, "player token is recognized")
 equal(ns.Escape:IsPlayerUnit("raid2"), true, "player raid token is recognized")

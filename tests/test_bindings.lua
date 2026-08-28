@@ -20,6 +20,14 @@ local defaults = ns.Bindings:List()
 equal(#defaults, 1, "one detected dispel gets one default binding")
 equal(defaults[1].key, "BUTTON1", "primary dispel defaults to left click")
 
+ns.db.escapes[1044] = true
+defaults = ns.Bindings:List()
+equal(#defaults, 2, "enabled escape adds a second automatic binding")
+equal(defaults[2].key, "BUTTON2", "enabled escape defaults to right click")
+equal(ns.Bindings:SpellID(defaults[2]), 1044,
+    "right-click default uses the enabled movement removal")
+ns.db.escapes[1044] = nil
+
 ns.secondaryName = "Cauterizing Flame"
 ns.secondaryID = 374251
 defaults = ns.Bindings:List()

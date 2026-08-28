@@ -60,6 +60,7 @@ O.NewPage({
     local previewCount = 5
     local previewCellState = "DISPELLABLE"
     local previewCooldownState = "COOLDOWN"
+    local previewMovementSweep = false
     local sections = {}
 
     local function add(frame, height, visible)
@@ -128,11 +129,17 @@ O.NewPage({
     cooldownToggle.Text:SetText("Preview on cooldown")
     O.AttachHint(cooldownToggle, "Preview on cooldown",
         "Draw a cooldown over the preview cells.")
+    local movementSweepToggle = O.CheckButton(stage)
+    movementSweepToggle:SetPoint("TOPLEFT", 10, -222)
+    movementSweepToggle.Text:SetText("Preview movement sweep")
+    O.AttachHint(movementSweepToggle, "Preview movement sweep",
+        "Show the chosen movement actions' coloured clock-hand cooldowns on the first preview cell.")
 
     local function applyPreviewSettings()
         ns.Preview.count = previewCount
         ns.Preview.cellState = previewCellState
         ns.Preview.cooldownState = previewCooldownState
+        ns.Preview.movementSweepState = previewMovementSweep
         if ns.Preview.RefreshSettingsPreview then ns.Preview:RefreshSettingsPreview() end
         if ns.Preview.active then ns.Preview:Refresh() end
     end
@@ -142,6 +149,7 @@ O.NewPage({
         previewToggle:SetChecked(ns.Preview.active and true or false)
         stateToggle:SetChecked(previewCellState == "DISPELLABLE")
         cooldownToggle:SetChecked(previewCooldownState == "COOLDOWN")
+        movementSweepToggle:SetChecked(previewMovementSweep)
         applyPreviewSettings()
     end
 
@@ -168,6 +176,11 @@ O.NewPage({
     cooldownToggle:SetScript("OnClick", function(self)
         self:SetChecked(not self:GetChecked())
         previewCooldownState = self:GetChecked() and "COOLDOWN" or "READY"
+        applyPreviewSettings()
+    end)
+    movementSweepToggle:SetScript("OnClick", function(self)
+        self:SetChecked(not self:GetChecked())
+        previewMovementSweep = self:GetChecked() and true or false
         applyPreviewSettings()
     end)
 

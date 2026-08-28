@@ -30,12 +30,14 @@ local Escape = ns.Escape
 
 ns.ESCAPE_ALLY = "ALLY"   -- castable on another group member
 ns.ESCAPE_SELF = "SELF"   -- personal; lights your own cell only
+ns.ESCAPE_AREA = "AREA"   -- ground-area group utility; place it near allies
 
 -- id, scope, and a note shown in the options so the choice is informed.
 ns.ESCAPE_SPELLS = {
     PALADIN = {
         { id = 1044,   scope = "ALLY", note = "Removes and prevents movement impairment." },
         { id = 1022,   scope = "ALLY", note = "Blessing of Protection — physical effects." },
+        { id = 642,    scope = "SELF", note = "Divine Shield — emergency self-clear; causes Forbearance." },
     },
     MONK = {
         { id = 116841, scope = "ALLY", note = "Tiger's Lust — removes movement impairment." },
@@ -47,6 +49,12 @@ ns.ESCAPE_SPELLS = {
         { id = 1953,   scope = "SELF", note = "Blink — breaks roots and snares." },
         { id = 212653, scope = "SELF", note = "Shimmer — replaces Blink if talented." },
         { id = 45438,  scope = "SELF", note = "Ice Block — clears everything, but it is a major cooldown." },
+        { id = 235450, scope = "SELF", requires = 386828,
+            note = "Prismatic Barrier — Energized Barriers removes snares." },
+        { id = 235313, scope = "SELF", requires = 386828,
+            note = "Blazing Barrier — Energized Barriers removes snares." },
+        { id = 11426,  scope = "SELF", requires = 386828,
+            note = "Ice Barrier — Energized Barriers removes snares." },
     },
     DEATHKNIGHT = {
         { id = 212552, scope = "SELF", note = "Wraith Walk — removes movement impairment." },
@@ -59,6 +67,8 @@ ns.ESCAPE_SPELLS = {
     SHAMAN = {
         { id = 58875,  scope = "SELF", note = "Spirit Walk — Enhancement only." },
         { id = 2645,   scope = "SELF", note = "Ghost Wolf — breaks snares with the right talent." },
+        { id = 192077, scope = "AREA", requires = 462817,
+            note = "Wind Rush Totem — Jet Stream removes snares for allies in its area." },
     },
     WARLOCK = {
         { id = 48020,  scope = "SELF", note = "Demonic Circle: Teleport — needs a circle down." },
@@ -106,7 +116,7 @@ function Escape:Update()
     local list = {}
 
     for _, entry in ipairs(candidates) do
-        if known(entry.id) then
+        if known(entry.id) and (not entry.requires or known(entry.requires)) then
             local name = nameOf(entry.id)
             if name then
                 list[#list + 1] = {
@@ -138,7 +148,7 @@ end
 -- Does anything you have selected work on someone else?
 function Escape:HasAllyEscape()
     for _, s in ipairs(self:Enabled()) do
-        if s.scope == ns.ESCAPE_ALLY then return true end
+        if s.scope == ns.ESCAPE_ALLY or s.scope == ns.ESCAPE_AREA then return true end
     end
     return false
 end
@@ -154,6 +164,32 @@ end
 function Escape:CooldownSpellID()
     local first = self:Enabled()[1]
     return first and first.id or nil
+end
+
+function Escape:SweepSpellIDs()
+    local selected = ns.db and ns.db.movementSweepSpellIDs or {}
+    local out = {}
+    for _, spell in ipairs(self:Enabled()) do
+        local keys = ns.Bindings and ns.Bindings:KeysForSpell(spell.id) or {}
+        if selected[spell.id] and #keys > 0 then out[#out + 1] = spell.id end
+    end
+    return out
+end
+
+-- Compatibility for callers from older option builds. New rendering uses the
+-- full list: separate clock-hand edges can coexist on one Salve cell.
+function Escape:SweepSpellID()
+    return self:SweepSpellIDs()[1]
+end
+
+function Escape:CanSweepForUnit(spellID, unit)
+    for _, spell in ipairs(self:Enabled()) do
+        if spell.id == spellID then
+            return spell.scope == ns.ESCAPE_ALLY or spell.scope == ns.ESCAPE_AREA
+                or self:IsPlayerUnit(unit)
+        end
+    end
+    return false
 end
 
 function Escape:IsEnabledSpell(spellID)

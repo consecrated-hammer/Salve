@@ -46,7 +46,12 @@ local function attachHint(control, title, hint)
     control.salveHint = hint
     control:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(self.salveHintTitle or "Salve", unpack(THEME.accent))
+        -- Some labels change with the current layout. Resolve them at hover
+        -- time: Retail's tooltip rejects a function passed straight to SetText.
+        local titleText = self.salveHintTitle
+        if type(titleText) == "function" then titleText = titleText() end
+        GameTooltip:SetText(type(titleText) == "string" and titleText or "Salve",
+            unpack(THEME.accent))
         GameTooltip:AddLine(self.salveHint, 1, 1, 1, true)
         GameTooltip:Show()
     end)

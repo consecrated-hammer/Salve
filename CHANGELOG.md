@@ -5,6 +5,42 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.6] - 2026-08-29
+
+### Added
+
+- A two-column **Actions** page for rebinding spells, with direct spell
+  tooltips, detected dispel schools, self-only movement actions and clear
+  movement-area guidance.
+- Talent-gated movement actions: Mage barriers appear with Energized Barriers,
+  and Wind Rush Totem appears with Shaman's Jet Stream as an area effect.
+- Per-action movement sweep colours. Multiple enabled actions can draw their
+  own coloured clock-hand cooldown edges concurrently.
+
+### Fixed
+
+- Movement sweep checkboxes now toggle and persist correctly.
+- The minimap button follows the minimap edge correctly at non-default scales.
+- Settings tooltip labels no longer error when a dynamic label is shown.
+
+### Changed
+
+- Reorganised Commands and About for clearer reference material, including
+  in-game `/salve help` at login when startup text is enabled.
+
+## [1.5.5] - 2026-08-29
+
+### Added
+
+- An off-by-default **cell-click audit** in Troubleshooting. It records an
+  armed Salve-cell click's timestamp, unit token, binding and selected action
+  in a capped, separate SavedVariables block, with a compact JSON export.
+
+### Changed
+
+- Widened copyable diagnostic windows and removed Salve's explicit Raid
+  category so it uses Blizzard's default AddOns grouping.
+
 ## [1.5.4] - 2026-08-28
 
 ### Added
