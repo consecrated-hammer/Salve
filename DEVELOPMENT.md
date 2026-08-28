@@ -2,8 +2,7 @@
 
 Before testing an unreleased Salve change through `Copy-AddonToWoW.ps1`, set
 the main addon's `## Version:` in `Salve.toc` to the next clearly labelled
-development suffix, for example `1.5.2-dev1`, then `1.5.2-dev2`. The current
-redesign test build is `1.5.2-dev60`.
+development suffix, for example `1.5.4-dev1`, then `1.5.4-dev2`.
 
 Increment the `devN` suffix for every new debug copy so the version shown in
 the AddOns list and `/salve version` confirms which build the game loaded.

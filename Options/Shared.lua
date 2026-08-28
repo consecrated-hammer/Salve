@@ -109,6 +109,8 @@ local function attachTitleHint(parent, fontString, title, hint)
     return region
 end
 
+Options.AttachTitleHint = attachTitleHint
+
 local function refreshAll(panel)
     if panel.salveRefreshAll then panel.salveRefreshAll() end
 end

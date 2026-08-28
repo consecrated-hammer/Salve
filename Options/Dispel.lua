@@ -125,7 +125,7 @@ O.NewPage({
 
     local escapeHeader
     escapeHeader, y = O.Header(panel, "Snare removals", y)
-    O.AttachHint(escapeHeader, "Snare removals",
+    O.AttachTitleHint(panel, escapeHeader, "Snare removals",
         "Enable spells Salve should treat as a root or snare removal. Party-wide spells light any cell; personal spells light only yours.")
 
     local escapeNote = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
@@ -212,8 +212,7 @@ O.NewPage({
                 O.ShowColourPicker(ns.db.movementColour or ns.defaults.movementColour,
                     function(selected)
                         ns.Set("movementColour", selected)
-                        row.colour.swatch:SetColorTexture(selected.r, selected.g,
-                            selected.b, selected.a)
+                        redrawAll()
                     end)
             end)
         end

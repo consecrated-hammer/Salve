@@ -455,7 +455,7 @@ function Sound:OnSettingChanged(key)
         -- Enabling may need to load the current instance module; disabling
         -- must make it inactive and remove all registrations.
         self:ActivateCurrentInstance()
-    else
+    elseif key ~= "movementSoundEnabled" then
         -- Channel/file changes only replace existing native registrations.
         self:RequestRefresh()
     end

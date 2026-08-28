@@ -23,6 +23,10 @@ local function statusText()
 end
 
 local function buildReport()
+    local dispelSound = ns.db.dispelSoundEnabled
+    if dispelSound == nil then dispelSound = ns.db.soundEnabled end
+    local movementSound = ns.db.movementSoundEnabled
+    if movementSound == nil then movementSound = ns.db.soundEnabled end
     local lines = {
         "Salve diagnostics",
         "Version: " .. tostring(ns.VERSION or "unknown"),
@@ -32,10 +36,8 @@ local function buildReport()
         "Instance: " .. tostring(ns.Sound.activeInstanceName or "World")
             .. " (" .. tostring(ns.Sound.activeInstanceID or 0) .. ")",
         "Data: " .. moduleStatus(),
-        "Dispel sound: " .. yesNo(ns.db.dispelSoundEnabled ~= nil
-            and ns.db.dispelSoundEnabled or ns.db.soundEnabled),
-        "Snare-removal sound: " .. yesNo(ns.db.movementSoundEnabled ~= nil
-            and ns.db.movementSoundEnabled or ns.db.soundEnabled),
+        "Dispel sound: " .. yesNo(dispelSound),
+        "Snare-removal sound: " .. yesNo(movementSound),
         "Aura learning: always on",
         "Cures: " .. ns.CuresText(ns.Sound:CurrentCures()),
         "Spell IDs: " .. tostring(#ns.Sound:ActiveRecords()),

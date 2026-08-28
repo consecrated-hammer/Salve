@@ -5,6 +5,22 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4] - 2026-08-28
+
+### Added
+
+- A redesigned task-based settings window with an in-settings live panel
+  preview, presets, modern controls and dedicated Alerts page.
+- Separate dispel and snare-removal alert toggles, each with its own test
+  control.
+
+### Changed
+
+- Reorganised panel, dispel, visibility, reference and diagnostic settings for
+  clearer grouping and consistent visual styling.
+- Movement-removal alerts now require an explicitly verified answer before
+  appearing on the panel.
+
 ## [1.5.3] - 2026-08-28
 
 ### Fixed
