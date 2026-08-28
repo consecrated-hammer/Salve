@@ -5,6 +5,13 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3] - 2026-08-28
+
+### Fixed
+
+- The minimap button now follows the minimap's current size instead of using a
+  fixed orbit radius, so it stays outside the edge at non-default UI scales.
+
 ## [1.5.2] - 2026-08-27
 
 ### Changed

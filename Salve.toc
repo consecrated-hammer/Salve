@@ -1,8 +1,8 @@
 ## Interface: 120100
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 1.5.2-dev60
-## X-ReleaseDate: 2026-08-27
+## Version: 1.5.3
+## X-ReleaseDate: 2026-08-28
 ## Notes: Compact clickable group-dispel panel built for Midnight's private aura rules.
 ## Category-enUS: Raid
 ## SavedVariables: SalveDB, SalveLearnedDB
