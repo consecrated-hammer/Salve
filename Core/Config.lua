@@ -58,7 +58,12 @@ ns.defaults = {
 
     -- Alert sound. Typed spell IDs come from the bundled load-on-demand
     -- Salve_Data_* module for the current instance.
+    -- `soundEnabled` remains as a migrated compatibility key. The two alert
+    -- paths are independently useful: a player may want native dispel sounds
+    -- without a warning for every verified snare.
     soundEnabled  = false,
+    dispelSoundEnabled = false,
+    movementSoundEnabled = false,
     soundChannel  = "Master",
     soundFile     = nil,
 
@@ -75,7 +80,7 @@ ns.defaults = {
 
     -- Saved-variable migrations. Increment only when an old shape needs an
     -- explicit conversion; ordinary new defaults do not need a bump.
-    schemaVersion = 6,
+    schemaVersion = 7,
 
     -- Minimap button
     showMinimap   = true,
@@ -167,6 +172,13 @@ function ns.InitConfig()
         SalveDB.schemaVersion = 6
     end
 
+    if oldSchema < 7 then
+        local enabled = SalveDB.soundEnabled == true
+        SalveDB.dispelSoundEnabled = enabled
+        SalveDB.movementSoundEnabled = enabled
+        SalveDB.schemaVersion = 7
+    end
+
     -- Learning supplies the coverage that encounter-journal data cannot,
     -- especially for trash roots and snares. It is always active in 1.4.0;
     -- preserve the key only as an internal compatibility signal.
@@ -248,7 +260,8 @@ function ns.Set(key, value)
     if ns.db[key] == value then return end
     ns.db[key] = value
 
-    if key == "soundEnabled" or key == "soundChannel" or key == "soundFile" then
+    if key == "soundEnabled" or key == "dispelSoundEnabled"
+        or key == "movementSoundEnabled" or key == "soundChannel" or key == "soundFile" then
         if ns.Sound then ns.Sound:OnSettingChanged(key) end
         return
     end

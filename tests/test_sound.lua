@@ -9,6 +9,8 @@ local ns = {
     DISPELLABLE_FILTER = "HARMFUL",
     db = {
         soundEnabled = false,
+        dispelSoundEnabled = false,
+        movementSoundEnabled = false,
         soundChannel = "Master",
         soundFile = nil,
         learnMode = true,
@@ -124,7 +126,8 @@ equal(ns.Sound:PlayMovementWarning(), false,
     "movement warning respects the shared alert-sound toggle")
 equal(#createdFrames, 3, "always-on learning creates one listener per party unit")
 
-ns.db.soundEnabled = true
+ns.db.dispelSoundEnabled = true
+ns.db.movementSoundEnabled = true
 ns.Sound:ActivateCurrentInstance()
 equal(ns.Sound:PlayMovementWarning(), true,
     "movement warning plays through the selected alert path")
@@ -143,6 +146,13 @@ equal(added[2].unit, "party1", "party includes first member")
 equal(added[3].unit, "party2", "party includes second member")
 equal(added[1].soundFileName, "Interface\\AddOns\\Salve\\Media\\DispelAlert.ogg",
     "default native sound uses Salve's bundled filename payload")
+
+ns.db.movementSoundEnabled = false
+equal(ns.Sound:PlayMovementWarning(), false,
+    "snare-removal sound can be disabled independently")
+equal(ns.Sound.registered, 3,
+    "disabling snare-removal sound keeps dispel registrations active")
+ns.db.movementSoundEnabled = true
 
 ns.Sound:UpdateLearnRegistration()
 equal(#createdFrames, 3, "learning creates one listener per party unit")
@@ -168,9 +178,11 @@ for index = #added - 4, #added do
     if added[index].unit == "player" then error("raid registrations duplicated the player alias") end
 end
 
-ns.db.soundEnabled = false
-ns.Sound:OnSettingChanged("soundEnabled")
+ns.db.dispelSoundEnabled = false
+ns.Sound:OnSettingChanged("dispelSoundEnabled")
 equal(ns.Sound.registered, 0, "disabling sound clears registrations")
+equal(ns.Sound:PlayMovementWarning(), true,
+    "disabling dispel sound keeps snare-removal sound active")
 ns.Sound:SetLearning(false, true)
 equal(ns.db.learnMode, true, "compatibility call cannot disable learning")
 equal(ns.Sound.activeModule, "Salve_Data_Test",
@@ -181,7 +193,7 @@ for index = 1, 5 do
 end
 
 ns.Sound.lastFailure = "old transient failure"
-ns.db.soundEnabled = true
+ns.db.dispelSoundEnabled = true
 ns.Sound:RequestRefresh()
 equal(ns.Sound.lastFailure, nil, "successful refresh clears stale failure")
 
@@ -205,7 +217,7 @@ ns.Sound:OnSettingChanged("soundChannel")
 equal(loadCalls, loadsBeforeChannelChange, "channel change does not activate data module")
 
 -- Outdoor learning is map-scoped and cannot remain enabled after leaving.
-ns.db.soundEnabled = false
+ns.db.dispelSoundEnabled = false
 currentInstanceName, currentInstanceID = "World", 0
 ns.Sound:SetLearning(true, true)
 equal(ns.Sound.activeScopeKey, "map:42", "outdoor learning uses map ID")

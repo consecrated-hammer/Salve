@@ -35,6 +35,7 @@ local ns = {
             pages[#pages + 1] = {
                 name = spec.name,
                 title = spec.title,
+                group = spec.group,
                 build = build,
             }
         end,
@@ -88,21 +89,25 @@ UnitName = function() return "Test Shaman" end
 
 for _, path in ipairs({
     "Options/Salve.lua",
-    "Options/Visibility.lua",
     "Options/Dispel.lua",
+    "Options/Visibility.lua",
+    "Options/Alerts.lua",
+    "Options/Commands.lua",
     "Options/Troubleshooting.lua",
     "Options/LearnedSpells.lua",
-    "Options/Commands.lua",
     "Options/About.lua",
 }) do
     assert(loadfile(path))("Salve", ns)
 end
 
-equal(#pages, 7, "seven options pages registered")
-for i, name in ipairs({ "Salve", "Visibility", "Dispels", "Troubleshooting", "Learned Spells", "Commands", "About" }) do
+equal(#pages, 8, "eight options pages registered")
+for i, name in ipairs({ "Salve", "Dispels", "Visibility", "Alerts", "Commands", "Troubleshooting", "Learned Spells", "About" }) do
     equal(pages[i].name, name, "page order " .. i)
 end
-equal(pages[1].title, "Appearance", "root page has task-focused heading")
+equal(pages[1].title, "Panel", "root page has task-focused heading")
+equal(pages[1].group, "CORE", "Panel is a Core page")
+equal(pages[4].group, "CORE", "Alerts is a Core page")
+equal(pages[6].group, "REFERENCE", "Troubleshooting is a Reference page")
 
 local report = ns.Options.BuildDiagnosticReport()
 if not report:find("Version: 0.1.0", 1, true) then error("report omits version") end
@@ -137,8 +142,11 @@ if not version then error("Salve.toc has no ## Version") end
 local releaseDate = toc:match("## X%-ReleaseDate:%s*(%d%d%d%d%-%d%d%-%d%d)")
 if not releaseDate then error("Salve.toc has no well-formed X-ReleaseDate") end
 
--- Local/debug stamps intentionally do not create public release notes.
-if not version:find("-local", 1, true) then
+-- Local/debug stamps intentionally do not create public release notes. Use
+-- `-devN` for every copy-to-WoW test build so it is visible in-game.
+local isDebugBuild = version:find("-local", 1, true)
+    or version:match("%-dev%d+$")
+if not isDebugBuild then
     local changelog = assert(io.open("CHANGELOG.md", "r")):read("*a")
     local heading = ("## [%s] - %s"):format(version, releaseDate)
     if not changelog:find(heading, 1, true) then

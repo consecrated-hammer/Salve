@@ -11,7 +11,7 @@ function O.DispelLayout(knownTop, dispelCount, escapeCount)
     layout.paletteY = layout.knownNoteY - 20
     layout.escapeHeaderY = knownTop - knownRows * 32 - 48
     layout.escapeNoteY = layout.escapeHeaderY - 28
-    layout.escapeTop = layout.escapeHeaderY - 74
+    layout.escapeTop = layout.escapeHeaderY - 52
     layout.buttonsTop = layout.escapeTop - escapeRows * 32 - 12
     return layout
 end
@@ -83,64 +83,20 @@ local function promptForKey(onCapture)
     f:SetPropagateKeyboardInput(false)
 end
 
-local function movementColour()
-    local colour = ns.db.movementColour or (ns.defaults and ns.defaults.movementColour) or {}
-    return {
-        r = tonumber(colour.r) or 0.92,
-        g = tonumber(colour.g) or 0.20,
-        b = tonumber(colour.b) or 0.08,
-        a = tonumber(colour.a) or 0.68,
-    }
-end
-
-local function showMovementColourPicker(onChange)
-    if not ColorPickerFrame then return end
-    local initial = movementColour()
-    local function applyFromPicker()
-        local r, g, b = ColorPickerFrame:GetColorRGB()
-        onChange({ r = r, g = g, b = b, a = ColorPickerFrame:GetColorAlpha() })
-    end
-    local function restore(previous)
-        onChange({
-            r = previous.r or initial.r,
-            g = previous.g or initial.g,
-            b = previous.b or initial.b,
-            a = previous.opacity or previous.a or initial.a,
-        })
-    end
-
-    if ColorPickerFrame.SetupColorPickerAndShow then
-        ColorPickerFrame:SetupColorPickerAndShow({
-            r = initial.r, g = initial.g, b = initial.b, opacity = initial.a,
-            hasOpacity = true,
-            swatchFunc = applyFromPicker,
-            opacityFunc = applyFromPicker,
-            cancelFunc = restore,
-        })
-        return
-    end
-
-    ColorPickerFrame.func = applyFromPicker
-    ColorPickerFrame.opacityFunc = applyFromPicker
-    ColorPickerFrame.cancelFunc = restore
-    ColorPickerFrame.hasOpacity = true
-    ColorPickerFrame.opacity = initial.a
-    ColorPickerFrame:SetColorRGB(initial.r, initial.g, initial.b)
-    ColorPickerFrame:Show()
-end
-
 -- ── Page ───────────────────────────────────────────────────────────────────
 
 O.NewPage({
     name = "Dispels",
-    description = "Your dispels, movement-removal bindings, and alerts.",
+    title = "Dispels",
+    group = "CORE",
+    description = "Choose what each click casts.",
 }, function(panel, y)
-    _, y = O.Header(panel, "Your dispels", y)
+    _, y = O.Header(panel, "Dispel spells", y)
 
     local knownTop = y
     local knownRows = {}
     local knownNote = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-    knownNote:SetText("Detected from your current specialisation. Click a binding to change it.")
+    knownNote:SetText("Detected for your current specialisation.")
 
     local palette = CreateFrame("Frame", nil, panel)
     palette:SetSize(540, 18)
@@ -168,14 +124,14 @@ O.NewPage({
     end
 
     local escapeHeader
-    escapeHeader, y = O.Header(panel, "Your snare removals", y)
+    escapeHeader, y = O.Header(panel, "Snare removals", y)
+    O.AttachHint(escapeHeader, "Snare removals",
+        "Enable spells Salve should treat as a root or snare removal. Party-wide spells light any cell; personal spells light only yours.")
 
     local escapeNote = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     escapeNote:SetWidth(520)
     escapeNote:SetJustifyH("LEFT")
-    escapeNote:SetText("Roots and snares carry no dispel school, so the normal filter "
-        .. "never sees them. Enable only spells you count as a removal, then bind "
-        .. "them here. Party-wide spells light anyone's cell; personal spells light only yours.")
+    escapeNote:SetText("Enable the movement-removal spells you want Salve to show.")
     local escapeRows = {}
     local escapeEmpty = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     local escapeTop = y
@@ -183,8 +139,7 @@ O.NewPage({
     local redrawAll
     local pageBottom
 
-    local restore = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    restore:SetSize(180, 22)
+    local restore = O.Button(panel, 180, 22, "danger")
     restore:SetText("Restore binding defaults")
     O.AttachHint(restore, "Restore binding defaults",
         "Bind the primary dispel to left click and a distinct secondary dispel to right click.")
@@ -195,33 +150,11 @@ O.NewPage({
         if redrawAll then redrawAll() end
     end)
 
-    local colourLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    colourLabel:SetText("Movement alert colour:")
-
-    local colour = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    colour:SetSize(58, 22)
-    colour:SetText("")
-    local colourSwatch = colour:CreateTexture(nil, "ARTWORK")
-    colourSwatch:SetAllPoints()
-    local function renderMovementColour()
-        local selected = movementColour()
-        colourSwatch:SetColorTexture(selected.r, selected.g, selected.b, selected.a)
-    end
-    O.AttachHint(colour, "Movement alert colour",
-        "Choose the colour shown on a rooted or snared character when an enabled removal can answer it.")
-    colour:SetScript("OnClick", function()
-        showMovementColourPicker(function(selected)
-            ns.Set("movementColour", selected)
-            renderMovementColour()
-        end)
-    end)
-
     local function createActionRow(storage, index, hasCheckbox)
         local row = storage[index]
         if row then return row end
         row = CreateFrame("Frame", nil, panel)
         row:SetSize(540, 30)
-
         if hasCheckbox then
             row.check = O.CheckButton(row)
             row.check:SetPoint("LEFT", 14, 0)
@@ -235,14 +168,22 @@ O.NewPage({
 
         row.text = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
         row.text:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
-        row.text:SetWidth(hasCheckbox and 292 or 306)
+        row.text:SetWidth(hasCheckbox and 270 or 306)
         row.text:SetJustifyH("LEFT")
 
-        row.bind = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-        row.bind:SetSize(hasCheckbox and 124 or 140, 22)
+        row.bind = O.Button(row, 124, 22)
         row.bind:SetPoint("RIGHT", row, "RIGHT", -34, 0)
-        row.clear = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-        row.clear:SetSize(24, 22)
+        if hasCheckbox then
+            row.colour = O.Button(row, 24, 22)
+            row.colour:SetPoint("RIGHT", row.bind, "LEFT", -6, 0)
+            row.colour:SetText("")
+            row.colour.swatch = row.colour:CreateTexture(nil, "ARTWORK")
+            row.colour.swatch:SetSize(14, 14)
+            row.colour.swatch:SetPoint("CENTER")
+            O.AttachHint(row.colour, "Snare-removal colour",
+                "Choose the colour shown for enabled snare removals.")
+        end
+        row.clear = O.Button(row, 24, 22)
         row.clear:SetPoint("LEFT", row.bind, "RIGHT", 6, 0)
         row.clear:SetText("x")
         O.AttachHint(row.bind, "Change binding",
@@ -263,6 +204,19 @@ O.NewPage({
         end
         O.SetEnabled(row.bind, enabled)
         row.clear:SetShown(enabled and #keys > 0)
+        if row.colour then
+            local colour = ns.db.movementColour or ns.defaults.movementColour
+            row.colour.swatch:SetColorTexture(colour.r, colour.g, colour.b, colour.a)
+            row.colour:SetShown(enabled)
+            row.colour:SetScript("OnClick", function()
+                O.ShowColourPicker(ns.db.movementColour or ns.defaults.movementColour,
+                    function(selected)
+                        ns.Set("movementColour", selected)
+                        row.colour.swatch:SetColorTexture(selected.r, selected.g,
+                            selected.b, selected.a)
+                    end)
+            end)
+        end
 
         row.bind:SetScript("OnClick", function()
             if not enabled then return end
@@ -321,7 +275,8 @@ O.NewPage({
             O.AttachHint(row, spell.name, spell.note or "Movement-removal candidate.")
             row.check:SetChecked(enabled)
             row.check:SetScript("OnClick", function(self)
-                local active = self:GetChecked() and true or false
+                local active = not self:GetChecked()
+                self:SetChecked(active)
                 ns.db.escapes[spellID] = active and true or nil
                 if not active then ns.Bindings:ClearSpellBinding(spellID) end
                 if active and ns.Sound then ns.Sound:ActivateCurrentInstance() end
@@ -338,51 +293,7 @@ O.NewPage({
         if reflow then reflow() end
     end
 
-    -- Everything below the action rows lives in one footer so detected class
-    -- spells move the complete alert section together.
-    local footer = CreateFrame("Frame", nil, panel)
-    footer:SetSize(560, 1)
-    footer.salveRefresh = panel.salveRefresh
-    footer.salveRefreshAll = panel.salveRefreshAll
-
-    local fy = -4
-    _, fy = O.Header(footer, "Alerts", fy)
-
-    _, fy = O.Check(footer, "Play a sound for dispels and actionable movement impairments",
-        "Also alerts for your own roots and snares, or party members when you enable an ally-targeted removal.", fy,
-        function() return ns.db.soundEnabled end,
-        function(v) ns.Set("soundEnabled", v) end)
-
-    local alertDetails = CreateFrame("Frame", nil, footer)
-    alertDetails:SetSize(560, 1)
-    alertDetails:SetPoint("TOPLEFT", footer, "TOPLEFT", 0, fy)
-    alertDetails.salveRefresh = panel.salveRefresh
-    alertDetails.salveRefreshAll = panel.salveRefreshAll
-
-    local channel
-    local alertY = 0
-    channel, alertY = O.Cycle(alertDetails, "Sound channel",
-        "Master is audible even when game sound effects are muted.", alertY,
-        { "Master", "SFX", "Dialog" },
-        { "Master", "Sound effects", "Dialog" },
-        function() return ns.db.soundChannel end,
-        function(v) ns.Set("soundChannel", v) end)
-
-    local test = CreateFrame("Button", nil, alertDetails, "UIPanelButtonTemplate")
-    test:SetSize(120, 22)
-    test:SetPoint("TOPLEFT", alertDetails, "TOPLEFT", 16, alertY - 4)
-    test:SetText("Test dispel sound")
-    O.AttachHint(test, "Test dispel sound", "Play the selected dispel alert now.")
-    test:SetScript("OnClick", function() ns.Sound:Test() end)
-    local testMovement = CreateFrame("Button", nil, alertDetails, "UIPanelButtonTemplate")
-    testMovement:SetSize(170, 22)
-    testMovement:SetPoint("LEFT", test, "RIGHT", 8, 0)
-    testMovement:SetText("Test snare-removal sound")
-    O.AttachHint(testMovement, "Test snare-removal sound",
-        "Play the distinct sound used for actionable roots and snares.")
-    testMovement:SetScript("OnClick", function() ns.Sound:TestMovement() end)
-    local alertDetailsHeight = -alertY + 32
-    local resetFrame = CreateFrame("Frame", nil, footer)
+    local resetFrame = CreateFrame("Frame", nil, panel)
     resetFrame:SetSize(560, 1)
     resetFrame.salveRefresh = panel.salveRefresh
     resetFrame.salveRefreshAll = panel.salveRefreshAll
@@ -391,12 +302,8 @@ O.NewPage({
         ns.db.bindingsCustom = false
         ns.RequestRebuildSoon(0.05)
         ns.Set("escapes", {})
-        ns.Set("soundEnabled", ns.defaults.soundEnabled)
-        ns.Set("soundChannel", ns.defaults.soundChannel)
-        ns.Set("soundFile", ns.defaults.soundFile)
-        ns.Set("movementColour", ns.defaults.movementColour)
         redrawAll()
-    end)
+    end, "Reset Dispels")
     local resetHeight = -resetY
 
     function reflow()  -- luacheck: ignore (declared local above)
@@ -427,22 +334,9 @@ O.NewPage({
         local bottom = layout.buttonsTop
         restore:ClearAllPoints()
         restore:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, bottom)
-        colourLabel:ClearAllPoints()
-        colourLabel:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, bottom - 30)
-        colour:ClearAllPoints()
-        colour:SetPoint("LEFT", colourLabel, "RIGHT", 8, 0)
-        renderMovementColour()
-
-        footer:ClearAllPoints()
-        footer:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, bottom - 72)
-        alertDetails:SetShown(ns.db.soundEnabled)
-        local footerY = fy
-        if ns.db.soundEnabled then footerY = footerY - alertDetailsHeight end
         resetFrame:ClearAllPoints()
-        resetFrame:SetPoint("TOPLEFT", footer, "TOPLEFT", 0, footerY - 8)
-        local footerHeight = -footerY + 8 + resetHeight
-        footer:SetHeight(footerHeight)
-        pageBottom = bottom - 72 - footerHeight
+        resetFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, bottom - 30)
+        pageBottom = bottom - 30 - resetHeight
         if panel.salveSetBottom then panel.salveSetBottom(pageBottom) end
     end
 

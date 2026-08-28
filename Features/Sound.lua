@@ -241,6 +241,18 @@ function Sound:NeedsData()
     return ns.db ~= nil
 end
 
+local function dispelSoundEnabled()
+    if not ns.db then return false end
+    if ns.db.dispelSoundEnabled ~= nil then return ns.db.dispelSoundEnabled end
+    return ns.db.soundEnabled == true
+end
+
+local function movementSoundEnabled()
+    if not ns.db then return false end
+    if ns.db.movementSoundEnabled ~= nil then return ns.db.movementSoundEnabled end
+    return ns.db.soundEnabled == true
+end
+
 function Sound:ActivateCurrentInstance()
     if registrationUnsafe() then
         activationPending = true
@@ -344,7 +356,7 @@ function Sound:Refresh()
     -- error from an earlier transient failure after registrations recover.
     self.lastFailure = nil
     self.expected = 0
-    if not (ns.db and ns.db.soundEnabled) then return end
+    if not dispelSoundEnabled() then return end
 
     local add = C_UnitAuras and (C_UnitAuras.AddAuraSound
         or C_UnitAuras.AddAuraAppliedSound)
@@ -439,7 +451,7 @@ function Sound:OnDispelChanged()
 end
 
 function Sound:OnSettingChanged(key)
-    if key == "soundEnabled" then
+    if key == "soundEnabled" or key == "dispelSoundEnabled" then
         -- Enabling may need to load the current instance module; disabling
         -- must make it inactive and remove all registrations.
         self:ActivateCurrentInstance()
@@ -468,7 +480,7 @@ end
 -- already the authoritative player event, so play the same user-selected
 -- alert once for each new movement impairment.
 function Sound:PlayMovementWarning()
-    if not (ns.db and ns.db.soundEnabled) then return false end
+    if not movementSoundEnabled() then return false end
     local channel = ns.db.soundChannel or "Master"
     local ok, willPlay, handle = pcall(PlaySoundFile, MOVEMENT_WARNING_SOUND, channel)
     if ok and willPlay then return true, handle end
@@ -587,7 +599,7 @@ function Sound:Learn(unit)
                 }
                 ns.Print(("learned |cffffd100%d|r  %s (%s) in %s"):format(
                     spellID, tostring(name or "?"), dispelType, self.activeScopeName))
-                if ns.db.soundEnabled then self:ScheduleRefresh() end
+                if dispelSoundEnabled() then self:ScheduleRefresh() end
             end
         end
     end
@@ -645,7 +657,8 @@ end
 
 function Sound:Report()
     ns.Print("sound report")
-    ns.Print("  enabled: " .. (ns.db.soundEnabled and "yes" or "no"))
+    ns.Print("  dispel sound: " .. (dispelSoundEnabled() and "yes" or "no"))
+    ns.Print("  snare-removal sound: " .. (movementSoundEnabled() and "yes" or "no"))
     ns.Print("  learning: always on")
     ns.Print("  instance: " .. tostring(self.activeInstanceName) .. " ("
         .. tostring(self.activeInstanceID) .. ")")

@@ -6,6 +6,7 @@ local function section(parent)
     frame:SetSize(560, 1)
     frame.salveRefresh = parent.salveRefresh
     frame.salveRefreshAll = parent.salveRefreshAll
+    frame.salveHeaderOwner = parent.salveHeaderOwner or parent
     return frame
 end
 
@@ -18,8 +19,7 @@ end
 
 local function toolbarCycle(parent, x, y, width, hintTitle, hint,
         values, labels, get, set)
-    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    button:SetSize(width, 22)
+    local button = O.Button(parent, width, 22)
     button:SetPoint("TOPLEFT", x, y)
     O.AttachHint(button, hintTitle, hint)
 
@@ -53,8 +53,8 @@ end
 
 O.NewPage({
     name = "Salve",
-    title = "Appearance",
-    description = "How the grid looks — layout, size, and what each cell shows.",
+    title = "Panel",
+    group = "CORE",
 }, function(panel)
     local db = ns.db
     local previewCount = 5
@@ -70,50 +70,79 @@ O.NewPage({
         }
     end
 
-    local preview = section(panel)
+    local preview = panel.salveCreatePinned(290, 720)
     local py = -8
     _, py = O.Header(preview, "Preview", py)
 
-    local previewButton = CreateFrame("Button", nil, preview, "UIPanelButtonTemplate")
-    previewButton:SetSize(150, 22)
-    previewButton:SetPoint("TOPLEFT", 16, py - 16)
-    O.AttachHint(previewButton, "Live panel preview",
-        "Show a full-size, non-clickable test panel at Salve's saved position. It closes with this page and when combat starts.")
+    local stage = CreateFrame("Frame", nil, preview, "BackdropTemplate")
+    stage:SetPoint("TOPLEFT", 16, py)
+    stage:SetSize(688, 246)
+    stage:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
+    })
+    stage:SetBackdropColor(unpack(O.theme.rail))
+    stage:SetBackdropBorderColor(unpack(O.theme.edge))
+    stage.salveRefresh = preview.salveRefresh
+    stage.salveRefreshAll = preview.salveRefreshAll
 
-    local unitsLabel = smallLabel(preview, "Units", 182, py)
-    local minus = CreateFrame("Button", nil, preview, "UIPanelButtonTemplate")
-    minus:SetSize(24, 22)
-    minus:SetPoint("TOPLEFT", 182, py - 16)
+    local stageLabel = stage:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    stageLabel:SetPoint("TOPLEFT", 10, -8)
+    stageLabel:SetText("LIVE PREVIEW")
+    stageLabel:SetTextColor(unpack(O.theme.muted))
+
+    -- The rendered grid owns the wide centre of the stage. This leaves a full
+    -- five 95px-name row intact and lets every layout grow around the centre.
+    if ns.Preview.CreateSettingsPreview then
+        ns.Preview:CreateSettingsPreview(stage, -10, 10, 668, 160)
+    end
+
+    local previewToggle = O.CheckButton(stage)
+    previewToggle:SetPoint("TOPLEFT", 10, -198)
+    previewToggle.Text:SetText("Preview settings on screen")
+    O.AttachHint(previewToggle, "On-screen preview",
+        "Show the same non-clickable test panel at Salve's saved screen position. It closes with settings and when combat starts.")
+
+    local unitsLabel = smallLabel(stage, "Units", 10, -38)
+    local minus = O.SelectButton(stage, 24, 22)
+    minus:SetPoint("TOPLEFT", 50, -32)
     minus:SetText("-")
-    local countText = preview:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    countText:SetPoint("LEFT", minus, "RIGHT", 8, 0)
-    countText:SetWidth(22)
-    countText:SetJustifyH("CENTER")
-    local plus = CreateFrame("Button", nil, preview, "UIPanelButtonTemplate")
-    plus:SetSize(24, 22)
-    plus:SetPoint("LEFT", countText, "RIGHT", 8, 0)
+    local count = stage:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    count:SetPoint("LEFT", minus, "RIGHT", 8, 0)
+    count:SetWidth(22)
+    count:SetJustifyH("CENTER")
+    local plus = O.SelectButton(stage, 24, 22)
+    plus:SetPoint("LEFT", count, "RIGHT", 8, 0)
     plus:SetText("+")
 
-    local stateLabel = smallLabel(preview, "State", 284, py)
-    local cooldownLabel = smallLabel(preview, "Cooldown", 416, py)
-
-    local previewDetails = {
-        unitsLabel, minus, countText, plus, stateLabel, cooldownLabel,
-    }
+    local simulatedLabel = smallLabel(stage, "PREVIEW OPTIONS", 10, -178)
+    simulatedLabel:SetTextColor(unpack(O.theme.muted))
+    local stateToggle = O.CheckButton(stage)
+    stateToggle:SetPoint("TOPLEFT", 250, -198)
+    stateToggle.Text:SetText("Preview dispellable")
+    O.AttachHint(stateToggle, "Preview dispellable",
+        "Show one or two cells with a dispellable effect.")
+    local cooldownToggle = O.CheckButton(stage)
+    cooldownToggle:SetPoint("TOPLEFT", 480, -198)
+    cooldownToggle.Text:SetText("Preview on cooldown")
+    O.AttachHint(cooldownToggle, "Preview on cooldown",
+        "Draw a cooldown over the preview cells.")
 
     local function applyPreviewSettings()
         ns.Preview.count = previewCount
         ns.Preview.cellState = previewCellState
         ns.Preview.cooldownState = previewCooldownState
+        if ns.Preview.RefreshSettingsPreview then ns.Preview:RefreshSettingsPreview() end
         if ns.Preview.active then ns.Preview:Refresh() end
     end
 
     local function refreshPreview()
-        countText:SetText(tostring(previewCount))
-        previewButton:SetText(ns.Preview.active and "Hide preview" or "Show preview")
-        for _, control in ipairs(previewDetails) do
-            control:SetShown(ns.Preview.active and true or false)
-        end
+        count:SetText(tostring(previewCount))
+        previewToggle:SetChecked(ns.Preview.active and true or false)
+        stateToggle:SetChecked(previewCellState == "DISPELLABLE")
+        cooldownToggle:SetChecked(previewCooldownState == "COOLDOWN")
+        applyPreviewSettings()
     end
 
     minus:SetScript("OnClick", function()
@@ -126,31 +155,60 @@ O.NewPage({
         applyPreviewSettings()
         refreshPreview()
     end)
-    previewButton:SetScript("OnClick", function()
+    previewToggle:SetScript("OnClick", function()
         applyPreviewSettings()
         ns.Preview:Toggle()
         refreshPreview()
     end)
-
-    local stateButton = toolbarCycle(preview, 284, py - 16, 116, "Preview state",
-        "Show a clean group or one with one or two dispellable cells.",
-        { "CLEAR", "DISPELLABLE" }, { "Clear", "Needs dispel" },
-        function() return previewCellState end,
-        function(value) previewCellState = value; applyPreviewSettings() end)
-    local cooldownButton = toolbarCycle(preview, 416, py - 16, 112, "Preview cooldown",
-        "Show the dispel spell ready or on cooldown.",
-        { "READY", "COOLDOWN" }, { "Ready", "On cooldown" },
-        function() return previewCooldownState end,
-        function(value) previewCooldownState = value; applyPreviewSettings() end)
-
-    previewDetails[#previewDetails + 1] = stateButton
-    previewDetails[#previewDetails + 1] = cooldownButton
+    stateToggle:SetScript("OnClick", function(self)
+        self:SetChecked(not self:GetChecked())
+        previewCellState = self:GetChecked() and "DISPELLABLE" or "CLEAR"
+        applyPreviewSettings()
+    end)
+    cooldownToggle:SetScript("OnClick", function(self)
+        self:SetChecked(not self:GetChecked())
+        previewCooldownState = self:GetChecked() and "COOLDOWN" or "READY"
+        applyPreviewSettings()
+    end)
 
     preview.salveRefresh[#preview.salveRefresh + 1] = refreshPreview
     O.RefreshPreviewControls = refreshPreview
     refreshPreview()
-    py = py - 48
-    add(preview, -py)
+    local presets = section(panel)
+    local presetY = -8
+    _, presetY = O.Header(presets, "Presets", presetY)
+    local presetSpecs = {
+        { label = "Compact", note = "20px cells, no names", width = 20, height = 20, columns = 5, spacing = 1, names = false, previewUnits = 5 },
+        { label = "Named", note = "95px cells, names on", width = 95, height = 20, columns = 5, spacing = 1, names = true, previewUnits = 5 },
+        { label = "Raid wall", note = "Tight 10-cell wall, no names", width = 20, height = 20, columns = 10, spacing = 0, names = false, previewUnits = 40 },
+    }
+    for index, spec in ipairs(presetSpecs) do
+        local button = O.SelectButton(presets, 168, 46)
+        button:SetPoint("TOPLEFT", 16 + (index - 1) * 176, presetY - 4)
+        button:SetText(spec.label)
+        button.Text:ClearAllPoints()
+        button.Text:SetPoint("TOPLEFT", 10, -7)
+        button.Text:SetPoint("RIGHT", -10, 0)
+        button.Text:SetJustifyH("LEFT")
+        local note = button:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+        note:SetPoint("TOPLEFT", button.Text, "BOTTOMLEFT", 0, -2)
+        note:SetText(spec.note)
+        note:SetTextColor(unpack(O.theme.muted))
+        O.AttachHint(button, spec.label, "Apply this panel shape.")
+        button:SetScript("OnClick", function()
+            ns.Set("boxWidth", spec.width)
+            ns.Set("boxHeight", spec.height)
+            ns.Set("columns", spec.columns)
+            ns.Set("spacing", spec.spacing)
+            ns.Set("showNames", spec.names)
+            if spec.previewUnits then
+                previewCount = spec.previewUnits
+                refreshPreview()
+            end
+            if presets.salveRefreshAll then presets.salveRefreshAll() end
+        end)
+    end
+    add(presets, -presetY + 58)
 
     local grid = section(panel)
     local gy = -8
@@ -202,7 +260,7 @@ O.NewPage({
     local sy = -8
     _, sy = O.Header(size, "Cell size", sy)
     _, sy = O.Slider(size, "Width",
-        "Use about 58 or more if you show unit names.", sy,
+        "Use 95 or more to show the twelve-character preview names.", sy,
         10, 300, 1,
         function() return db.boxWidth end,
         function(value) ns.Set("boxWidth", value) end)
@@ -226,19 +284,38 @@ O.NewPage({
         function() return db.showTooltip end,
         function(value) ns.Set("showTooltip", value) end)
     _, cy = O.Check(contents, "Unit names",
-        "Names work best with cells about 58 pixels wide or more.", cy,
+        "Use cells at least 95 pixels wide for the twelve-character preview names.", cy,
         function() return db.showNames end,
         function(value) ns.Set("showNames", value) end)
     _, cy = O.Check(contents, "Show stack counts",
         "The game hides the number when there is only one stack.", cy,
         function() return db.showStacks end,
         function(value) ns.Set("showStacks", value) end)
+    _, cy = O.Check(contents, "Use class colours",
+        "Dispellable debuffs still use Blizzard's dispel colours.", cy,
+        function() return db.useClassColours end,
+        function(value) ns.Set("useClassColours", value) end)
     add(contents, -cy + 4)
+
+    local inactive = section(panel)
+    local iy = -8
+    _, iy = O.Header(inactive, "Inactive units", iy)
+    _, iy = O.Check(inactive, "Show units with nothing to dispel",
+        "Off makes inactive cells transparent. Their click areas stay in place during combat.", iy,
+        function() return db.showWhenClean end,
+        function(value) ns.Set("showWhenClean", value) end)
+    _, iy = O.Slider(inactive, "Opacity",
+        "How visible inactive cells are when shown.", iy,
+        0, 1, 0.05,
+        function() return db.cleanAlpha end,
+        function(value) ns.Set("cleanAlpha", value) end,
+        function(value) return string.format("%d%%", math.floor(value * 100 + 0.5)) end)
+    add(inactive, -iy + 4)
 
     local names = section(panel)
     local ny = -8
     _, ny = O.Header(names, "Unit names", ny)
-    _, _, ny = O.CyclePair(names, "Alignment", ny,
+    _, _, ny = O.DropdownPair(names, "Alignment", ny,
         {
             label = "Horizontal",
             hint = "Place names against the left edge, centre or right edge.",
@@ -264,7 +341,7 @@ O.NewPage({
     local cooldown = section(panel)
     local dy = -8
     _, dy = O.Header(cooldown, "Cooldown", dy)
-    _, _, dy = O.CyclePair(cooldown, "Alignment", dy,
+    _, _, dy = O.DropdownPair(cooldown, "Alignment", dy,
         {
             label = "Horizontal",
             hint = "Place the cooldown number on the left, centre or right.",
@@ -285,12 +362,6 @@ O.NewPage({
         6, 40, 1,
         function() return db.cooldownFontSize end,
         function(value) ns.Set("cooldownFontSize", value) end)
-    local paletteNote = cooldown:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-    paletteNote:SetPoint("TOPLEFT", 16, dy + 2)
-    paletteNote:SetWidth(520)
-    paletteNote:SetJustifyH("LEFT")
-    paletteNote:SetText("Debuff colours come from the game's dispel palette. Colourblind settings apply automatically.")
-    dy = dy - 28
     add(cooldown, -dy + 4)
 
     local reset = section(panel)
@@ -300,6 +371,7 @@ O.NewPage({
             "spacing", "scale", "boxWidth", "boxHeight",
             "showTooltip", "showNames", "nameJustifyH", "nameJustifyV", "nameFontSize",
             "cooldownJustifyH", "cooldownJustifyV", "cooldownFontSize", "showStacks",
+            "showWhenClean", "cleanAlpha", "useClassColours",
         }) do
             ns.Set(key, ns.defaults[key])
         end
@@ -307,7 +379,7 @@ O.NewPage({
         previewCellState = "DISPELLABLE"
         previewCooldownState = "COOLDOWN"
         applyPreviewSettings()
-    end)
+    end, "Reset Panel")
     add(reset, -ry)
 
     local pageBottom

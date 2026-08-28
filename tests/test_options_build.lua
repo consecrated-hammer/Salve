@@ -112,8 +112,10 @@ local ns = {
         cooldownFontSize = 14, showStacks = true, showWhenClean = true,
         cleanAlpha = 0.25, useClassColours = false, showHandle = true,
         handlePosition = "TOPLEFT", showMinimap = true, showStartupMessage = true,
-        visibilityMode = "ALWAYS", soundEnabled = false, soundChannel = "Master",
-        soundFile = nil, point = { "CENTER", "CENTER", 0, -140 },
+        visibilityMode = "ALWAYS", soundEnabled = false, dispelSoundEnabled = false,
+        movementSoundEnabled = false, soundChannel = "Master",
+        soundFile = nil, movementColour = { r = 0.92, g = 0.20, b = 0.08, a = 0.68 },
+        point = { "CENTER", "CENTER", 0, -140 },
         settingsPoint = { "CENTER", "CENTER", 0, 0 },
         horizontalGrowth = "RIGHT", verticalGrowth = "DOWN",
     },
@@ -126,7 +128,9 @@ local ns = {
         cleanAlpha = 0.25, useClassColours = false, showHandle = true,
         handlePosition = "TOPLEFT", showMinimap = true, showStartupMessage = true,
         visibilityMode = "ALWAYS", visibility = {}, soundEnabled = false,
+        dispelSoundEnabled = false, movementSoundEnabled = false,
         soundChannel = "Master", bindings = {}, escapes = {},
+        movementColour = { r = 0.2, g = 0.3, b = 0.4, a = 0.5 },
         settingsPoint = { "CENTER", "CENTER", 0, 0 },
         horizontalGrowth = "RIGHT", verticalGrowth = "DOWN",
     },
@@ -207,8 +211,9 @@ ns.Bindings = {
 
 assert(loadfile("Options/Shared.lua"))("Salve", ns)
 for _, path in ipairs({
-    "Options/Salve.lua", "Options/Visibility.lua", "Options/Dispel.lua",
-    "Options/Troubleshooting.lua", "Options/LearnedSpells.lua", "Options/Commands.lua", "Options/About.lua",
+    "Options/Salve.lua", "Options/Dispel.lua", "Options/Visibility.lua",
+    "Options/Alerts.lua",
+    "Options/Commands.lua", "Options/Troubleshooting.lua", "Options/LearnedSpells.lua", "Options/About.lua",
 }) do
     assert(loadfile(path))("Salve", ns)
 end
@@ -224,35 +229,68 @@ local function findText(text)
 end
 
 local unitsLabel = findText("Units")
-equal(unitsLabel.shown, false, "preview details start hidden")
-local showPreview = findText("Show preview")
+equal(unitsLabel.shown, true, "in-settings preview controls are always visible")
+local showPreview
+for _, value in ipairs(objects) do
+    if value.Text and value.Text.text == "Preview settings on screen" then
+        showPreview = value
+        break
+    end
+end
+if not showPreview then error("on-screen preview checkbox was not built") end
 showPreview.scripts.OnClick()
-equal(unitsLabel.shown, true, "preview details show with live preview")
+equal(unitsLabel.shown, true, "in-settings preview remains available with live preview")
 showPreview.scripts.OnClick()
-equal(unitsLabel.shown, false, "preview details hide with live preview")
+equal(unitsLabel.shown, true, "in-settings preview remains available after live preview closes")
+
+local function findButtonWithLabel(label)
+    for _, value in ipairs(objects) do
+        if value.Text and value.Text.text == label then return value end
+    end
+end
+local previewDispellable = findButtonWithLabel("Preview dispellable")
+previewDispellable.scripts.OnClick(previewDispellable)
+equal(ns.Preview.cellState, "CLEAR", "preview dispellable checkbox clears the simulated effect")
+previewDispellable.scripts.OnClick(previewDispellable)
+equal(ns.Preview.cellState, "DISPELLABLE", "preview dispellable checkbox restores the simulated effect")
+
+local previewCooldown = findButtonWithLabel("Preview on cooldown")
+previewCooldown.scripts.OnClick(previewCooldown)
+equal(ns.Preview.cooldownState, "READY", "preview cooldown checkbox clears the simulated cooldown")
+previewCooldown.scripts.OnClick(previewCooldown)
+equal(ns.Preview.cooldownState, "COOLDOWN", "preview cooldown checkbox restores the simulated cooldown")
+
+local namedPreset = findText("Named")
+namedPreset.scripts.OnClick()
+equal(ns.db.boxWidth, 95, "Named preset sets cell width")
+equal(ns.db.boxHeight, 20, "Named preset sets cell height")
+equal(ns.db.columns, 5, "Named preset sets cells per row")
+equal(ns.db.spacing, 1, "Named preset sets spacing")
+equal(ns.db.showNames, true, "Named preset shows names")
+equal(ns.db.showTooltip, true, "Named preset preserves tooltip setting")
+equal(ns.db.scale, 1, "Named preset preserves scale")
+equal(ns.Preview.count, 5, "Named preset previews five units")
+
+local raidWallPreset = findText("Raid wall")
+raidWallPreset.scripts.OnClick()
+equal(ns.db.columns, 10, "Raid wall preset sets ten cells per row")
+equal(ns.db.spacing, 0, "Raid wall preset removes cell gaps")
+equal(ns.db.showNames, false, "Raid wall preset hides names")
+equal(ns.Preview.count, 40, "Raid wall preset previews forty units")
 
 local pageCount = 0
 for _ in pairs(ns.Options.pages) do pageCount = pageCount + 1 end
-equal(pageCount, 7, "all seven pages live in the movable window")
-equal(dropdown.template, "WowStyle1DropdownTemplate",
-    "Show Salve uses Blizzard's native dropdown template")
-equal(dropdown.defaultText, "Always", "native dropdown shows visibility summary")
-
-local nativeText = {}
-for _, frame in ipairs(dropdowns) do nativeText[frame.defaultText] = true end
-equal(nativeText.Rows, true, "grid fill uses a native Rows dropdown")
-equal(nativeText.Left, true, "grid growth uses a native Left dropdown")
-
-for _, item in ipairs(dropdown.menu) do
-    if item.label == "Never" then item.set() end
+equal(pageCount, 8, "all eight pages live in the movable window")
+equal(ns.Options.pages.Alerts ~= nil, true, "Alerts page is built")
+local visibilityMenu
+for _, value in ipairs(objects) do
+    if value.Text and value.Text.text == "Always" then
+        visibilityMenu = value
+        break
+    end
 end
-equal(ns.db.visibilityMode, "NEVER", "native Never choice sets base mode")
-
-for _, item in ipairs(dropdown.menu) do
-    if item.label == "In combat" then item.set() end
-end
-equal(ns.db.visibilityMode, "ALWAYS", "condition leaves Never mode")
-equal(ns.db.visibility.inCombat, true, "native checkbox stores condition")
+equal(visibilityMenu.template, "BackdropTemplate",
+    "Show Salve uses Salve's bordered custom select control")
 
 for _, frame in pairs(named) do
     if frame.scripts.OnShow then frame.scripts.OnShow(frame) end
@@ -265,6 +303,32 @@ ns.Preview.active = true
 ns.Options.ShowPage("Dispels")
 equal(ns.Preview.active, true, "preview persists while navigating settings pages")
 equal(previewStops, 0, "page navigation does not stop preview")
+ns.Options.ShowPage("Alerts")
+equal(ns.Options.selectedPage, "Alerts", "Alerts page is selectable")
+equal(ns.Options.pages.Alerts.shown, true, "Alerts page is shown")
+ns.Options.ShowPage("Visibility")
+equal(ns.Options.selectedPage, "Visibility", "Visibility identifier still opens Visibility")
+equal(ns.Options.pages.Visibility.shown, true, "Visibility page is shown")
+ns.Options.ShowPage("not a Salve page")
+equal(ns.Options.selectedPage, "Salve", "unknown page falls back to Panel")
+equal(ns.Options.pages.Salve.shown, true, "Panel is shown for an unknown page")
+
+ns.db.dispelSoundEnabled = true
+ns.db.movementSoundEnabled = true
+ns.db.soundChannel = "Dialog"
+ns.db.movementColour = { r = 0.2, g = 0.3, b = 0.4, a = 0.5 }
+local resetDispels = findText("Reset Dispels")
+resetDispels.scripts.OnClick()
+equal(ns.db.dispelSoundEnabled, true, "Reset Dispels preserves dispel alert sound")
+equal(ns.db.movementSoundEnabled, true, "Reset Dispels preserves snare-removal sound")
+equal(ns.db.soundChannel, "Dialog", "Reset Dispels preserves alert channel")
+equal(ns.db.movementColour.r, 0.2, "Reset Dispels preserves movement colour")
+
+local resetAlerts = findText("Reset Alerts")
+resetAlerts.scripts.OnClick()
+equal(ns.db.dispelSoundEnabled, false, "Reset Alerts restores dispel sound default")
+equal(ns.db.movementSoundEnabled, false, "Reset Alerts restores snare-removal sound default")
+equal(ns.db.soundChannel, "Master", "Reset Alerts restores sound channel default")
 ns.Options.window:Hide()
 equal(ns.Preview.active, false, "closing settings stops preview")
 equal(previewStops, 1, "settings window owns preview teardown")

@@ -27,9 +27,11 @@ local chunk = assert(loadfile("Core/Config.lua"))
 chunk("Salve", ns)
 ns.InitConfig()
 
-equal(ns.db.schemaVersion, 6, "schema migrated")
+equal(ns.db.schemaVersion, 7, "schema migrated")
 equal(ns.db.learnMode, true, "learning normalized on")
 equal(ns.db.soundEnabled, false, "alert sound defaults off")
+equal(ns.db.dispelSoundEnabled, false, "dispel alert sound defaults off")
+equal(ns.db.movementSoundEnabled, false, "snare-removal sound defaults off")
 equal(ns.db.movementColour.r, 0.92, "movement alert colour defaults to red-orange")
 equal(ns.db.showStartupMessage, true, "startup message defaults on")
 equal(ns.db.useClassColours, false, "class-coloured clear cells default off")
@@ -73,7 +75,7 @@ ns.InitConfig()
 -- data source, not a diagnostic, so resetting it meant that category never
 -- accumulated anything.
 equal(ns.db.learnMode, true, "learning survives UI reload")
-equal(ns.db.schemaVersion, 6, "duplicate-binding migration applied")
+equal(ns.db.schemaVersion, 7, "duplicate-binding migration applied")
 equal(#ns.db.bindings, 1, "duplicate mouse bindings collapsed")
 equal(ns.db.bindingsCustom, true, "legacy explicit bindings remain custom")
 equal(ns.db.visibility.mounted, nil, "removed mounted condition cleared")
@@ -87,5 +89,11 @@ equal(#ns.db.bindings, 1, "current-schema duplicate bindings also collapse")
 SalveDB.learnMode = false
 ns.InitConfig()
 equal(ns.db.learnMode, true, "existing profiles cannot retain disabled learning")
+
+SalveDB = { schemaVersion = 6, soundEnabled = true }
+SalveLearnedDB = nil
+ns.InitConfig()
+equal(ns.db.dispelSoundEnabled, true, "legacy sound setting enables dispel sound")
+equal(ns.db.movementSoundEnabled, true, "legacy sound setting enables snare-removal sound")
 
 print("config tests passed")

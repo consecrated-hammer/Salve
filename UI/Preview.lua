@@ -11,7 +11,9 @@ local Preview = ns.Preview
 
 local MAX_BOXES = 40
 local NAMES = {
-    "Silverhammer", "Beaststalker", "Stormtotemic", "Nightstalker", "Spiritmender",
+    -- Each is twelve characters: the Named preset needs to prove it can carry
+    -- a realistic player name rather than flattering itself with short labels.
+    "Ravenstriker", "Nyxmoonblade", "Thornwhisper", "Shadowmender", "Stormwardenx",
 }
 local CLASSES = { "PALADIN", "HUNTER", "SHAMAN", "ROGUE", "PRIEST" }
 local FALLBACK_DISPEL_COLOURS = {
@@ -49,6 +51,95 @@ end
 function Preview:NeedsDispel(index, count)
     if count <= 2 then return index == count end
     return index == 2 or index == math.min(count, 4)
+end
+
+-- Both preview hosts use the same non-secure boxes, layout calculation and
+-- restyling as Salve's live panel. The Settings host is clipped and scales down
+-- only when the configured grid cannot fit its preview stage.
+local function renderBoxes(boxes, frame, count, layout, state, cooldownState,
+        cooldownStart)
+    local types = knownDispelTypes()
+    for i, box in ipairs(boxes) do
+        if i <= count then
+            ns.Panel:PlaceBox(box, i, layout)
+            ns.Box.RestylePreview(box,
+                NAMES[((i - 1) % #NAMES) + 1],
+                CLASSES[((i - 1) % #CLASSES) + 1])
+
+            if state == "DISPELLABLE" and Preview:NeedsDispel(i, count) then
+                local colour = dispelColour(types[((i - 1) % #types) + 1])
+                box.previewFill:SetColorTexture(colour.r, colour.g, colour.b, 1)
+                box.previewFill:Show()
+                box.previewStack:SetText(ns.db.showStacks and i == 4 and "2" or "")
+            else
+                box.previewFill:Hide()
+                box.previewStack:SetText("")
+            end
+
+            if cooldownState == "COOLDOWN" then
+                box.dispelCooldown:SetCooldown(cooldownStart, 8)
+                box.dispelCooldown:Show()
+            else
+                if box.dispelCooldown.Clear then box.dispelCooldown:Clear() end
+                box.dispelCooldown:Hide()
+            end
+            box:Show()
+        else
+            box:Hide()
+        end
+    end
+end
+
+function Preview:CreateSettingsPreview(parent, top, left, width, height)
+    if self.settingsPreview and self.settingsPreview.parent == parent then return end
+
+    width = width or 508
+    height = height or 100
+    local viewport = CreateFrame("Frame", nil, parent)
+    viewport:SetPoint("TOPLEFT", left or 10, top or -24)
+    viewport:SetSize(width, height)
+    if viewport.SetClipsChildren then viewport:SetClipsChildren(true) end
+
+    local frame = CreateFrame("Frame", nil, viewport)
+    frame:EnableMouse(false)
+    local boxes = {}
+    for i = 1, MAX_BOXES do
+        local box = ns.Box.CreatePreview(frame)
+        box:Hide()
+        boxes[i] = box
+    end
+    self.settingsPreview = {
+        parent = parent, viewport = viewport, frame = frame, boxes = boxes,
+        width = width, height = height,
+    }
+    viewport:SetScript("OnUpdate", function(_, elapsed)
+        if not Preview.settingsPreview or Preview.cooldownState ~= "COOLDOWN" then return end
+        Preview.settingsElapsed = (Preview.settingsElapsed or 0) + elapsed
+        if Preview.settingsElapsed < 0.1 then return end
+        Preview.settingsElapsed = 0
+        if not Preview.cooldownStart or GetTime() - Preview.cooldownStart >= 8 then
+            Preview.cooldownStart = GetTime()
+            Preview:RefreshSettingsPreview()
+        end
+    end)
+end
+
+function Preview:RefreshSettingsPreview()
+    local preview = self.settingsPreview
+    if not preview then return end
+
+    local count = math.max(1, math.min(MAX_BOXES, tonumber(self.count) or 5))
+    local layout = ns.Panel:Layout(count)
+    local fit = math.min(1, preview.width / math.max(1, layout.frameWidth),
+        preview.height / math.max(1, layout.frameHeight))
+    preview.frame:ClearAllPoints()
+    preview.frame:SetPoint("CENTER", preview.viewport, "CENTER")
+    preview.frame:SetScale(layout.scale * fit)
+    preview.frame:SetSize(layout.frameWidth, layout.frameHeight)
+    self.cooldownStart = self.cooldownStart or GetTime()
+    renderBoxes(preview.boxes, preview.frame, count, layout, self.cellState,
+        self.cooldownState, self.cooldownStart)
+    preview.frame:Show()
 end
 
 function Preview:Create()
@@ -134,43 +225,14 @@ function Preview:Refresh()
     frame:SetScale(layout.scale)
     frame:SetSize(layout.frameWidth, layout.frameHeight)
 
-    local types = knownDispelTypes()
     local now = GetTime()
     if self.cooldownState == "COOLDOWN"
         and (not self.cooldownStart or now - self.cooldownStart >= 8) then
         self.cooldownStart = now
     end
 
-    for i, box in ipairs(self.boxes) do
-        if i <= count then
-            ns.Panel:PlaceBox(box, i, layout)
-            ns.Box.RestylePreview(box,
-                NAMES[((i - 1) % #NAMES) + 1],
-                CLASSES[((i - 1) % #CLASSES) + 1])
-
-            if self.cellState == "DISPELLABLE" and self:NeedsDispel(i, count) then
-                local dispelType = types[((i - 1) % #types) + 1]
-                local colour = dispelColour(dispelType)
-                box.previewFill:SetColorTexture(colour.r, colour.g, colour.b, 1)
-                box.previewFill:Show()
-                box.previewStack:SetText(ns.db.showStacks and i == 4 and "2" or "")
-            else
-                box.previewFill:Hide()
-                box.previewStack:SetText("")
-            end
-
-            if self.cooldownState == "COOLDOWN" then
-                box.dispelCooldown:SetCooldown(self.cooldownStart, 8)
-                box.dispelCooldown:Show()
-            else
-                if box.dispelCooldown.Clear then box.dispelCooldown:Clear() end
-                box.dispelCooldown:Hide()
-            end
-            box:Show()
-        else
-            box:Hide()
-        end
-    end
+    renderBoxes(self.boxes, frame, count, layout, self.cellState,
+        self.cooldownState, self.cooldownStart)
 
     self.handle:SetShown(ns.db.showHandle and true or false)
     ns.Handle:PositionFrame(self.handle, frame)

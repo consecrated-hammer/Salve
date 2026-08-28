@@ -25,7 +25,13 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         ns.Sound:DiscoverModules()
         -- ☠ Only now is ns.db real. The option pages queued themselves at file
         --   scope precisely so they could be built here instead of against nil.
-        ns.Options.BuildAll()
+        -- A failed settings build should not prevent the dispel panel loading.
+        -- OpenOptions retries on demand and reports the captured error.
+        local built, err = pcall(ns.Options.BuildAll)
+        if not built then
+            ns.Options.buildError = tostring(err)
+            ns.Print("settings will retry when opened")
+        end
         frame:UnregisterEvent("ADDON_LOADED")
 
     elseif event == "PLAYER_LOGIN" then
@@ -91,8 +97,8 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         if type(unit) == "number" and effectIndex == nil then
             effectIndex, unit = unit, "player"
         end
-        local _, isMovement = ns.Escape:CaptureLossOfControl(unit, effectIndex)
-        if isMovement and ns.Escape:CanWarnForUnit(unit) then
+        local _, isVerifiedMovement = ns.Escape:CaptureLossOfControl(unit, effectIndex)
+        if isVerifiedMovement and ns.Escape:CanWarnForUnit(unit) then
             ns.Sound:PlayMovementWarning()
         end
 

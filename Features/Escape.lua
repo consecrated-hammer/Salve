@@ -190,8 +190,10 @@ function Escape:RegisterMovement(source, spellIDs)
     return true
 end
 
--- Everything registered, plus everything learned. Used as
--- candidateFilters.includeSpellIDs on the movement slot.
+-- Only reviewed source data may drive the movement overlay. A ROOT/SNARE
+-- classification is evidence that an effect impairs movement, not proof that
+-- the selected escape removes it. Auto-captured observations stay in the
+-- learned catalogue until reviewed and promoted into movement.csv.
 function Escape:AllSpellIDs()
     local seen, list = {}, {}
     local function add(id)
@@ -203,8 +205,15 @@ function Escape:AllSpellIDs()
     for _, set in pairs(self.sources) do
         for id in pairs(set) do add(id) end
     end
-    for id in pairs((ns.learned and ns.learned.movement) or {}) do add(id) end
     return list
+end
+
+function Escape:IsVerifiedMovement(spellID)
+    if type(spellID) ~= "number" then return false end
+    for _, set in pairs(self.sources) do
+        if set[spellID] then return true end
+    end
+    return false
 end
 
 -- ── Capture ────────────────────────────────────────────────────────────────
@@ -248,10 +257,10 @@ function Escape:CaptureLossOfControl(unit, effectIndex)
     if locType ~= "ROOT" and locType ~= "SNARE" then return false, false end
 
     ns.learned.movement = ns.learned.movement or {}
-    -- The second result describes the current effect, not whether it was new
-    -- to the catalogue. Callers use it for a live player-only warning, which
-    -- must still occur when a known root is applied again.
-    return capture(plain(data.spellID), plain(data.displayText)), true
+    local spellID = plain(data.spellID)
+    -- The second result says the effect is reviewed for the live overlay and
+    -- alert. It deliberately remains false for auto-captured discoveries.
+    return capture(spellID, plain(data.displayText)), self:IsVerifiedMovement(spellID)
 end
 
 function Escape:IsPlayerUnit(unit)
@@ -277,7 +286,7 @@ function Escape:DumpCaptured()
         ns.Print("nothing captured yet — keep playing content with roots or snares")
         return
     end
-    ns.Print(("%d captured, all active:"):format(#ids))
+    ns.Print(("%d captured; review before activating:"):format(#ids))
     for _, id in ipairs(ids) do
         print(("    %d, -- %s"):format(id, tostring(ns.learned.movement[id])))
     end

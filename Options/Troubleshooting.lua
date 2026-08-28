@@ -32,7 +32,10 @@ local function buildReport()
         "Instance: " .. tostring(ns.Sound.activeInstanceName or "World")
             .. " (" .. tostring(ns.Sound.activeInstanceID or 0) .. ")",
         "Data: " .. moduleStatus(),
-        "Sound enabled: " .. yesNo(ns.db.soundEnabled),
+        "Dispel sound: " .. yesNo(ns.db.dispelSoundEnabled ~= nil
+            and ns.db.dispelSoundEnabled or ns.db.soundEnabled),
+        "Snare-removal sound: " .. yesNo(ns.db.movementSoundEnabled ~= nil
+            and ns.db.movementSoundEnabled or ns.db.soundEnabled),
         "Aura learning: always on",
         "Cures: " .. ns.CuresText(ns.Sound:CurrentCures()),
         "Spell IDs: " .. tostring(#ns.Sound:ActiveRecords()),
@@ -150,7 +153,9 @@ O.ShowDiagnosticReport = showCopyReport
 
 O.NewPage({
     name = "Troubleshooting",
-    description = "Use this when a debuff is missing or Salve looks wrong.",
+    title = "Troubleshooting",
+    group = "REFERENCE",
+    description = "Check Salve status.",
 }, function(panel, y)
     _, y = O.Header(panel, "Status", y)
 
@@ -159,11 +164,11 @@ O.NewPage({
     card:SetSize(520, 112)
     card:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        edgeSize = 8,
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
     })
-    card:SetBackdropColor(0.045, 0.045, 0.05, 0.9)
-    card:SetBackdropBorderColor(0.3, 0.3, 0.33, 0.9)
+    card:SetBackdropColor(unpack(O.theme.rail))
+    card:SetBackdropBorderColor(unpack(O.theme.edge))
 
     local status = card:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     status:SetPoint("TOPLEFT", 14, -12)
@@ -178,8 +183,7 @@ O.NewPage({
     O.RefreshTroubleshooting = refreshStatus
     y = y - 126
 
-    local probe = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    probe:SetSize(150, 22)
+    local probe = O.Button(panel, 150, 22)
     probe:SetPoint("TOPLEFT", 16, y)
     probe:SetText("Run diagnostics")
     O.AttachHint(probe, "Run diagnostics",
@@ -190,8 +194,7 @@ O.NewPage({
         refreshStatus()
     end)
 
-    local copy = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    copy:SetSize(120, 22)
+    local copy = O.Button(panel, 120, 22)
     copy:SetPoint("LEFT", probe, "RIGHT", 8, 0)
     copy:SetText("Copy report")
     O.AttachHint(copy, "Copy report", "Open a report you can paste into a bug report.")
@@ -204,7 +207,7 @@ O.NewPage({
     note:SetPoint("TOPLEFT", 16, y)
     note:SetWidth(520)
     note:SetJustifyH("LEFT")
-    note:SetText("Salve always records readable dispellable aura names, IDs and schools from your group in the separate SalveLearnedDB saved-data block, scoped to each location. It also captures Blizzard-reported roots and snares automatically. Private auras cannot be learned. Use /salve learned clear to remove the recorded catalogue.")
-    y = y - 82
+    note:SetText("Records readable dispellable auras and Blizzard-reported roots or snares. Private auras cannot be recorded.")
+    y = y - 42
     return y
 end)

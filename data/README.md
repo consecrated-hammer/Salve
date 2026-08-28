@@ -28,8 +28,9 @@ python3 tools/generate_data_modules.py --check
 New DB2 candidates should enter the CSV as `verified=false`, then be reviewed
 before activation. In-game `/salve learn on` discoveries include instance and
 dispel-school provenance and can be promoted here after verification.
-Automatically captured roots and snares belong in `movement.csv`; they are
-registered independently of the alert-sound setting.
+Automatically captured roots and snares remain in the learned catalogue. Review
+and promote only confirmed removals into `movement.csv`; generated verified rows
+are the only movement effects allowed to light a Salve cell.
 
 For a new client build, download `JournalInstance`, `JournalEncounter`,
 `JournalEncounterSection`, `SpellCategories` and `SpellName` CSVs from

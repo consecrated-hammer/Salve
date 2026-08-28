@@ -29,7 +29,11 @@ def load_sources() -> tuple[dict, dict[str, list[dict]], dict[str, list[dict]], 
     main_toc = (ROOT / "Salve.toc").read_text(encoding="utf-8")
     version_match = re.search(r"^## Version:\s*(\S+)\s*$", main_toc, re.MULTILINE)
     interface_match = re.search(r"^## Interface:\s*(\d+)\s*$", main_toc, re.MULTILINE)
-    if not version_match or version_match.group(1) != config.get("version"):
+    toc_version = version_match.group(1) if version_match else None
+    # Local `-devN` builds identify the copied test addon in-game without
+    # regenerating or version-bumping the bundled release data modules.
+    data_version = re.sub(r"-dev\d+$", "", toc_version or "")
+    if not toc_version or data_version != config.get("version"):
         raise ValueError("data version does not match Salve.toc")
     if not interface_match or int(interface_match.group(1)) != int(config.get("interface", 0)):
         raise ValueError("data interface does not match Salve.toc")

@@ -84,6 +84,16 @@ end
 
 O.BuildLearnedSpellReport = buildReport
 
+-- Copy/export keeps Markdown headings; the in-settings reader should not look
+-- like a raw file preview. It presents the same observations without markup.
+local function buildDisplay()
+    local report = buildReport()
+    report = report:gsub("^Salve learned%-spell export\nCharacter:.-\nScope:.-\n\n", "")
+    report = report:gsub("### ([^\n]+)", "|cff4c9a7a%1|r")
+    report = report:gsub("## ([^\n]+)", "|cff4c9a7a%1|r")
+    return report
+end
+
 local copyFrame
 local function showCopyReport()
     if not copyFrame then
@@ -140,7 +150,9 @@ O.ShowLearnedSpellReport = showCopyReport
 
 O.NewPage({
     name = "Learned Spells",
-    description = "Dispellable auras, roots and snares Salve has recorded while you play.",
+    title = "Learned spells",
+    group = "REFERENCE",
+    description = "Recorded aura and movement spells.",
 }, function(panel, y)
     _, y = O.Header(panel, "Salve's learned spells", y)
     local note = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
@@ -150,8 +162,7 @@ O.NewPage({
     note:SetText("This is Salve's learned catalogue, not your spellbook. It shows only positive observations; missing spells remain unknown.")
     y = y - 46
 
-    local copy = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    copy:SetSize(170, 22)
+    local copy = O.Button(panel, 170, 22)
     copy:SetPoint("TOPLEFT", 16, y)
     copy:SetText("Copy learned spells")
     O.AttachHint(copy, "Copy learned spells", "Copy the same Salve-learned catalogue, ready for Ctrl+C.")
@@ -159,23 +170,34 @@ O.NewPage({
     y = y - 36
     local listTopY = y
 
-    local list = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    list:SetPoint("TOPLEFT", 16, y)
-    list:SetWidth(520)
+    local listCard = CreateFrame("Frame", nil, panel, "BackdropTemplate")
+    listCard:SetPoint("TOPLEFT", 16, y)
+    listCard:SetWidth(540)
+    listCard:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
+    })
+    listCard:SetBackdropColor(unpack(O.theme.raised))
+    listCard:SetBackdropBorderColor(unpack(O.theme.edge))
+    local list = listCard:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    list:SetPoint("TOPLEFT", 12, -10)
+    list:SetWidth(516)
     list:SetJustifyH("LEFT")
     list:SetJustifyV("TOP")
 
     local listHeight = 42
     local function render()
-        local report = buildReport()
+        local report = buildDisplay()
         list:SetText(report)
         local lineCount = 1
         for _ in report:gmatch("\n") do lineCount = lineCount + 1 end
         listHeight = math.max(42, lineCount * 15)
         list:SetHeight(listHeight)
-        panel.salveSetBottom(listTopY - listHeight - 24)
+        listCard:SetHeight(listHeight + 20)
+        panel.salveSetBottom(listTopY - listHeight - 44)
     end
     panel.salveRefresh[#panel.salveRefresh + 1] = render
     render()
-    return listTopY - listHeight - 24
+    return listTopY - listHeight - 44
 end)

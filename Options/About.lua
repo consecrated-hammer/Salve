@@ -42,6 +42,8 @@ local applicationLines = {
 
 O.NewPage({
     name = "About",
+    title = "About",
+    group = "REFERENCE",
     description = "Version, credits, and questionable medical advice.",
 }, function(panel, y)
     local info = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
@@ -79,8 +81,7 @@ O.NewPage({
     panel.salveRefresh[#panel.salveRefresh + 1] = showTip
     y = y - 44
 
-    local apply = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    apply:SetSize(176, 44)
+    local apply = O.Button(panel, 176, 44, "primary")
     apply:SetPoint("TOPLEFT", 16, y)
     apply:SetText("")
     local applyIcon = apply:CreateTexture(nil, "ARTWORK")

@@ -17,22 +17,41 @@ local commands = {
 
 O.NewPage({
     name = "Commands",
-    description = "Every /salve command in one place.",
+    title = "Commands",
+    group = "REFERENCE",
+    description = "Every /salve command.",
 }, function(panel, y)
     _, y = O.Header(panel, "Commands", y)
-    for _, row in ipairs(commands) do
-        local command = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        command:SetPoint("TOPLEFT", 16, y)
+    local list = CreateFrame("Frame", nil, panel, "BackdropTemplate")
+    list:SetPoint("TOPLEFT", 16, y)
+    list:SetSize(540, #commands * 28)
+    list:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
+    })
+    list:SetBackdropColor(unpack(O.theme.raised))
+    list:SetBackdropBorderColor(unpack(O.theme.edge))
+    for index, row in ipairs(commands) do
+        local rowY = -8 - (index - 1) * 28
+        local command = list:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        command:SetPoint("TOPLEFT", 12, rowY)
         command:SetWidth(220)
         command:SetJustifyH("LEFT")
-        command:SetText("|cffffd100" .. row[1] .. "|r")
+        command:SetText("|cff4c9a7a" .. row[1] .. "|r")
 
-        local does = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        does:SetPoint("TOPLEFT", 250, y)
+        local does = list:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        does:SetPoint("TOPLEFT", 240, rowY)
         does:SetWidth(285)
         does:SetJustifyH("LEFT")
         does:SetText(row[2])
-        y = y - 22
+        if index < #commands then
+            local divider = list:CreateTexture(nil, "ARTWORK")
+            divider:SetPoint("TOPLEFT", 1, -index * 28)
+            divider:SetPoint("TOPRIGHT", -1, -index * 28)
+            divider:SetHeight(1)
+            divider:SetColorTexture(unpack(O.theme.edge))
+        end
     end
-    return y - 20
+    return y - #commands * 28 - 20
 end)

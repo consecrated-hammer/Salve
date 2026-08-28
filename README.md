@@ -111,7 +111,7 @@ between settings pages leaves it running.
 ## Settings worth knowing
 
 **Show unit names** is off by default. The default 20 × 20 boxes are too small
-for names to fit — turn names on and raise the box width to around 58 if you
+for names to fit — turn names on and raise the box width to at least 95 if you
 would rather have them.
 
 **Grid flow** separates wrapping from direction. Rows can grow from the left or

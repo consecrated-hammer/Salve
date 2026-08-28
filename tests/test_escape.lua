@@ -54,11 +54,14 @@ equal(ns.Escape:CaptureLossOfControl("party1", 2), true,
 equal(ns.learned.movement[12345], "Test Root", "automatic root stores spell")
 equal(rebuilds, 1, "automatic root requests panel rebuild")
 equal(#prints, 1, "automatic root reports capture")
-local capturedAgain, isMovement = ns.Escape:CaptureLossOfControl("party1", 2)
+local afterCapture = ns.Escape:AllSpellIDs()
+equal(#afterCapture, 1, "auto-captured roots do not activate the movement overlay")
+equal(afterCapture[1], 45678, "only reviewed movement data drives the overlay")
+local capturedAgain, isVerifiedMovement = ns.Escape:CaptureLossOfControl("party1", 2)
 equal(capturedAgain, false,
     "automatic root de-duplicates spell")
-equal(isMovement, true,
-    "known roots remain identifiable as live movement impairments")
+equal(isVerifiedMovement, false,
+    "unreviewed roots do not become live movement impairments")
 
 record = { locType = "STUN", spellID = 23456, displayText = "Test Stun" }
 equal(ns.Escape:CaptureLossOfControl("party1", 2), false,
