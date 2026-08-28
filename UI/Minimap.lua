@@ -7,8 +7,6 @@ local addonName, ns = ...
 ns.Minimap = {}
 local Minimap_ = ns.Minimap
 
-local RADIUS = 80
-
 -- ☠ TGA or BLP only, and referenced WITHOUT the extension. WoW cannot load a
 --   PNG: it fails silently and you get an empty button rather than an error.
 local ICON = "Interface\\AddOns\\Salve\\Textures\\SalveClean"
@@ -41,11 +39,21 @@ function Minimap_:Create()
     border:SetSize(54, 54)
     border:SetPoint("TOPLEFT")
 
+    local function orbitRadius()
+        local width = Minimap:GetWidth() or 0
+        local height = Minimap:GetHeight() or 0
+        local diameter = math.min(width, height)
+        if diameter <= 0 then return 80 end
+        -- Keep the visible icon just outside the minimap edge at any UI scale.
+        -- The old fixed 80px value only happened to fit the default minimap.
+        return diameter / 2 + b:GetWidth() / 2 - 5
+    end
+
     local function place(angle)
         local r = math.rad(angle or 225)
         b:ClearAllPoints()
         b:SetPoint("CENTER", Minimap, "CENTER",
-            math.cos(r) * RADIUS, math.sin(r) * RADIUS)
+            math.cos(r) * orbitRadius(), math.sin(r) * orbitRadius())
     end
 
     -- ☠ atan2, NOT a two-argument math.atan. WoW runs Lua 5.1, where math.atan
@@ -103,11 +111,16 @@ function Minimap_:Create()
     b:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     place(ns.db.minimapAngle or 225)
+    Minimap:HookScript("OnSizeChanged", function()
+        place(ns.db.minimapAngle or 225)
+    end)
     self.button = b
+    self.place = place
     return b
 end
 
 function Minimap_:Update()
     if not self.button then return end
     self.button:SetShown(ns.db.showMinimap and true or false)
+    if self.place then self.place(ns.db.minimapAngle or 225) end
 end
