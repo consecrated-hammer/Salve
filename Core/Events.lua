@@ -22,7 +22,6 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             ns.Print("loaded — version " .. tostring(ns.VERSION)
                 .. ". Type |cffffd100/salve|r for settings; |cffffd100/salve help|r for commands.")
         end
-        ns.Sound:DiscoverModules()
         -- ☠ Only now is ns.db real. The option pages queued themselves at file
         --   scope precisely so they could be built here instead of against nil.
         -- A failed settings build should not prevent the dispel panel loading.

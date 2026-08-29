@@ -122,7 +122,7 @@ def main() -> int:
         writer.writerows(retained)
 
     print(f"imported {len(candidates)} unverified DB2 candidates for {len(selected)} module(s)")
-    print("review the CSV, set approved rows verified=true, then regenerate modules")
+    print("review the CSV, set approved rows verified=true, then regenerate the catalogue")
     return 0
 
 

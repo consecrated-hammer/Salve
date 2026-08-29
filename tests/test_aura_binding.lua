@@ -6,7 +6,7 @@ end
 
 local ns = {
     db = { showStacks = false, boxWidth = 20, boxHeight = 20 },
-    DISPELLABLE_FILTER = "HARMFUL",
+    DISPELLABLE_FILTER = "HARMFUL|RAID_PLAYER_DISPELLABLE",
     DISPEL_TYPES = { "Magic", "Curse", "Disease", "Poison" },
     spellID = 4987,
     Bindings = {
@@ -129,18 +129,12 @@ local accepted = box()
 equal(ns.Binding:Attach(accepted, "player"), true,
     "valid dispel carrier attaches")
 equal(anchoredTo.salveDispel, accepted, "returned dispel slot is anchored over its Salve box")
-equal(anchoredTo.salveMovement, accepted, "returned movement slot is anchored over its Salve box")
-equal(capturedSlots.salveDispel.filter, "HARMFUL", "dispel slot uses the broad harmful filter")
-equal(capturedSlots.salveDispel.options.candidateFilters.includeDispelTypes.Magic, true,
-    "known Magic cure included in native candidate filter")
-equal(capturedSlots.salveDispel.options.candidateFilters.includeDispelTypes.Disease, true,
-    "known Disease cure included in native candidate filter")
-equal(capturedSlots.salveDispel.options.candidateFilters.includeDispelTypes.Poison, true,
-    "known Poison cure included in native candidate filter")
-equal(capturedSlots.salveDispel.options.candidateFilters.includeDispelTypes.Curse, nil,
-    "unknown Curse cure excluded from native candidate filter")
-equal(capturedSlots.salveMovement.options.candidateFilters.includeSpellIDs[45678], true,
-    "movement slot receives known movement spell IDs")
+equal(capturedSlots.salveDispel.filter, "HARMFUL|RAID_PLAYER_DISPELLABLE",
+    "dispel slot requires Blizzard's per-character dispellable classification")
+equal(capturedSlots.salveDispel.options.candidateFilters, nil,
+    "normal dispel slot relies on Blizzard's by-me classification")
+equal(capturedSlots.salveMovement, nil,
+    "movement slot fails dark because spell-ID filtering is identity-gated")
 equal(movementDispelTextureBinds, 0,
     "movement warning uses generic child art, not dispel-type-gated textures")
 
@@ -148,8 +142,8 @@ UnitIsUnit = function(left, right) return left == "raid2" and right == "player" 
 local raidSelf = box()
 equal(ns.Binding:Attach(raidSelf, "raid2"), true,
     "raid player cell attaches")
-equal(anchoredTo.salveMovement, raidSelf,
-    "personal movement slot is created and anchored for the player's raid token")
+equal(capturedSlots.salveMovement, nil,
+    "personal movement cell also fails dark without a safe spell-ID filter")
 local cooldown = {
     SetCooldownFromDurationObject = function(_, duration)
         appliedDuration = duration

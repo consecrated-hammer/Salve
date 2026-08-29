@@ -44,7 +44,7 @@ jobs:
             awk '!/^[[:space:]]*(#|$)/ { gsub(/\\/, "/"); if ($0 ~ /\.lua$/) print }' \
               "$toc" | tr -d '\r' | sort > /tmp/in_toc
             if [ "$dir" = "." ]; then
-              find Core Features Options UI -name '*.lua' -print \
+              find Core Data Features Options UI -name '*.lua' -print \
                 | sort > /tmp/on_disk
               printf '%s\n' Core.lua >> /tmp/on_disk
               sort -o /tmp/on_disk /tmp/on_disk
@@ -55,14 +55,11 @@ jobs:
           }
 
           check_toc . Salve.toc
-          for dir in Salve_Data_*; do
-            check_toc "$dir" "$dir/$dir.toc"
-          done
 
   data:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate catalogue and generated modules
+      - name: Validate built-in catalogue
         run: python3 tools/generate_data_modules.py --check

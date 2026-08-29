@@ -85,42 +85,24 @@ C_UnitAuras = {
     end,
 }
 
-local loadCalls = 0
-local loadedName
-local addonNames = { "Salve_Data_Test_Old", "Salve_Data_Test" }
-C_AddOns = {
-    GetNumAddOns = function() return #addonNames end,
-    GetAddOnName = function(index) return addonNames[index] end,
-    GetAddOnMetadata = function(name, key)
-        if key == "X-Salve-LoadOn-InstanceID" then return "2993" end
-        if key == "X-Salve-Data-Priority" then
-            return name == "Salve_Data_Test" and "2" or "1"
-        end
-    end,
-}
-
 local chunk = assert(loadfile("Features/Sound.lua"))
 chunk("Salve", ns)
 
-C_AddOns.LoadAddOn = function(name)
-    loadCalls = loadCalls + 1
-    loadedName = name
-    ns.Sound:RegisterData(name, {
-        [2993] = {
-            name = "Test Instance",
-            debuffs = {
-                { spellID = 1001, dispelType = "Magic", verified = true },
-                { spellID = 1002, dispelType = "Disease", verified = true },
-                { spellID = 1003, dispelType = "Poison", verified = false },
-            },
+ns.Sound:RegisterData("Salve", {
+    [2993] = {
+        name = "Test Instance",
+        debuffs = {
+            { spellID = 1001, dispelType = "Magic", verified = true },
+            { spellID = 1002, dispelType = "Disease", verified = true },
+            { spellID = 1003, dispelType = "Poison", verified = false },
         },
-    })
-    return true
-end
-
-ns.Sound:DiscoverModules()
+    },
+})
 ns.Sound:ActivateCurrentInstance()
-equal(loadCalls, 1, "always-on learning loads current data module")
+equal(ns.Sound.activeModule, "Built-in catalogue", "current data is built into Salve")
+local curatedIDs = ns.Sound:ActiveCuratedSpellIDs()
+equal(#curatedIDs, 1, "only verified current-instance spells can drive the cell overlay")
+equal(curatedIDs[1], 1001, "overlay list excludes schools the character cannot cure")
 equal(ns.Sound.registered, 0, "sound disabled registers no alerts")
 equal(ns.Sound:PlayMovementWarning(), false,
     "movement warning respects the shared alert-sound toggle")
@@ -137,8 +119,6 @@ equal(playedSound[#playedSound].channel, "Master",
     "movement warning uses the configured output channel")
 equal(ns.Sound:TestMovement(true), true,
     "movement sound test uses the movement-warning alert path")
-equal(loadCalls, 2, "enabling sound refreshes the current module")
-equal(loadedName, "Salve_Data_Test", "highest-priority module wins")
 equal(#ns.Sound:ActiveRecords(), 1, "records filtered by cure type and verification")
 equal(ns.Sound.registered, 3, "one spell registered for current party tokens")
 equal(added[1].unit, "player", "party includes player")
@@ -185,8 +165,8 @@ equal(ns.Sound:PlayMovementWarning(), true,
     "disabling dispel sound keeps snare-removal sound active")
 ns.Sound:SetLearning(false, true)
 equal(ns.db.learnMode, true, "compatibility call cannot disable learning")
-equal(ns.Sound.activeModule, "Salve_Data_Test",
-    "learning keeps current data active when sound is disabled")
+equal(ns.Sound.activeModule, "Built-in catalogue",
+    "learning keeps built-in data active when sound is disabled")
 for index = 1, 5 do
     equal(createdFrames[index].event, "UNIT_AURA",
         "always-on learning listener " .. index)
@@ -212,9 +192,9 @@ equal(#removed > removedBeforeEncounter, true,
 equal(ns.Sound.lastFailure, nil,
     "deferred sound refresh does not report a transient rejection")
 
-local loadsBeforeChannelChange = loadCalls
 ns.Sound:OnSettingChanged("soundChannel")
-equal(loadCalls, loadsBeforeChannelChange, "channel change does not activate data module")
+equal(ns.Sound.activeModule, "Built-in catalogue",
+    "channel change keeps the built-in catalogue selected")
 
 -- Outdoor learning is map-scoped and cannot remain enabled after leaving.
 ns.db.dispelSoundEnabled = false

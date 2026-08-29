@@ -65,7 +65,7 @@ jobs:
             exit 1
           fi
 
-      - name: Validate generated data modules
+      - name: Validate generated built-in catalogue
         run: python3 tools/generate_data_modules.py --check
 
       # Publish ONLY this version's notes. .pkgmeta points the packager at

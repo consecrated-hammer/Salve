@@ -60,8 +60,8 @@ ns.defaults = {
     visibilityMode = "ALWAYS",
     visibility     = {},
 
-    -- Alert sound. Typed spell IDs come from the bundled load-on-demand
-    -- Salve_Data_* module for the current instance.
+    -- Alert sound. Typed spell IDs come from Salve's built-in catalogue for
+    -- the current instance.
     -- `soundEnabled` remains as a migrated compatibility key. The two alert
     -- paths are independently useful: a player may want native dispel sounds
     -- without a warning for every verified snare.

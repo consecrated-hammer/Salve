@@ -5,8 +5,8 @@ local addonName, ns = ...
 -- ============================================================
 -- C_UnitAuras.AddAuraSound is the only native route that works for private
 -- auras. It accepts a unit token and one spell ID -- never an aura filter -- so
--- Salve keeps the code here and loads small, typed data modules only when their
--- instance is entered. See Salve_Data_* and data/modules.json.
+-- Salve keeps a small, typed catalogue in Catalog/Curated.lua and selects only the
+-- current instance's records for registration. See data/modules.json.
 
 ns.Sound = {}
 local Sound = ns.Sound
@@ -20,14 +20,11 @@ local DEFAULT_SOUND = "Interface\\AddOns\\Salve\\Media\\DispelAlert.ogg"
 -- alert. This is Blizzard's Entangling Roots end-state sound, available as a
 -- Retail FileDataID and intentionally not affected by the dispel-tone setting.
 local MOVEMENT_WARNING_SOUND = 3151600
-local DATA_META = "X-Salve-LoadOn-InstanceID"
-local PRIORITY_META = "X-Salve-Data-Priority"
 
 local VALID_DISPEL = {}
 for _, dispelType in ipairs(ns.DISPEL_TYPES) do VALID_DISPEL[dispelType] = true end
 
 Sound.sources = {}
-Sound.loaders = {}
 Sound.handles = {}
 Sound.registered = 0
 Sound.expected = 0
@@ -43,7 +40,6 @@ Sound.pendingLearnUnits = {}
 
 local refreshPending = false
 local activationPending = false
-local moduleLoading = false
 local applyTimer
 
 local function registrationUnsafe()
@@ -54,36 +50,6 @@ end
 local function plain(value)
     if issecretvalue and issecretvalue(value) then return nil end
     return value
-end
-
-local function addOnCount()
-    if C_AddOns and C_AddOns.GetNumAddOns then return C_AddOns.GetNumAddOns() end
-    return GetNumAddOns and GetNumAddOns() or 0
-end
-
-local function addOnName(index)
-    if C_AddOns and C_AddOns.GetAddOnName then return C_AddOns.GetAddOnName(index) end
-    if GetAddOnInfo then return GetAddOnInfo(index) end
-end
-
-local function addOnMetadata(name, key)
-    if C_AddOns and C_AddOns.GetAddOnMetadata then
-        return C_AddOns.GetAddOnMetadata(name, key)
-    end
-    return GetAddOnMetadata and GetAddOnMetadata(name, key)
-end
-
-local function loadAddOn(name)
-    if C_AddOns and C_AddOns.LoadAddOn then return C_AddOns.LoadAddOn(name) end
-    return LoadAddOn and LoadAddOn(name)
-end
-
-local function isAddOnLoaded(name)
-    if C_AddOns and C_AddOns.IsAddOnLoaded then
-        local _, loaded = C_AddOns.IsAddOnLoaded(name)
-        return loaded
-    end
-    return IsAddOnLoaded and IsAddOnLoaded(name) or false
 end
 
 local function currentInstance()
@@ -133,29 +99,7 @@ function Sound:CurrentCures()
     return cures
 end
 
--- ── Load-on-demand module discovery ───────────────────────────────────────
-
-function Sound:DiscoverModules()
-    self.loaders = {}
-    for index = 1, addOnCount() do
-        local name = addOnName(index)
-        local instances = name and addOnMetadata(name, DATA_META)
-        if name and name:match("^Salve_Data_") and instances then
-            local priority = tonumber(addOnMetadata(name, PRIORITY_META)) or 0
-            for rawID in tostring(instances):gmatch("%d+") do
-                local instanceID = tonumber(rawID)
-                local current = self.loaders[instanceID]
-                -- A later season may revisit an old dungeon. Highest priority
-                -- wins, so zoning there loads the newest installed manifest.
-                if not current or priority > current.priority then
-                    self.loaders[instanceID] = { name = name, priority = priority }
-                end
-            end
-        end
-    end
-end
-
--- Public API called by Salve_Data_* at file scope.
+-- Public API called by Catalog/Curated.lua at file scope.
 function Sound:RegisterData(source, instances)
     if type(source) ~= "string" or type(instances) ~= "table" then return false end
 
@@ -185,20 +129,15 @@ function Sound:RegisterData(source, instances)
 
     self.sources[source] = normalized
     self:PruneLearned(self.activeInstanceID)
-    if self.activeInstanceID > 0 and not moduleLoading then self:RequestRefresh() end
+    if self.activeInstanceID > 0 then self:RequestRefresh() end
     return true
 end
 
 function Sound:KnownCurated(instanceID, spellID)
-    local loader = self.loaders[instanceID]
-    local preferred = loader and self.sources[loader.name]
-    local sourceList = preferred and { preferred } or self.sources
-    for _, instances in pairs(sourceList) do
-        local instance = instances[instanceID]
-        if instance then
-            for _, record in ipairs(instance.debuffs) do
-                if record.spellID == spellID then return true end
-            end
+    local instance = self.sources.Salve and self.sources.Salve[instanceID]
+    if instance then
+        for _, record in ipairs(instance.debuffs) do
+            if record.spellID == spellID then return true end
         end
     end
     return false
@@ -212,27 +151,6 @@ function Sound:PruneLearned(instanceID, scopeKey)
     for spellID in pairs(bucket.spells) do
         if self:KnownCurated(instanceID, spellID) then bucket.spells[spellID] = nil end
     end
-end
-
-function Sound:LoadCurrentModule()
-    local loader = self.loaders[self.activeInstanceID]
-    self.activeModule = loader and loader.name or nil
-    if not loader then return true end
-    if isAddOnLoaded(loader.name) then
-        if self.sources[loader.name] then return true end
-        self.lastFailure = loader.name .. " is loaded but registered no Salve data"
-        return false
-    end
-
-    moduleLoading = true
-    local ok, loaded, reason = pcall(loadAddOn, loader.name)
-    moduleLoading = false
-    if not ok or loaded == false or loaded == nil then
-        self.lastFailure = "could not load " .. loader.name .. ": "
-            .. tostring(reason or (ok and "unknown" or loaded))
-        return false
-    end
-    return true
 end
 
 -- ── Active-instance selection and registration ────────────────────────────
@@ -274,16 +192,19 @@ function Sound:ActivateCurrentInstance()
             ns.Print("learning now scoped to " .. self.activeScopeName)
         end
     end
-    self.activeModule = nil
+    self.activeModule = self.sources.Salve and "Built-in catalogue" or nil
     self.lastFailure = nil
 
-    if self:NeedsData() then self:LoadCurrentModule() end
     self:PruneLearned(self.activeInstanceID, self.activeScopeKey)
     self:Refresh()
     self:UpdateLearnRegistration()
 end
 
-function Sound:ActiveRecords()
+-- The cell overlay is deliberately stricter than sounds and learning: it may
+-- only make a clickable promise for a reviewed catalogue entry in the current
+-- instance.  A learned record is useful evidence for a later review, but it
+-- is not evidence that the selected spell can remove the aura.
+function Sound:ActiveCuratedRecords()
     local cures = self:CurrentCures()
     local seen, records = {}, {}
 
@@ -296,11 +217,36 @@ function Sound:ActiveRecords()
         end
     end
 
-    local loader = self.loaders[self.activeInstanceID]
-    local instances = loader and self.sources[loader.name]
+    local instances = self.sources.Salve
     local instance = instances and instances[self.activeInstanceID]
     if instance then
         for _, record in ipairs(instance.debuffs) do add(record) end
+    end
+
+    table.sort(records, function(a, b) return a.spellID < b.spellID end)
+    return records
+end
+
+function Sound:ActiveCuratedSpellIDs()
+    local records = self:ActiveCuratedRecords()
+    local ids = {}
+    for _, record in ipairs(records) do ids[#ids + 1] = record.spellID end
+    return ids
+end
+
+function Sound:ActiveRecords()
+    local records = self:ActiveCuratedRecords()
+    local seen = {}
+    for _, record in ipairs(records) do seen[record.spellID] = true end
+
+    local cures = self:CurrentCures()
+    local function add(record)
+        if type(record) ~= "table" then return end
+        local spellID = tonumber(record.spellID)
+        if spellID and cures[record.dispelType] and not seen[spellID] then
+            seen[spellID] = true
+            records[#records + 1] = record
+        end
     end
 
     local bucket = ns.learned and ns.learned.auras and ns.learned.auras[self.activeScopeKey]
@@ -647,7 +593,7 @@ function Sound:StatusText()
     if not self:NeedsData() then
         loader = "no active data"
     else
-        loader = self.activeModule or "no matching data module"
+        loader = self.activeModule or "no matching built-in data"
     end
     local records = self:ActiveRecords()
     return ("%s (%s)\n%s\n%d actionable spell IDs; %d/%d registrations active"):format(
@@ -666,7 +612,7 @@ function Sound:Report()
         .. tostring(self.activeScopeKey) .. ")")
     local moduleStatus = self.activeModule or "none"
     if not self:NeedsData() then moduleStatus = "no active data" end
-    ns.Print("  module: " .. moduleStatus)
+    ns.Print("  catalogue: " .. moduleStatus)
     ns.Print("  cures: " .. ns.CuresText(self:CurrentCures()))
     ns.Print("  actionable IDs: " .. tostring(#self:ActiveRecords()))
     ns.Print("  registrations: " .. tostring(self.registered) .. "/" .. tostring(self.expected))

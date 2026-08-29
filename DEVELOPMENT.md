@@ -6,6 +6,6 @@ development suffix, for example `1.5.4-dev1`, then `1.5.4-dev2`.
 
 Increment the `devN` suffix for every new debug copy so the version shown in
 the AddOns list and `/salve version` confirms which build the game loaded.
-Do not change release metadata, generated data-module versions or the
+Do not change release metadata or generated catalogue versions during these
 changelog for these local debug builds. At release time, replace the suffix
 with the final release version and follow the normal release checklist.

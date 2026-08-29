@@ -2,12 +2,48 @@
 if not Salve then return end
 
 if Salve.Escape and Salve.Escape.RegisterMovement then
-    Salve.Escape:RegisterMovement("Salve_Data_Midnight_S2", { 1241463, 1294567, 1302802 })
+    Salve.Escape:RegisterMovement("Salve", { 1241463, 1294567, 1302802 })
 end
 
 if not Salve.Sound or not Salve.Sound.RegisterData then return end
 
-Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
+Salve.Sound:RegisterData("Salve", {
+    [658] = {
+        name = "Pit of Saron",
+        season = "Midnight Season 1",
+        seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1261921,
+                dispelType = "Magic",
+                name = "Cryoshards",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1264186,
+                dispelType = "Curse",
+                name = "Shadowbind",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+        },
+    },
+    [1209] = {
+        name = "Skyreach",
+        season = "Midnight Season 1",
+        seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+        },
+    },
     [1592] = {
         name = "Sporefall",
         season = "Midnight Season 2",
@@ -24,6 +60,14 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
                     build = "12.1.0.69299",
                 },
             },
+        },
+    },
+    [1753] = {
+        name = "Seat of the Triumvirate",
+        season = "Midnight Season 1",
+        seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
         },
     },
     [1762] = {
@@ -320,6 +364,24 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
             },
         },
     },
+    [2526] = {
+        name = "Algeth'ar Academy",
+        season = "Midnight Season 1",
+        seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 389033,
+                dispelType = "Poison",
+                name = "Lasher Toxin",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+        },
+    },
     [2694] = {
         name = "Harandar",
         season = "Midnight Season 2",
@@ -334,6 +396,62 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
                 provenance = {
                     source = "in-game learning",
                     build = "12.1.0 live",
+                },
+            },
+        },
+    },
+    [2805] = {
+        name = "Windrunner Spire",
+        season = "Midnight Season 1",
+        seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+        },
+    },
+    [2811] = {
+        name = "Magisters' Terrace",
+        season = "Midnight Season 1",
+        seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1214038,
+                dispelType = "Magic",
+                name = "Ethereal Shackles",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1214714,
+                dispelType = "Magic",
+                name = "Void Torrent",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1248689,
+                dispelType = "Magic",
+                name = "Hastening Ward",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1284627,
+                dispelType = "Magic",
+                name = "Umbral Splinters",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
                 },
             },
         },
@@ -582,6 +700,128 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
             },
         },
     },
+    [2874] = {
+        name = "Maisara Caverns",
+        season = "Midnight Season 1",
+        seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1246666,
+                dispelType = "Disease",
+                name = "Infected Pinions",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1254175,
+                dispelType = "Magic",
+                name = "Cries of the Fallen",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1260709,
+                dispelType = "Magic",
+                name = "Vilebranch Sting",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+        },
+    },
+    [2912] = {
+        name = "The Voidspire",
+        season = "Midnight Season 1",
+        seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1233865,
+                dispelType = "Magic",
+                name = "Null Corona",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1258514,
+                dispelType = "Magic",
+                name = "Blinding Light",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1259186,
+                dispelType = "Magic",
+                name = "Blisterburst",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1261531,
+                dispelType = "Magic",
+                name = "Corrupting Essence",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1272527,
+                dispelType = "Magic",
+                name = "Creep Spit",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1275059,
+                dispelType = "Curse",
+                name = "Black Miasma",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+        },
+    },
+    [2913] = {
+        name = "March on Quel'Danas",
+        season = "Midnight Season 1",
+        seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+        },
+    },
+    [2915] = {
+        name = "Nexus-Point Xenas",
+        season = "Midnight Season 1",
+        seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+        },
+    },
     [2916] = {
         name = "Vaults of Atal'Utek",
         season = "Midnight Season 2",
@@ -694,6 +934,34 @@ Salve.Sound:RegisterData("Salve_Data_Midnight_S2", {
                 provenance = {
                     source = "Mythic Dungeon Tools 4b8b0b7 spell metadata",
                     build = "12.1.0 live",
+                },
+            },
+        },
+    },
+    [2939] = {
+        name = "The Dreamrift",
+        season = "Midnight Season 1",
+        seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1249017,
+                dispelType = "Magic",
+                name = "Fearsome Cry",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1257087,
+                dispelType = "Magic",
+                name = "Consuming Miasma",
+                verified = true,
+                provenance = {
+                    source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
+                    build = "12.1.0.69299",
                 },
             },
         },

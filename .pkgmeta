@@ -1,15 +1,8 @@
 # CurseForge / WoWInterface packaging, for BigWigsMods/packager.
-# The repo root IS the main addon folder; each season module below is moved out
-# beside it so one release contains the main addon plus its load boundaries.
+# The repo root is the one Salve addon folder. Its curated seasonal data ships
+# inside it, so players see one entry in the AddOns list.
 
 package-as: Salve
-
-# Data modules ship beside Salve as load-on-demand addon folders. They are one
-# product and one release; WoW requires a separate folder for each loadable
-# boundary, but only the current instance's module is loaded at runtime.
-move-folders:
-  Salve/Salve_Data_Midnight_S1: Salve_Data_Midnight_S1
-  Salve/Salve_Data_Midnight_S2: Salve_Data_Midnight_S2
 
 # No embedded libraries, so there is no no-lib variant worth building.
 enable-nolib-creation: no

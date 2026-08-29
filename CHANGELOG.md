@@ -5,6 +5,21 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.7] - 2026-08-29
+
+### Changed
+
+- Folded the Midnight Season 1 and Season 2 sound catalogues into Salve itself.
+  The AddOns list now has one Salve entry; runtime registration still selects
+  only the current instance's curated spell IDs.
+
+### Fixed
+
+- Disabled cell-based movement warnings when the client cannot safely apply
+  their spell-ID filter to friendly units. This prevents non-removable bleeds
+  and ground effects from appearing as Blessing of Freedom targets; verified
+  movement alerts continue through the dedicated sound path.
+
 ## [1.5.6] - 2026-08-29
 
 ### Added

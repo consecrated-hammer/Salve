@@ -12,20 +12,18 @@ function ns.GetMetadata(key)
     return GetAddOnMetadata and GetAddOnMetadata(addonName, key)
 end
 
-ns.VERSION = ns.GetMetadata("Version") or "1.5.6"
+ns.VERSION = ns.GetMetadata("Version") or "1.5.7"
 -- Development revision for distinguishing synced installs that share the same
 -- release version. Surface this in /salve debug before debugging live code.
-ns.REVISION = "1.5.6"
+ns.REVISION = "1.5.7"
 
 -- The four dispel schools, in the order the options UI lists them.
 ns.DISPEL_TYPES = { "Magic", "Curse", "Disease", "Poison" }
 
--- Aura presence remains entirely engine-driven. The accompanying native
--- candidate filter in AuraBinding limits HARMFUL auras to the dispel schools
--- covered by this character's detected spells. This is broader and more
--- accurate than RAID_PLAYER_DISPELLABLE, whose internal raid flag omits some
--- manually curable dungeon and legacy auras.
-ns.DISPELLABLE_FILTER = "HARMFUL"
+-- A lit normal-dispel cell is a promise that the character can answer the
+-- aura. AuraBinding uses Blizzard's per-character dispellable classification;
+-- strict movement spell-ID matching is unavailable for friendly unit frames.
+ns.DISPELLABLE_FILTER = "HARMFUL|RAID_PLAYER_DISPELLABLE"
 
 function ns.Print(msg)
     print("|cff66ddaaSalve:|r " .. tostring(msg or ""))

@@ -64,7 +64,7 @@ equal(ns.Escape:Update(), true, "Jet Stream changes the detected class list")
 equal(ns.knownEscapes[1].scope, ns.ESCAPE_AREA,
     "Jet Stream Wind Rush Totem is an area movement action")
 
-equal(ns.Escape:RegisterMovement("Salve_Data_Test", { 45678 }), true,
+equal(ns.Escape:RegisterMovement("Salve", { 45678 }), true,
     "curated movement registration succeeds")
 local curated = ns.Escape:AllSpellIDs()
 equal(#curated, 1, "curated movement ID is active before learning")

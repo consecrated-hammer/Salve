@@ -1,16 +1,16 @@
 # Salve sound data
 
 `modules.json` is the authoritative expansion/season/instance manifest and
-links each module to the Blizzard season announcement used to select instances.
+links each season to the Blizzard announcement used to select instances.
 `debuffs.csv` is the reviewed dispel catalogue and `movement.csv` is the
 reviewed root/snare catalogue. `tools/generate_data_modules.py` validates both
-and generates the load-on-demand `Salve_Data_*` addon folders.
+and generates the built-in `Catalog/Curated.lua` catalogue included by Salve.
 
 `verified=true` means the row and its dispel school were checked against the
 named source. It does **not** claim complete instance coverage. The current DB2
 source is an Encounter Journal baseline and does not enumerate ordinary dungeon
 trash. An instance with zero rows is kept in the manifest so Salve can report
-that its module loaded but no verified candidates are available.
+that Salve has built-in data but no verified candidates are available.
 
 For Midnight Season 2 Mythic+, the catalogue also uses the dispel-school spell
 metadata in Mythic Dungeon Tools commit `4b8b0b7`. This covers trash and other
@@ -43,4 +43,4 @@ python3 tools/import_db2_candidates.py \
 ```
 
 The importer deliberately marks every generated row unverified. Review the
-diff and promote approved rows before running the module generator.
+diff and promote approved rows before running the catalogue generator.

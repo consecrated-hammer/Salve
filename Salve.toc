@@ -1,7 +1,7 @@
 ## Interface: 120100
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 1.5.6
+## Version: 1.5.7
 ## X-ReleaseDate: 2026-08-29
 ## Notes: Compact clickable group-dispel panel built for Midnight's private aura rules.
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
@@ -25,8 +25,7 @@
 # Decursive and what makes the other replacements unusable.
 #
 # So Salve never reads an aura. It hands regions to Blizzard's AuraContainer
-# under HARMFUL plus native dispel-type candidates and lets the engine drive
-# them.
+# with the native per-character dispel check, then lets the engine drive them.
 # See Features/AuraBinding.lua for the full argument.
 
 # Namespace and saved variables. Everything else assumes these exist.
@@ -50,8 +49,12 @@ Features\Bindings.lua
 # Movement-impairing effects and the class spells that remove them.
 Features\Escape.lua
 
-# Alert sounds and the loader for bundled, instance-scoped Salve_Data_* modules.
+# Alert sounds and the selector for the built-in, instance-scoped catalogue.
 Features\Sound.lua
+
+# Generated from data/. This is one small catalogue inside Salve, not a second
+# or third AddOns-list entry. Edit the CSVs and manifest, never this file.
+Catalog\Curated.lua
 
 # ☠ Box.lua and Handle.lua before Panel.lua: Panel builds both from Create().
 # Preview.lua comes after all three because its full-size test panel shares

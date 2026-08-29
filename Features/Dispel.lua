@@ -3,10 +3,9 @@ local addonName, ns = ...
 -- ============================================================
 -- What to CAST. Not what to detect.
 -- ============================================================
--- Detection is entirely Blizzard's: AuraBinding hands the engine a HARMFUL
--- filter plus the dispel schools resolved here. This file works out both which
--- spell to put on the secure button and which schools its native candidate
--- filter should include.
+-- Detection is Blizzard's per-character dispellable classification. This file
+-- works out which spell belongs on the secure button and which schools it can
+-- cover.
 --
 -- ☠ THE CANDIDATE FILTER IS BROADER THAN ANY SINGLE SPELL. It covers everything the
 --   character can remove across EVERY dispel they know. A Preservation Evoker

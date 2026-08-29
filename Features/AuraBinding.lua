@@ -76,6 +76,7 @@ local function dispelTypeSignature()
     return table.concat(parts, ",")
 end
 
+
 local function dispelTextureStyle()
     local current = Enum and Enum.CustomAuraButtonDispelTypeTextureStyle
     if current and current.PreserveAsset ~= nil then return current.PreserveAsset end
@@ -380,7 +381,8 @@ function Binding:Report()
     -- ☠ Escape pipes in case the filter gains multiple tokens again. "|" opens
     --   a colour escape in WoW chat markup and can corrupt the diagnostic.
     ns.Print("  filter: " .. ns.DISPELLABLE_FILTER:gsub("|", "||"))
-    ns.Print("  candidate dispel types: " .. ns.CuresText(currentDispelTypes()))
+    ns.Print("  spell schools: " .. ns.CuresText(currentDispelTypes()))
+    ns.Print("  movement cell warnings: disabled (safe fallback)")
     for _, entry in ipairs(ns.Bindings:List()) do
         local what = ns.Bindings:Describe(entry)
         ns.Print("  " .. ns.Bindings:Label(entry.key) .. ": " .. tostring(what))
@@ -694,8 +696,10 @@ function Binding:Attach(box, unit)
     end
 
     box.salveVisualBindFailure = nil
+    -- Keep this exactly to Blizzard's by-me filter, the same normal-dispel
+    -- path used by Danders. Spell-ID filters are identity-gated and silently
+    -- inert for harmful auras on friendly group frames.
     local slotOK, slot = pcall(c.AddAuraSlot, c, SLOT_KEY, ns.DISPELLABLE_FILTER, {
-        candidateFilters = { includeDispelTypes = currentDispelTypes() },
         initializeFrame = initializeFrame(box),
     })
     if not slotOK or not slot or box.salveVisualBindFailure then
@@ -713,45 +717,12 @@ function Binding:Attach(box, unit)
         return restoreFallback(self.lastFailure)
     end
 
-    -- Second slot: movement impairment. Added only when it could tell you
-    -- something you can act on -- an ally escape lets it light anyone's cell,
-    -- a personal one lights your own and nobody else's, because you cannot
-    -- Blink someone else out of a root.
-    --
-    -- ☠ A FAILURE HERE IS NOT FATAL. The dispel slot above is the addon's
-    --   reason to exist; this is an extra. If the client rejects it, the box
-    --   still dispels -- so record it and carry on rather than detaching.
-    if ns.Escape and ns.Escape:Active() then
-        -- Raid layouts use raid1..raid40, including the player's own cell.
-        -- A literal "player" check made personal escapes disappear in raids.
-        local mine = unit == "player"
-        if not mine and UnitIsUnit then
-            local comparable, sameUnit = pcall(UnitIsUnit, unit, "player")
-            mine = comparable and sameUnit or false
-        end
-        if mine or ns.Escape:HasAllyEscape() then
-            local ids = ns.Escape:AllSpellIDs()
-            if #ids > 0 then
-                -- AuraContainer candidate filters take a spell-ID set, not an
-                -- array. Passing { 339 } silently does not match spell 339;
-                -- it must be { [339] = true }.
-                local idFilter = {}
-                for _, spellID in ipairs(ids) do idFilter[spellID] = true end
-                local ok, movementSlot = pcall(c.AddAuraSlot, c, MOVE_SLOT_KEY, "HARMFUL", {
-                    candidateFilters = { includeSpellIDs = idFilter },
-                    initializeFrame  = initializeMovementFrame(box),
-                })
-                if not ok then
-                    self.lastMovementFailure = tostring(movementSlot)
-                -- Just like the primary slot, the engine creates this button
-                -- but does not position it over Salve's visible box.
-                elseif not movementSlot or not movementSlot.SetAllPoints
-                    or not pcall(movementSlot.SetAllPoints, movementSlot, box) then
-                    self.lastMovementFailure = "movement aura slot could not be anchored to its box"
-                end
-            end
-        end
-    end
+    -- Do not declare a movement slot. Its only selector is includeSpellIDs,
+    -- which the client silently ignores for harmful auras on friendly frames.
+    -- A broad HARMFUL fallback would make every bleed and ground effect look
+    -- Freedom-removable. Until Blizzard permits a strict spell-ID match here,
+    -- fail dark and retain the curated native movement sounds as the warning.
+    self.lastMovementFailure = "movement cell warning disabled: spell-ID filtering is identity-gated"
 
     -- ☠ LAST. This is what registers the container for aura events.
     if caps.methods.SetEnabled and not pcall(c.SetEnabled, c, true) then

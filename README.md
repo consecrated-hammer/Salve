@@ -139,14 +139,14 @@ being presented as absent from an encounter.
 makes inactive cells transparent. Their click areas stay in place:
 mouse input cannot be changed on a protected frame during combat.
 
-**Alert sound** is optional and off by default. When enabled, Salve loads only
-the bundled data module covering the current instance, then registers only its
-catalogued spell IDs matching schools your character can remove. Actionable
-roots and snares use a distinct Blizzard movement-alert sound; the Dispels page
-has separate test buttons for both sounds. Season 1, Season 2 and future
-catalogues can coexist without loading or activating one another. Run
-`/salve debug` to see the active module, spell ID count and native sound
-registrations.
+**Alert sound** is optional and off by default. Salve carries its small,
+built-in seasonal catalogue in the same addon folder, then registers only the
+current instance's catalogued spell IDs matching schools your character can
+remove. Actionable roots and snares use a distinct Blizzard movement-alert
+sound; the Dispels page has separate test buttons for both sounds. Season 1,
+Season 2 and future catalogues can coexist without becoming separate AddOns.
+Run `/salve debug` to see the built-in catalogue, spell ID count and native
+sound registrations.
 
 Aura learning is always active. Outdoor discoveries are keyed to the current
 map; dungeon and raid discoveries are keyed to their instance. Salve listens
