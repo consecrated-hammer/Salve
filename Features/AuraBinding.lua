@@ -493,6 +493,9 @@ local function initializeFrame(box)
                     style = dispelTextureStyle(),
                     showWhenHarmful = true,
                     showWhenHelpful = false,
+                    -- The fill is colour-only. The separate, configurable
+                    -- badge below is the sole dispel-type glyph.
+                    showIcon = false,
                 })
                 if showDispelTypeIcon then
                     b:AddDispelTypeTexture(b.salveDispelTypeIcon, {

@@ -45,6 +45,7 @@ Enum = {
 
 local rejectDispel = true
 local capturedOptions
+local capturedDispelOptions = {}
 local capturedFilter
 local capturedSlotOptions
 local capturedSlots = {}
@@ -92,7 +93,10 @@ local function auraButton(slotKey)
                 movementDispelTextureBinds = movementDispelTextureBinds + 1
             end
             if rejectDispel then error("options rejected") end
-            if options then capturedOptions = options end
+            if options then
+                capturedOptions = options
+                capturedDispelOptions[#capturedDispelOptions + 1] = options
+            end
         end,
     }
 end
@@ -144,6 +148,8 @@ equal(capturedSlots.salveDispel.options.candidateFilters, nil,
     "normal dispel slot relies on Blizzard's by-me classification")
 equal(capturedOptions.style, 2,
     "native dispel-type badge uses Blizzard's Icon renderer")
+equal(capturedDispelOptions[#capturedDispelOptions - 1].showIcon, false,
+    "colour fill never draws Blizzard's default dispel glyph")
 equal(createdTextures[#createdTextures].width, 20,
     "native dispel badge is created at its configured size")
 equal(createdTextures[#createdTextures].point, "BOTTOMLEFT",
@@ -213,6 +219,8 @@ equal(ns.Binding:Attach(withoutIcon, "player"), true,
     "icon can be disabled without changing the dispel filter")
 equal(capturedOptions.style, 3,
     "disabled icon restores Salve's preserve-asset cell fill")
+equal(capturedOptions.showIcon, false,
+    "disabled icon leaves no implicit Blizzard glyph on the colour fill")
 
 ns.StructuralChangesUnsafe = function()
     return InCombatLockdown() or IsEncounterInProgress()

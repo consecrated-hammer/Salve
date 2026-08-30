@@ -5,6 +5,14 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.9] - 2026-08-30
+
+### Fixed
+
+- Disabling the dispel-type badge now also suppresses Blizzard's implicit glyph,
+  so the panel icon toggle is reliable.
+- Unified the tooltip anchor selector with Salve's shared, clamped dropdown.
+
 ## [1.5.8] - 2026-08-30
 
 ### Added
