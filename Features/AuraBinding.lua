@@ -87,6 +87,26 @@ local function dispelTextureStyle()
     return 3 -- current PreserveAsset value; last-resort for enum-less clients
 end
 
+local function dispelIconStyle()
+    local current = Enum and Enum.CustomAuraButtonDispelTypeTextureStyle
+    if current and current.Icon ~= nil then return current.Icon end
+    return 2 -- Icon on current clients
+end
+
+local function dispelIconSize()
+    local value = tonumber(ns.db and ns.db.dispelTypeIconSize) or 20
+    return math.max(8, math.min(64, value))
+end
+
+local function dispelIconPosition()
+    local position = ns.db and ns.db.dispelTypeIconPosition
+    local valid = {
+        TOPLEFT = true, TOPRIGHT = true, BOTTOMLEFT = true,
+        BOTTOMRIGHT = true, CENTER = true,
+    }
+    return valid[position] and position or "BOTTOMLEFT"
+end
+
 local function movementColour()
     local colour = ns.db and ns.db.movementColour or nil
     return tonumber(colour and colour.r) or 0.92,
@@ -452,6 +472,20 @@ local function initializeFrame(box)
             b.salveFill:SetColorTexture(1, 1, 1, 1)
         end
 
+        -- This is a distinct, sizeable badge. Blizzard assigns its Magic,
+        -- Curse, Disease or Poison asset privately; Salve only sets geometry
+        -- while the aura button is being initialized.
+        local showDispelTypeIcon = ns.db and ns.db.showDispelTypeIcon ~= false
+        if showDispelTypeIcon then
+            if not b.salveDispelTypeIcon then
+                b.salveDispelTypeIcon = b:CreateTexture(nil, "OVERLAY")
+            end
+            b.salveDispelTypeIcon:ClearAllPoints()
+            local position = dispelIconPosition()
+            b.salveDispelTypeIcon:SetPoint(position, b, position, 0, 0)
+            b.salveDispelTypeIcon:SetSize(dispelIconSize(), dispelIconSize())
+        end
+
         if b.AddDispelTypeTexture then
             local ok, err = pcall(function()
                 if b.ClearDispelTypeTextures then b:ClearDispelTypeTextures() end
@@ -459,8 +493,14 @@ local function initializeFrame(box)
                     style = dispelTextureStyle(),
                     showWhenHarmful = true,
                     showWhenHelpful = false,
-                    showIcon = false,
                 })
+                if showDispelTypeIcon then
+                    b:AddDispelTypeTexture(b.salveDispelTypeIcon, {
+                        style = dispelIconStyle(),
+                        showWhenHarmful = true,
+                        showWhenHelpful = false,
+                    })
+                end
             end)
             if not ok then box.salveVisualBindFailure = tostring(err) end
         else
@@ -562,6 +602,8 @@ function Binding:Attach(box, unit)
     --   button still at the old dimensions.
     local sig = table.concat({
         tostring(ns.db.showStacks), ns.db.boxWidth, ns.db.boxHeight,
+        tostring(ns.db.showDispelTypeIcon ~= false),
+        dispelIconSize(), dispelIconPosition(),
         dispelTypeSignature(),
         -- ☠ The movement slot is baked in at creation like everything else, so
         --   enabling an escape or learning a new snare has to change the

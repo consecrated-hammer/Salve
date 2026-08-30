@@ -91,6 +91,7 @@ UnitName = function() return "Test Shaman" end
 
 for _, path in ipairs({
     "Options/Salve.lua",
+    "Options/Tooltips.lua",
     "Options/Dispel.lua",
     "Options/Visibility.lua",
     "Options/Alerts.lua",
@@ -102,14 +103,14 @@ for _, path in ipairs({
     assert(loadfile(path))("Salve", ns)
 end
 
-equal(#pages, 8, "eight options pages registered")
-for i, name in ipairs({ "Salve", "Actions", "Visibility", "Alerts", "Commands", "Troubleshooting", "Learned Spells", "About" }) do
+equal(#pages, 9, "nine options pages registered")
+for i, name in ipairs({ "Salve", "Tooltips", "Actions", "Visibility", "Alerts", "Commands", "Troubleshooting", "Learned Spells", "About" }) do
     equal(pages[i].name, name, "page order " .. i)
 end
 equal(pages[1].title, "Panel", "root page has task-focused heading")
 equal(pages[1].group, "CORE", "Panel is a Core page")
-equal(pages[4].group, "CORE", "Alerts is a Core page")
-equal(pages[6].group, "REFERENCE", "Troubleshooting is a Reference page")
+equal(pages[5].group, "CORE", "Alerts is a Core page")
+equal(pages[7].group, "REFERENCE", "Troubleshooting is a Reference page")
 
 local report = ns.Options.BuildDiagnosticReport()
 if not report:find("Version: 0.1.0", 1, true) then error("report omits version") end

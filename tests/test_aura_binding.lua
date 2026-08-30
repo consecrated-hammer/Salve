@@ -5,7 +5,11 @@ local function equal(actual, expected, label)
 end
 
 local ns = {
-    db = { showStacks = false, boxWidth = 20, boxHeight = 20 },
+    db = {
+        showStacks = false, boxWidth = 20, boxHeight = 20,
+        showDispelTypeIcon = true, dispelTypeIconSize = 20,
+        dispelTypeIconPosition = "BOTTOMLEFT",
+    },
     DISPELLABLE_FILTER = "HARMFUL|RAID_PLAYER_DISPELLABLE",
     DISPEL_TYPES = { "Magic", "Curse", "Disease", "Poison" },
     spellID = 4987,
@@ -36,7 +40,7 @@ InCombatLockdown = function() return false end
 local encounterActive = false
 IsEncounterInProgress = function() return encounterActive end
 Enum = {
-    CustomAuraButtonDispelTypeTextureStyle = { PreserveAsset = 3 },
+    CustomAuraButtonDispelTypeTextureStyle = { Icon = 2, PreserveAsset = 3 },
 }
 
 local rejectDispel = true
@@ -50,6 +54,7 @@ local appliedDuration
 local movementCooldownDurationObject = {}
 local appliedMovementDuration
 local movementDispelTextureBinds = 0
+local createdTextures = {}
 
 C_Spell = {
     GetSpellCooldownDuration = function(spellID)
@@ -60,13 +65,17 @@ C_Spell = {
 }
 
 local function texture()
-    return {
+    local value = {
         SetAllPoints = function() end,
-        SetPoint = function() end,
+        ClearAllPoints = function() end,
+        SetPoint = function(self, point) self.point = point end,
+        SetSize = function(self, width, height) self.width, self.height = width, height end,
         SetHeight = function() end,
         SetWidth = function() end,
         SetColorTexture = function() end,
     }
+    createdTextures[#createdTextures + 1] = value
+    return value
 end
 
 local function auraButton(slotKey)
@@ -133,6 +142,12 @@ equal(capturedSlots.salveDispel.filter, "HARMFUL|RAID_PLAYER_DISPELLABLE",
     "dispel slot requires Blizzard's per-character dispellable classification")
 equal(capturedSlots.salveDispel.options.candidateFilters, nil,
     "normal dispel slot relies on Blizzard's by-me classification")
+equal(capturedOptions.style, 2,
+    "native dispel-type badge uses Blizzard's Icon renderer")
+equal(createdTextures[#createdTextures].width, 20,
+    "native dispel badge is created at its configured size")
+equal(createdTextures[#createdTextures].point, "BOTTOMLEFT",
+    "native dispel badge is created at its configured position")
 equal(capturedSlots.salveMovement, nil,
     "movement slot fails dark because spell-ID filtering is identity-gated")
 equal(movementDispelTextureBinds, 0,
@@ -188,9 +203,16 @@ equal(ns.Binding:ObserveMovementCast("player", 12345), nil,
 ns.Binding:RefreshMovementCooldowns("test movement", 1044)
 equal(appliedMovementDuration, refreshedMovementDuration,
     "movement cast refreshes border-sweep cooldown widgets")
-equal(capturedOptions.style, 3, "preserve-asset style passed")
+equal(capturedOptions.style, 2, "native Icon style remains selected")
 equal(capturedOptions.showWhenHarmful, true, "harmful dispels shown")
 equal(capturedOptions.showWhenHelpful, false, "helpful effects excluded")
+
+ns.db.showDispelTypeIcon = false
+local withoutIcon = box()
+equal(ns.Binding:Attach(withoutIcon, "player"), true,
+    "icon can be disabled without changing the dispel filter")
+equal(capturedOptions.style, 3,
+    "disabled icon restores Salve's preserve-asset cell fill")
 
 ns.StructuralChangesUnsafe = function()
     return InCombatLockdown() or IsEncounterInProgress()

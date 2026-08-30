@@ -23,6 +23,18 @@ ns.defaults = {
     -- bindings are configurable, so without it there is nothing on screen that
     -- says what a box will cast.
     showTooltip   = true,
+    -- Tooltip content is deliberately separate from the master toggle. It
+    -- lets a player keep a compact action reminder without accepting the
+    -- default Blizzard unit tooltip on every small cell.
+    tooltipUnitInfo = false,
+    tooltipActions = true,
+    tooltipSpellDescriptions = false,
+    tooltipAnchor = "RIGHT",
+    -- Blizzard draws this itself from private aura data. It is not an aura
+    -- inspection by Salve, and defaults on for the familiar DF-style marker.
+    showDispelTypeIcon = true,
+    dispelTypeIconSize = 20,
+    dispelTypeIconPosition = "BOTTOMLEFT",
     nameJustifyH  = "LEFT",
     nameJustifyV  = "MIDDLE",
     nameFontSize  = 11,
@@ -280,6 +292,8 @@ local GEOMETRY = {
     scale = true, showNames = true, showStacks = true, orientation = true,
     horizontalGrowth = true, verticalGrowth = true,
     bindings = true, escapes = true, movementColour = true,
+    showDispelTypeIcon = true,
+    dispelTypeIconSize = true, dispelTypeIconPosition = true,
     -- ☠ visibilityMode belongs here even though it changes no geometry: the
     --   state driver is only (re)registered from Panel:Rebuild, so treating it
     --   as a restyle left the old driver installed. Choosing Never did nothing

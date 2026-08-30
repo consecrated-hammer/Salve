@@ -310,6 +310,27 @@ O.NewPage({
         function(value) ns.Set("useClassColours", value) end)
     add(contents, -cy + 4)
 
+    local dispelIcon = section(panel)
+    local diy = -8
+    _, diy = O.Header(dispelIcon, "Dispel icon", diy)
+    _, diy = O.Check(dispelIcon, "Show dispel-type icon",
+        "Show Blizzard's Magic, Curse, Disease or Poison icon on a dispellable cell.", diy,
+        function() return db.showDispelTypeIcon end,
+        function(value) ns.Set("showDispelTypeIcon", value) end)
+    _, diy = O.Slider(dispelIcon, "Icon size",
+        "Size in pixels before UI scale. Large icons can cover names or cooldown numbers.", diy,
+        8, 64, 1,
+        function() return db.dispelTypeIconSize end,
+        function(value) ns.Set("dispelTypeIconSize", value) end)
+    _, diy = O.Dropdown(dispelIcon, "Position",
+        "Choose which part of the cell holds the Blizzard dispel-type icon.", diy,
+        { "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT", "CENTER" },
+        { "Top left", "Top right", "Bottom left", "Bottom right", "Centre" },
+        function() return db.dispelTypeIconPosition end,
+        function(value) ns.Set("dispelTypeIconPosition", value) end,
+        560, 78)
+    add(dispelIcon, -diy + 4)
+
     local inactive = section(panel)
     local iy = -8
     _, iy = O.Header(inactive, "Inactive units", iy)
@@ -385,6 +406,7 @@ O.NewPage({
             "showTooltip", "showNames", "nameJustifyH", "nameJustifyV", "nameFontSize",
             "cooldownJustifyH", "cooldownJustifyV", "cooldownFontSize", "showStacks",
             "showWhenClean", "cleanAlpha", "useClassColours",
+            "showDispelTypeIcon", "dispelTypeIconSize", "dispelTypeIconPosition",
         }) do
             ns.Set(key, ns.defaults[key])
         end

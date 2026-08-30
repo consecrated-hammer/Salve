@@ -1,8 +1,8 @@
 ## Interface: 120100
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 1.5.7
-## X-ReleaseDate: 2026-08-29
+## Version: 1.5.8
+## X-ReleaseDate: 2026-08-30
 ## Notes: Compact clickable group-dispel panel built for Midnight's private aura rules.
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
 ## AllowAddOnTableAccess: 1
@@ -73,6 +73,7 @@ UI\Minimap.lua
 # ☠ Shared.lua first: every page below calls its widget helpers at file scope.
 Options\Shared.lua
 Options\Salve.lua
+Options\Tooltips.lua
 Options\Dispel.lua
 Options\Visibility.lua
 Options\Alerts.lua

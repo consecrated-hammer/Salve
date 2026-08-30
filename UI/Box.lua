@@ -90,23 +90,46 @@ local function ShowBoxTooltip(box)
     if not (ns.db and ns.db.showTooltip) then return end
     if not box.unit or not UnitExists(box.unit) then return end
 
-    GameTooltip:SetOwner(box, "ANCHOR_RIGHT")
+    local anchor = ns.db.tooltipAnchor or "RIGHT"
+    local anchors = {
+        RIGHT = "ANCHOR_RIGHT",
+        LEFT = "ANCHOR_LEFT",
+        CURSOR = "ANCHOR_CURSOR",
+    }
+    GameTooltip:SetOwner(box, anchors[anchor] or "ANCHOR_RIGHT")
 
     -- SetUnit gives the game's own unit tooltip -- name, level, class -- and
     -- handles restricted or secret unit identity itself, which we may not.
-    GameTooltip:SetUnit(box.unit)
+    if ns.db.tooltipUnitInfo ~= false then
+        GameTooltip:SetUnit(box.unit)
+    else
+        -- Keep a useful title when Blizzard's full unit section is hidden.
+        -- UnitName is public unit identity, unlike private aura metadata.
+        local name = UnitName and UnitName(box.unit)
+        GameTooltip:SetText(name or "Group member")
+    end
 
     local bindings = ns.Bindings and ns.Bindings:List()
-    if bindings and #bindings > 0 then
+    if ns.db.tooltipActions ~= false and bindings and #bindings > 0 then
         GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Salve actions", 0.45, 0.82, 0.68)
         for _, entry in ipairs(bindings) do
             local what = ns.Bindings:Describe(entry)
             if what then
+                local spellID = ns.Bindings.SpellID and ns.Bindings:SpellID(entry)
+                local action = (what:gsub(" %(automatic%)$", ""))
                 GameTooltip:AddDoubleLine(
                     ns.Bindings:Label(entry.key),
-                    (what:gsub(" %(automatic%)$", "")),
+                    action,
                     1, 0.82, 0.26,
                     1, 1, 1)
+                if ns.db.tooltipSpellDescriptions and type(spellID) == "number"
+                    and C_Spell and C_Spell.GetSpellDescription then
+                    local ok, description = pcall(C_Spell.GetSpellDescription, spellID)
+                    if ok and type(description) == "string" and description ~= "" then
+                        GameTooltip:AddLine(description, 0.72, 0.72, 0.72, true)
+                    end
+                end
             end
         end
     end

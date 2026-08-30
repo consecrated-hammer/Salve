@@ -5,6 +5,20 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.8] - 2026-08-30
+
+### Added
+
+- Configurable cell tooltips, including optional Blizzard unit details, Salve
+  actions, spell descriptions, and a selectable tooltip anchor.
+- A Blizzard-driven dispel-type badge for Salve cells, enabled by default, with
+  panel controls for its size and position.
+
+### Changed
+
+- Fresh profiles keep Blizzard's default unit tooltip off, leaving Salve's
+  compact action tooltip as the default hover experience.
+
 ## [1.5.7] - 2026-08-29
 
 ### Changed

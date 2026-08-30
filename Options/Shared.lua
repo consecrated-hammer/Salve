@@ -45,7 +45,9 @@ local function attachHint(control, title, hint)
     control.salveHintTitle = title
     control.salveHint = hint
     control:HookScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        -- Settings hints must not cover a page's live preview. Cursor anchoring
+        -- keeps the explanation beside the option the player is inspecting.
+        GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
         -- Some labels change with the current layout. Resolve them at hover
         -- time: Retail's tooltip rejects a function passed straight to SetText.
         local titleText = self.salveHintTitle
@@ -566,6 +568,117 @@ function Options.DropdownPair(panel, heading, y, left, right)
     local leftButton = makeChoice(PAD_L, left)
     local rightButton = makeChoice(206, right)
     return leftButton, rightButton, y - 76
+end
+
+-- A one-field counterpart to DropdownPair. The full-screen click catcher is
+-- deliberate: a popup must close when the player clicks elsewhere, without
+-- relying on mouse-state polling that misses some UI clicks.
+function Options.Dropdown(panel, label, hint, y, values, labels, get, set, width, offset)
+    local row = Options.Row(panel, y, 30, label, hint, width)
+    local buttonWidth = 156
+    local button = Options.SelectButton(row, buttonWidth, 30)
+    button:SetPoint("LEFT", row, "LEFT", offset or 80, 0)
+    button.Text:ClearAllPoints()
+    button.Text:SetPoint("LEFT", 10, 0)
+    button.Text:SetPoint("RIGHT", -26, 0)
+    button.Text:SetJustifyH("LEFT")
+    button.salveDropdown = true
+
+    for _, spec in ipairs({ { -13, 2, -0.75 }, { -8, 2, 0.75 } }) do
+        local arrow = button:CreateTexture(nil, "OVERLAY")
+        arrow:SetSize(7, 1)
+        arrow:SetPoint("RIGHT", spec[1], spec[2])
+        arrow:SetColorTexture(unpack(THEME.muted))
+        if arrow.SetRotation then arrow:SetRotation(spec[3]) end
+    end
+
+    local function render()
+        local current = get()
+        for index, value in ipairs(values) do
+            if current == value then button:SetText(labels[index]); return end
+        end
+        button:SetText(labels[1])
+    end
+
+    local menu, dismiss
+    local function createMenu()
+        if menu then return end
+        dismiss = CreateFrame("Button", nil, UIParent)
+        dismiss:SetFrameStrata("FULLSCREEN_DIALOG")
+        dismiss:SetFrameLevel(199)
+        dismiss:SetAllPoints(UIParent)
+        dismiss:EnableMouse(true)
+        menu = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+        menu:SetFrameStrata("FULLSCREEN_DIALOG")
+        menu:SetFrameLevel(200)
+        menu:SetClampedToScreen(true)
+        menu:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            edgeSize = 1,
+        })
+        menu:SetBackdropColor(0.020, 0.027, 0.039, 1)
+        menu:SetBackdropBorderColor(unpack(THEME.menuEdge))
+        menu:SetSize(buttonWidth, #values * 26 + 10)
+        local items = {}
+        local function paint(item, active, hovered)
+            item:SetBackdropColor(unpack((active or hovered)
+                and THEME.menuActive or THEME.rail))
+            item:SetBackdropBorderColor(0, 0, 0, 0)
+            item.activeBar:SetShown(active)
+            item.label:SetTextColor(active and 1 or THEME.muted[1],
+                active and 1 or THEME.muted[2], active and 1 or THEME.muted[3])
+        end
+        local function refreshItems()
+            for _, item in ipairs(items) do paint(item, get() == item.value, false) end
+        end
+        for index, value in ipairs(values) do
+            local item = CreateFrame("Button", nil, menu, "BackdropTemplate")
+            item:SetSize(buttonWidth - 10, 24)
+            item:SetPoint("TOPLEFT", 5, -5 - (index - 1) * 26)
+            item:SetBackdrop({
+                bgFile = "Interface\\Buttons\\WHITE8X8",
+                edgeFile = "Interface\\Buttons\\WHITE8X8",
+                edgeSize = 1,
+            })
+            item.activeBar = item:CreateTexture(nil, "ARTWORK")
+            item.activeBar:SetPoint("TOPLEFT")
+            item.activeBar:SetPoint("BOTTOMLEFT")
+            item.activeBar:SetWidth(3)
+            item.activeBar:SetColorTexture(unpack(THEME.selected))
+            item.label = item:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+            item.label:SetPoint("LEFT", 10, 0)
+            item.label:SetPoint("RIGHT", -8, 0)
+            item.label:SetJustifyH("LEFT")
+            item.label:SetText(labels[index])
+            item.value = value
+            item:HookScript("OnEnter", function(self) paint(self, get() == self.value, true) end)
+            item:HookScript("OnLeave", function(self) paint(self, get() == self.value, false) end)
+            item:SetScript("OnClick", function()
+                set(value)
+                render()
+                refreshAll(panel)
+                menu:Hide()
+            end)
+            items[#items + 1] = item
+        end
+        menu:SetScript("OnShow", refreshItems)
+        menu:SetScript("OnHide", function() dismiss:Hide() end)
+        dismiss:SetScript("OnClick", function() menu:Hide() end)
+        menu:Hide()
+    end
+    button:SetScript("OnClick", function(self)
+        createMenu()
+        if menu:IsShown() then menu:Hide(); return end
+        menu:ClearAllPoints()
+        menu:SetPoint("TOPLEFT", self, "BOTTOMLEFT", 0, -5)
+        dismiss:Show()
+        menu:Show()
+    end)
+    attachHint(button, label, hint)
+    panel.salveRefresh[#panel.salveRefresh + 1] = render
+    render()
+    return row, y - 34
 end
 
 -- Like Cycle, but the option list is rebuilt every time it is drawn or clicked.
@@ -1100,7 +1213,7 @@ function Options.CreateWindow()
             message:SetJustifyH("LEFT")
             message:SetJustifyV("TOP")
             message:SetText("This settings page did not build.\n\n" .. pageOrError
-                .. "\n\nPlease send this text to the developer. The raid has survived worse.")
+                .. "\n\nPlease send this text to the developer. Be honest - you've seen worse errors.")
             Options.pages[spec.name] = page
         end
     end

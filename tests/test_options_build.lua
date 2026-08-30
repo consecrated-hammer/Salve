@@ -88,9 +88,9 @@ CreateFrame = function(_, name, _, template)
 end
 
 UIParent = object("UIParent")
-local tooltipTitle, tooltipSpellID
+local tooltipTitle, tooltipSpellID, tooltipAnchor
 GameTooltip = {
-    SetOwner = function() end,
+    SetOwner = function(_, _, anchor) tooltipAnchor = anchor end,
     SetText = function(_, title)
         if type(title) ~= "string" then error("tooltip title must be text") end
         tooltipTitle = title
@@ -117,6 +117,9 @@ local ns = {
         cooldownFontSize = 14, showStacks = true, showWhenClean = true,
         cleanAlpha = 0.25, useClassColours = false, showHandle = true,
         handlePosition = "TOPLEFT", showMinimap = true, showStartupMessage = true,
+        tooltipUnitInfo = false, tooltipActions = true, tooltipSpellDescriptions = false,
+        showDispelTypeIcon = true, dispelTypeIconSize = 20,
+        dispelTypeIconPosition = "BOTTOMLEFT",
         visibilityMode = "ALWAYS", soundEnabled = false, dispelSoundEnabled = false,
         movementSoundEnabled = false, soundChannel = "Master",
         soundFile = nil, movementColour = { r = 0.92, g = 0.20, b = 0.08, a = 0.68 },
@@ -132,6 +135,9 @@ local ns = {
         cooldownFontSize = 14, showStacks = true, showWhenClean = true,
         cleanAlpha = 0.25, useClassColours = false, showHandle = true,
         handlePosition = "TOPLEFT", showMinimap = true, showStartupMessage = true,
+        tooltipUnitInfo = false, tooltipActions = true, tooltipSpellDescriptions = false,
+        showDispelTypeIcon = true, dispelTypeIconSize = 20,
+        dispelTypeIconPosition = "BOTTOMLEFT",
         visibilityMode = "ALWAYS", visibility = {}, soundEnabled = false,
         dispelSoundEnabled = false, movementSoundEnabled = false,
         soundChannel = "Master", bindings = {}, escapes = {},
@@ -218,7 +224,7 @@ ns.Bindings = {
 
 assert(loadfile("Options/Shared.lua"))("Salve", ns)
 for _, path in ipairs({
-    "Options/Salve.lua", "Options/Dispel.lua", "Options/Visibility.lua",
+    "Options/Salve.lua", "Options/Tooltips.lua", "Options/Dispel.lua", "Options/Visibility.lua",
     "Options/Alerts.lua",
     "Options/Commands.lua", "Options/Troubleshooting.lua", "Options/LearnedSpells.lua", "Options/About.lua",
 }) do
@@ -241,6 +247,7 @@ end
 if not dynamicHint then error("dynamic layout hint was not built") end
 dynamicHint.scripts.OnEnter(dynamicHint)
 equal(tooltipTitle, "Cells per row", "dynamic tooltip resolves its label before SetText")
+equal(tooltipAnchor, "ANCHOR_CURSOR", "settings hints stay at the cursor over live previews")
 
 local spellHint
 for _, value in ipairs(objects) do
@@ -311,8 +318,24 @@ equal(ns.Preview.count, 40, "Raid wall preset previews forty units")
 
 local pageCount = 0
 for _ in pairs(ns.Options.pages) do pageCount = pageCount + 1 end
-equal(pageCount, 8, "all eight pages live in the movable window")
+equal(pageCount, 9, "all nine pages live in the movable window")
 equal(ns.Options.pages.Alerts ~= nil, true, "Alerts page is built")
+equal(ns.Options.pages.Tooltips ~= nil, true, "Tooltips page is built")
+equal(findText("Right of cell") ~= nil, true,
+    "Tooltips anchor dropdown supplies its current display label")
+equal(findText("Show spell IDs") == nil, true,
+    "Tooltips page omits developer-only spell IDs")
+equal(findText("Show privacy note") == nil, true,
+    "Tooltips page omits the redundant privacy note")
+equal(findText("Show Salve actions") ~= nil, true,
+    "Tooltips page offers control over the Salve action list")
+equal(findText("Show actions heading") == nil, true,
+    "Tooltips page omits the redundant actions-heading switch")
+equal(findText("Show dispel-type icon") ~= nil, true,
+    "Panel page offers the native dispel marker")
+local dispelIconPosition = findText("Bottom left")
+equal(dispelIconPosition.salveDropdown, true,
+    "Dispel icon position uses Salve's dark dismissible dropdown")
 local visibilityMenu
 for _, value in ipairs(objects) do
     if value.Text and value.Text.text == "Always" then
