@@ -47,6 +47,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
 
     elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
         ns.Sound:ActivateCurrentInstance()
+        if ns.SelfAlert and ns.SelfAlert.Update then ns.SelfAlert:Update() end
         if ns.Options.RefreshTroubleshooting then ns.Options.RefreshTroubleshooting() end
         ns.RequestRebuild()
 
@@ -67,6 +68,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             if ns.Options.RefreshTroubleshooting then ns.Options.RefreshTroubleshooting() end
             ns.RequestRebuild()
         end
+        if ns.SelfAlert and ns.SelfAlert.Update then ns.SelfAlert:Update() end
 
     elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
         -- Only a successful player dispel should start the sweep. Refreshing on

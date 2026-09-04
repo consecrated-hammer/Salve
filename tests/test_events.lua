@@ -16,6 +16,7 @@ local rebuilds = 0
 local dispelRefreshes = 0
 local pendingFlushes = 0
 local movementWarnings = 0
+local selfAlertUpdates = 0
 
 CreateFrame = function()
     return {
@@ -55,6 +56,9 @@ local ns = {
         FlushPending = function() pendingFlushes = pendingFlushes + 1 end,
         PlayMovementWarning = function() movementWarnings = movementWarnings + 1 end,
     },
+    SelfAlert = {
+        Update = function() selfAlertUpdates = selfAlertUpdates + 1 end,
+    },
     RequestRebuild = function() rebuilds = rebuilds + 1 end,
     FlushPending = function() pendingFlushes = pendingFlushes + 1 end,
     Binding = {
@@ -86,6 +90,8 @@ equal(registered.PLAYER_REGEN_DISABLED, true,
     "combat start is registered to close preview safely")
 equal(registered.ENCOUNTER_END, true,
     "encounter end is registered to release structural rebuilds")
+equal(registered.COMBAT_LOG_EVENT_UNFILTERED, nil,
+    "shared event router never subscribes to high-volume combat-log traffic")
 
 handler(nil, "PLAYER_REGEN_DISABLED")
 equal(previewStops, 1, "combat start closes live panel preview")
@@ -103,6 +109,7 @@ equal(optionsRefreshes, 1,
 equal(dispelRefreshes, 0,
     "escape-only spell discovery does not rebuild sound registrations")
 equal(rebuilds, 1, "escape-only spell discovery rebuilds the panel")
+equal(selfAlertUpdates, 1, "spell discovery refreshes the self-dispel listener")
 
 handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast-guid", 4987)
 equal(refreshes, 0, "dispel cooldown is not read inside the early cast event")

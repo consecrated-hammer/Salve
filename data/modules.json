@@ -1,6 +1,6 @@
 {
   "interface": 120100,
-  "version": "1.5.9",
+  "version": "1.5.10",
   "modules": [
     {
       "folder": "Salve_Data_Midnight_S1",
@@ -12,6 +12,7 @@
         { "id": 1209, "name": "Skyreach" },
         { "id": 1753, "name": "Seat of the Triumvirate" },
         { "id": 2526, "name": "Algeth'ar Academy" },
+        { "id": 2771, "name": "Voidstorm" },
         { "id": 2805, "name": "Windrunner Spire" },
         { "id": 2811, "name": "Magisters' Terrace" },
         { "id": 2874, "name": "Maisara Caverns" },

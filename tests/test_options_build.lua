@@ -121,7 +121,7 @@ local ns = {
         showDispelTypeIcon = true, dispelTypeIconSize = 20,
         dispelTypeIconPosition = "BOTTOMLEFT",
         visibilityMode = "ALWAYS", soundEnabled = false, dispelSoundEnabled = false,
-        movementSoundEnabled = false, soundChannel = "Master",
+        movementSoundEnabled = false, selfDispelNotification = true, soundChannel = "Master",
         soundFile = nil, movementColour = { r = 0.92, g = 0.20, b = 0.08, a = 0.68 },
         point = { "CENTER", "CENTER", 0, -140 },
         settingsPoint = { "CENTER", "CENTER", 0, 0 },
@@ -140,7 +140,7 @@ local ns = {
         dispelTypeIconPosition = "BOTTOMLEFT",
         visibilityMode = "ALWAYS", visibility = {}, soundEnabled = false,
         dispelSoundEnabled = false, movementSoundEnabled = false,
-        soundChannel = "Master", bindings = {}, escapes = {},
+        selfDispelNotification = true, soundChannel = "Master", bindings = {}, escapes = {},
         movementSweepSpellIDs = { [1044] = true }, movementSweepColours = {},
         movementColour = { r = 0.2, g = 0.3, b = 0.4, a = 0.5 },
         settingsPoint = { "CENTER", "CENTER", 0, 0 },
@@ -333,6 +333,8 @@ equal(findText("Show actions heading") == nil, true,
     "Tooltips page omits the redundant actions-heading switch")
 equal(findText("Show dispel-type icon") ~= nil, true,
     "Panel page offers the native dispel marker")
+equal(findText("Show self-dispel combat text") ~= nil, true,
+    "Alerts page offers the optional self-dispel instruction")
 local dispelIconPosition = findText("Bottom left")
 equal(dispelIconPosition.salveDropdown, true,
     "Dispel icon position uses Salve's dark dismissible dropdown")
@@ -371,6 +373,7 @@ local resetAlerts = findText("Reset Alerts")
 resetAlerts.scripts.OnClick()
 equal(ns.db.dispelSoundEnabled, false, "Reset Alerts restores dispel sound default")
 equal(ns.db.movementSoundEnabled, false, "Reset Alerts restores snare-removal sound default")
+equal(ns.db.selfDispelNotification, true, "Reset Alerts restores self-dispel instruction")
 equal(ns.db.soundChannel, "Master", "Reset Alerts restores sound channel default")
 ns.Options.window:Hide()
 equal(ns.Preview.active, false, "closing settings stops preview")

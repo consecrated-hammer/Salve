@@ -2,7 +2,7 @@
 if not Salve then return end
 
 if Salve.Escape and Salve.Escape.RegisterMovement then
-    Salve.Escape:RegisterMovement("Salve", { 1241463, 1294567, 1302802 })
+    Salve.Escape:RegisterMovement("Salve", { 1241463, 1294567, 1302802, 1304838 })
 end
 
 if not Salve.Sound or not Salve.Sound.RegisterData then return end
@@ -395,6 +395,25 @@ Salve.Sound:RegisterData("Salve", {
                 verified = true,
                 provenance = {
                     source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+        },
+    },
+    [2771] = {
+        name = "Voidstorm",
+        season = "Midnight Season 1",
+        seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1272896,
+                dispelType = "Magic",
+                name = "Xal'atath's Bargain: Devour",
+                verified = true,
+                selfAlert = true,
+                provenance = {
+                    source = "Wowhead spell 1272896 scripted dispel tooltip",
                     build = "12.1.0 live",
                 },
             },

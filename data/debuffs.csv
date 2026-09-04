@@ -1,4 +1,5 @@
-module,instance_id,spell_id,spell_name,dispel_type,source,source_build,verified
+module,instance_id,spell_id,spell_name,dispel_type,source,source_build,verified,self_alert
+Salve_Data_Midnight_S1,2771,1272896,Xal'atath's Bargain: Devour,Magic,Wowhead spell 1272896 scripted dispel tooltip,12.1.0 live,true,true
 Salve_Data_Midnight_S1,658,1261921,Cryoshards,Magic,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
 Salve_Data_Midnight_S1,658,1264186,Shadowbind,Curse,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true
 Salve_Data_Midnight_S1,2526,389033,Lasher Toxin,Poison,wago.tools DB2 JournalEncounterSection+SpellCategories,12.1.0.69299,true

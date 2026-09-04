@@ -70,7 +70,7 @@ def load_sources() -> tuple[dict, dict[str, list[dict]], dict[str, list[dict]], 
         reader = csv.DictReader(handle)
         required = {
             "module", "instance_id", "spell_id", "spell_name", "dispel_type",
-            "source", "source_build", "verified",
+            "source", "source_build", "verified", "self_alert",
         }
         if set(reader.fieldnames or []) != required:
             raise ValueError("debuffs.csv headers do not match the required schema")
@@ -89,6 +89,9 @@ def load_sources() -> tuple[dict, dict[str, list[dict]], dict[str, list[dict]], 
                 raise ValueError(f"line {line_number}: invalid spell ID or dispel type")
             if row["verified"] not in {"true", "false"}:
                 raise ValueError(f"line {line_number}: verified must be true or false")
+            if row["self_alert"] not in {None, "", "true", "false"}:
+                raise ValueError(f"line {line_number}: self_alert must be true or false")
+            row["self_alert"] = row["self_alert"] == "true"
             if not row["source"] or not row["source_build"]:
                 raise ValueError(f"line {line_number}: provenance is required")
             key = (folder, row["instance_id"], row["spell_id"])
@@ -183,6 +186,7 @@ def render_data(modules: dict[str, dict], records: dict[str, list[dict]],
                     f"                dispelType = {lua_string(record['dispel_type'])},",
                     f"                name = {lua_string(record['spell_name'])},",
                     f"                verified = {record['verified']},",
+                    *(["                selfAlert = true,"] if record["self_alert"] else []),
                     "                provenance = {",
                     f"                    source = {lua_string(record['source'])},",
                     f"                    build = {lua_string(record['source_build'])},",

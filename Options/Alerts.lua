@@ -28,6 +28,10 @@ O.NewPage({
         "Play a sound for a verified root or snare you can remove.", y,
         movementSoundEnabled,
         function(value) ns.Set("movementSoundEnabled", value) end)
+    _, y = O.Check(panel, "Show self-dispel combat text",
+        "Show an instruction when a reviewed scripted dispel reaches you. It never marks a party member or a Salve cell.", y,
+        function() return ns.db.selfDispelNotification end,
+        function(value) ns.Set("selfDispelNotification", value) end)
 
     local function testButton(row, title, hint, play)
         local button = O.Button(row, 42, 20)
@@ -80,6 +84,7 @@ O.NewPage({
         ns.Set("soundEnabled", ns.defaults.soundEnabled)
         ns.Set("dispelSoundEnabled", ns.defaults.dispelSoundEnabled)
         ns.Set("movementSoundEnabled", ns.defaults.movementSoundEnabled)
+        ns.Set("selfDispelNotification", ns.defaults.selfDispelNotification)
         ns.Set("soundChannel", ns.defaults.soundChannel)
         ns.Set("soundFile", ns.defaults.soundFile)
     end, "Reset Alerts")

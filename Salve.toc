@@ -1,8 +1,8 @@
 ## Interface: 120100
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 1.5.9
-## X-ReleaseDate: 2026-08-30
+## Version: 1.5.10
+## X-ReleaseDate: 2026-09-04
 ## Notes: Compact clickable group-dispel panel built for Midnight's private aura rules.
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
 ## AllowAddOnTableAccess: 1
@@ -55,6 +55,9 @@ Features\Sound.lua
 # Generated from data/. This is one small catalogue inside Salve, not a second
 # or third AddOns-list entry. Edit the CSVs and manifest, never this file.
 Catalog\Curated.lua
+
+# Self-only combat text for exceptional scripted dispels without a native icon.
+Features\SelfAlert.lua
 
 # ☠ Box.lua and Handle.lua before Panel.lua: Panel builds both from Create().
 # Preview.lua comes after all three because its full-size test panel shares

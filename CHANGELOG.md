@@ -5,6 +5,22 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.10] - 2026-09-04
+
+### Added
+
+- Voidstorm coverage for Seeping Stomp as a verified Blessing of Freedom
+  warning.
+- A curated alert for Xal'atath's Bargain: Devour. Its native sound alerts
+  eligible group members, and an optional self-only floating instruction says
+  when you need to dispel yourself.
+
+### Changed
+
+- Alert settings now include **Show self-dispel combat text**, enabled by
+  default for reviewed scripted dispels that Blizzard does not give a normal
+  dispel-type icon.
+
 ## [1.5.9] - 2026-08-30
 
 ### Fixed

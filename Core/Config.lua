@@ -80,6 +80,7 @@ ns.defaults = {
     soundEnabled  = false,
     dispelSoundEnabled = false,
     movementSoundEnabled = false,
+    selfDispelNotification = true,
     soundChannel  = "Master",
     soundFile     = nil,
 
@@ -312,6 +313,11 @@ function ns.Set(key, value)
     end
 
     if key == "showStartupMessage" then return end
+
+    if key == "selfDispelNotification" then
+        if ns.SelfAlert and ns.SelfAlert.Update then ns.SelfAlert:Update() end
+        return
+    end
 
     -- Debounced: settings arrive from sliders, which fire on every drag tick.
     -- Events (roster, spec) call ns.RequestRebuild directly and stay immediate.

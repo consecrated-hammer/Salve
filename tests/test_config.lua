@@ -6,12 +6,16 @@ end
 
 local soundRefreshes = 0
 local changedKey
+local selfAlertRefreshes = 0
 local ns = {
     Sound = {
         OnSettingChanged = function(_, key)
             soundRefreshes = soundRefreshes + 1
             changedKey = key
         end,
+    },
+    SelfAlert = {
+        Update = function() selfAlertRefreshes = selfAlertRefreshes + 1 end,
     },
 }
 ns.RequestRebuildSoon = function() end
@@ -32,6 +36,7 @@ equal(ns.db.learnMode, true, "learning normalized on")
 equal(ns.db.soundEnabled, false, "alert sound defaults off")
 equal(ns.db.dispelSoundEnabled, false, "dispel alert sound defaults off")
 equal(ns.db.movementSoundEnabled, false, "snare-removal sound defaults off")
+equal(ns.db.selfDispelNotification, true, "self-dispel combat text defaults on")
 equal(ns.db.movementColour.r, 0.92, "movement alert colour defaults to red-orange")
 equal(type(ns.db.movementSweepSpellIDs), "table", "movement sweep selections default to a table")
 equal(type(ns.db.movementSweepColours), "table", "movement sweep colours default to a table")
@@ -60,6 +65,9 @@ equal(ns.db.learnedMovement, nil, "movement discoveries removed from preferences
 ns.Set("soundEnabled", true)
 equal(soundRefreshes, 1, "sound setting refreshes native registrations")
 equal(changedKey, "soundEnabled", "sound setting identifies changed key")
+
+ns.Set("selfDispelNotification", false)
+equal(selfAlertRefreshes, 1, "self-dispel setting updates only its combat-log listener")
 
 ns.Set("movementColour", { r = 0.1, g = 0.2, b = 0.3, a = 0.4 })
 equal(ns.db.movementColour.a, 0.4, "movement alert colour persists selected opacity")

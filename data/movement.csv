@@ -1,4 +1,5 @@
 module,instance_id,spell_id,spell_name,source,source_build,verified
+Salve_Data_Midnight_S1,2771,1304838,Seeping Stomp,user-confirmed Blessing of Freedom removal; wago.tools Spell DB2,12.1.0 live,true
 Salve_Data_Midnight_S2,2916,1302802,Snared,in-game learning,12.1.0 live,true
 Salve_Data_Midnight_S2,2825,1241463,Glacial Tomb,user-confirmed Blizzard spell ID,12.1.0 live,true
 Salve_Data_Midnight_S2,2993,1294567,Paralyzing Shot,user-confirmed Blizzard spell ID,12.1.0 live,true

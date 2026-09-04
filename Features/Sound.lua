@@ -51,6 +51,7 @@ local function plain(value)
     if issecretvalue and issecretvalue(value) then return nil end
     return value
 end
+Sound.Plain = plain
 
 local function currentInstance()
     if not GetInstanceInfo then return "World", 0 end
@@ -232,6 +233,23 @@ function Sound:ActiveCuratedSpellIDs()
     local ids = {}
     for _, record in ipairs(records) do ids[#ids + 1] = record.spellID end
     return ids
+end
+
+-- A tiny subset of curated dispels may be server-scripted, so Blizzard gives
+-- them no normal dispel icon even though a player's Cleanse can remove them.
+-- These records can request a self-only combat-text instruction. This returns
+-- only effects this character has a matching cure for in the active scope.
+function Sound:ActiveSelfDispelAlerts()
+    local cures, alerts = self:CurrentCures(), {}
+    local instances = self.sources.Salve
+    local instance = instances and instances[self.activeInstanceID]
+    if not instance then return alerts end
+    for _, record in ipairs(instance.debuffs) do
+        if record.selfAlert == true and cures[record.dispelType] then
+            alerts[record.spellID] = record
+        end
+    end
+    return alerts
 end
 
 function Sound:ActiveRecords()
