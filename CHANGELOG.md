@@ -5,6 +5,23 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.11] - 2026-09-08
+
+### Added
+
+- Map-scoped built-in catalogue activation for outdoor positive observations.
+  Alerts now select records by the exact current map as well as by instance.
+- Curated positive dispel observations for The Shadow Enclave, The Grudge Pit,
+  The Venomous Abyss, Eversong Woods, Zul'Aman and The Coiled Isle.
+- Optional combat text for a player or party member affected by a ROOT/SNARE
+  that an enabled Blessing of Freedom can answer.
+
+### Fixed
+
+- Blessing of Freedom alerts no longer require a movement spell ID to be in the
+  reviewed catalogue. Blizzard's ROOT/SNARE loss-of-control classification is
+  sufficient for Freedom's documented universal movement-impaired removal.
+
 ## [1.5.10] - 2026-09-04
 
 ### Added

@@ -97,6 +97,12 @@ ns.Sound:RegisterData("Salve", {
             { spellID = 1003, dispelType = "Poison", verified = false },
         },
     },
+    ["map:42"] = {
+        name = "Duskwood",
+        debuffs = {
+            { spellID = 2002, dispelType = "Disease", verified = true },
+        },
+    },
 })
 ns.Sound:ActivateCurrentInstance()
 equal(ns.Sound.activeModule, "Built-in catalogue", "current data is built into Salve")
@@ -201,6 +207,10 @@ ns.db.dispelSoundEnabled = false
 currentInstanceName, currentInstanceID = "World", 0
 ns.Sound:SetLearning(true, true)
 equal(ns.Sound.activeScopeKey, "map:42", "outdoor learning uses map ID")
+equal(ns.Sound.activeModule, "Built-in catalogue", "map-scoped catalogue activates outdoors")
+local mapRecords = ns.Sound:ActiveCuratedSpellIDs()
+equal(#mapRecords, 1, "outdoor catalogue selects only the active map")
+equal(mapRecords[1], 2002, "outdoor catalogue selects the map spell ID")
 equal(ns.db.learnMode, true, "learning active in original outdoor map")
 local auraReads = 0
 C_UnitAuras.GetAuraDataByIndex = function(_, index)

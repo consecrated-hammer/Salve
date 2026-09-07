@@ -35,7 +35,8 @@ ns.ESCAPE_AREA = "AREA"   -- ground-area group utility; place it near allies
 -- id, scope, and a note shown in the options so the choice is informed.
 ns.ESCAPE_SPELLS = {
     PALADIN = {
-        { id = 1044,   scope = "ALLY", note = "Removes and prevents movement impairment." },
+        { id = 1044,   scope = "ALLY", universalMovement = true,
+            note = "Removes and prevents movement impairment." },
         { id = 1022,   scope = "ALLY", note = "Blessing of Protection — physical effects." },
         { id = 642,    scope = "SELF", note = "Divine Shield — emergency self-clear; causes Forbearance." },
     },
@@ -121,7 +122,8 @@ function Escape:Update()
             if name then
                 list[#list + 1] = {
                     id = entry.id, name = name,
-                    scope = entry.scope, note = entry.note,
+                    scope = entry.scope, universalMovement = entry.universalMovement,
+                    note = entry.note,
                 }
             end
         end
@@ -294,9 +296,14 @@ function Escape:CaptureLossOfControl(unit, effectIndex)
 
     ns.learned.movement = ns.learned.movement or {}
     local spellID = plain(data.spellID)
+    local movement = {
+        spellID = spellID,
+        name = plain(data.displayText),
+        locType = locType,
+    }
     -- The second result says the effect is reviewed for the live overlay and
     -- alert. It deliberately remains false for auto-captured discoveries.
-    return capture(spellID, plain(data.displayText)), self:IsVerifiedMovement(spellID)
+    return capture(spellID, movement.name), self:IsVerifiedMovement(spellID), movement
 end
 
 function Escape:IsPlayerUnit(unit)
@@ -312,6 +319,24 @@ end
 function Escape:CanWarnForUnit(unit)
     if not self:Active() then return false end
     return self:IsPlayerUnit(unit) or self:HasAllyEscape()
+end
+
+-- A broadly-worded warning needs a stronger promise than a curated spell-ID
+-- match. Blessing of Freedom explicitly removes and prevents movement
+-- impairment, so a ROOT or SNARE from Blizzard's loss-of-control feed is
+-- enough to alert for every eligible group unit. Other escapes keep the
+-- reviewed-ID gate above: mobility is not proof it answers an arbitrary root.
+function Escape:UniversalMovementAlertSpell(unit, movement)
+    if not movement or (movement.locType ~= "ROOT" and movement.locType ~= "SNARE") then
+        return nil
+    end
+    for _, spell in ipairs(self:Enabled()) do
+        if spell.universalMovement and (spell.scope == ns.ESCAPE_ALLY
+                or spell.scope == ns.ESCAPE_AREA or self:IsPlayerUnit(unit)) then
+            return spell
+        end
+    end
+    return nil
 end
 
 function Escape:DumpCaptured()

@@ -16,6 +16,7 @@ local rebuilds = 0
 local dispelRefreshes = 0
 local pendingFlushes = 0
 local movementWarnings = 0
+local movementTextAlerts = 0
 local selfAlertUpdates = 0
 
 CreateFrame = function()
@@ -43,9 +44,16 @@ local ns = {
     Escape = {
         Update = function() return true end,
         CaptureLossOfControl = function(_, unit, index)
-            return false, unit == "player" and index == 4
+            if index == 5 then return false, false, nil end
+            return false, unit == "player" and index == 4,
+                { locType = "ROOT" }
         end,
         CanWarnForUnit = function(_, unit) return unit == "player" end,
+        UniversalMovementAlertSpell = function(_, unit, movement)
+            if movement and movement.locType == "ROOT" and (unit == "player" or unit == "party1") then
+                return { id = 1044, name = "Blessing of Freedom" }
+            end
+        end,
     },
     Options = {
         RefreshDispel = function() optionsRefreshes = optionsRefreshes + 1 end,
@@ -55,6 +63,12 @@ local ns = {
         OnDispelChanged = function() dispelRefreshes = dispelRefreshes + 1 end,
         FlushPending = function() pendingFlushes = pendingFlushes + 1 end,
         PlayMovementWarning = function() movementWarnings = movementWarnings + 1 end,
+    },
+    MovementAlert = {
+        Notify = function(_, unit, movement, spell)
+            equal(spell.id, 1044, "movement text uses Freedom")
+            movementTextAlerts = movementTextAlerts + 1
+        end,
     },
     SelfAlert = {
         Update = function() selfAlertUpdates = selfAlertUpdates + 1 end,
@@ -131,7 +145,12 @@ equal(#timers, 3, "another unit's dispel does not schedule a sweep")
 
 handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
 equal(movementWarnings, 1, "player movement impairment plays one warning")
+equal(movementTextAlerts, 1, "player movement impairment receives Freedom text")
 handler(nil, "LOSS_OF_CONTROL_ADDED", "party1", 4)
-equal(movementWarnings, 1, "non-actionable party movement impairments stay silent")
+equal(movementWarnings, 2, "Freedom warning reaches an affected party member")
+equal(movementTextAlerts, 2, "Freedom text identifies an affected party member")
+handler(nil, "LOSS_OF_CONTROL_ADDED", "party1", 5)
+equal(movementWarnings, 2, "non-movement loss of control never triggers Freedom")
+equal(movementTextAlerts, 2, "non-movement loss of control emits no Freedom text")
 
 print("event routing tests passed")

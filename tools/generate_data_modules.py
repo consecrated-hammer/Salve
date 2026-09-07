@@ -39,7 +39,7 @@ def load_sources() -> tuple[dict, dict[str, list[dict]], dict[str, list[dict]], 
         raise ValueError("data interface does not match Salve.toc")
 
     modules: dict[str, dict] = {}
-    instance_owner: dict[tuple[int, int], str] = {}
+    scope_owner: dict[tuple[str, int, int], str] = {}
 
     for module in config.get("modules", []):
         folder = module.get("folder", "")
@@ -48,19 +48,20 @@ def load_sources() -> tuple[dict, dict[str, list[dict]], dict[str, list[dict]], 
         if not str(module.get("manifest_source", "")).startswith("https://"):
             raise ValueError(f"authoritative manifest source is required for {folder}")
         module["priority"] = int(module["priority"])
-        instance_ids: set[int] = set()
-        for instance in module.get("instances", []):
-            instance["id"] = int(instance["id"])
-            if instance["id"] <= 0 or instance["id"] in instance_ids:
-                raise ValueError(f"invalid or duplicate instance in {folder}: {instance['id']}")
-            instance_ids.add(instance["id"])
-            priority_key = (instance["id"], module["priority"])
-            if priority_key in instance_owner:
-                raise ValueError(
-                    f"instance {instance['id']} has equal-priority owners: "
-                    f"{instance_owner[priority_key]} and {folder}"
-                )
-            instance_owner[priority_key] = folder
+        all_ids: set[int] = set()
+        for scope_type, field in (("instance", "instances"), ("map", "maps")):
+            for scope in module.get(field, []):
+                scope["id"] = int(scope["id"])
+                if scope["id"] <= 0 or scope["id"] in all_ids:
+                    raise ValueError(f"invalid or duplicate scope in {folder}: {scope['id']}")
+                all_ids.add(scope["id"])
+                priority_key = (scope_type, scope["id"], module["priority"])
+                if priority_key in scope_owner:
+                    raise ValueError(
+                        f"{scope_type} {scope['id']} has equal-priority owners: "
+                        f"{scope_owner[priority_key]} and {folder}"
+                    )
+                scope_owner[priority_key] = folder
         modules[folder] = module
 
     records: dict[str, list[dict]] = defaultdict(list)
@@ -80,8 +81,9 @@ def load_sources() -> tuple[dict, dict[str, list[dict]], dict[str, list[dict]], 
                 raise ValueError(f"line {line_number}: unknown module {folder}")
             row["instance_id"] = int(row["instance_id"])
             row["spell_id"] = int(row["spell_id"])
-            valid_instances = {item["id"] for item in modules[folder]["instances"]}
-            if row["instance_id"] not in valid_instances:
+            valid_scopes = {item["id"] for item in modules[folder].get("instances", [])}
+            valid_scopes.update(item["id"] for item in modules[folder].get("maps", []))
+            if row["instance_id"] not in valid_scopes:
                 raise ValueError(
                     f"line {line_number}: instance {row['instance_id']} is not in {folder}"
                 )
@@ -112,8 +114,9 @@ def load_sources() -> tuple[dict, dict[str, list[dict]], dict[str, list[dict]], 
                 raise ValueError(f"line {line_number}: unknown module {folder}")
             row["instance_id"] = int(row["instance_id"])
             row["spell_id"] = int(row["spell_id"])
-            valid_instances = {item["id"] for item in modules[folder]["instances"]}
-            if row["instance_id"] not in valid_instances:
+            valid_scopes = {item["id"] for item in modules[folder].get("instances", [])}
+            valid_scopes.update(item["id"] for item in modules[folder].get("maps", []))
+            if row["instance_id"] not in valid_scopes:
                 raise ValueError(f"line {line_number}: instance {row['instance_id']} is not in {folder}")
             if row["spell_id"] <= 0 or row["verified"] not in {"true", "false"}:
                 raise ValueError(f"line {line_number}: invalid spell ID or verified value")
@@ -130,16 +133,18 @@ def load_sources() -> tuple[dict, dict[str, list[dict]], dict[str, list[dict]], 
 
 def render_data(modules: dict[str, dict], records: dict[str, list[dict]],
                 movement: dict[str, list[dict]]) -> str:
-    """Render one table, retaining only the highest-priority season per map."""
-    selected: dict[int, tuple[dict, list[dict]]] = {}
+    """Render one table, retaining only the highest-priority source per scope."""
+    selected: dict[str, tuple[dict, dict, list[dict]]] = {}
     for folder, module in modules.items():
-        by_instance: dict[int, list[dict]] = defaultdict(list)
+        by_scope: dict[int, list[dict]] = defaultdict(list)
         for record in records[folder]:
-            by_instance[record["instance_id"]].append(record)
-        for instance in module["instances"]:
-            current = selected.get(instance["id"])
-            if not current or module["priority"] > current[0]["priority"]:
-                selected[instance["id"]] = (module, by_instance[instance["id"]])
+            by_scope[record["instance_id"]].append(record)
+        for scope_type, field in (("instance", "instances"), ("map", "maps")):
+            for scope in module.get(field, []):
+                key = f"{scope_type}:{scope['id']}"
+                current = selected.get(key)
+                if not current or module["priority"] > current[0]["priority"]:
+                    selected[key] = (module, scope, by_scope[scope["id"]])
 
     movement_ids = sorted({
         record["spell_id"]
@@ -165,20 +170,21 @@ def render_data(modules: dict[str, dict], records: dict[str, list[dict]],
         "",
         "Salve.Sound:RegisterData(\"Salve\", {",
     ])
-    for instance_id in sorted(selected):
-        module, instance_records = selected[instance_id]
-        instance = next(item for item in module["instances"] if item["id"] == instance_id)
+    for scope_key in sorted(selected, key=lambda key: (
+        key.split(":", 1)[0], int(key.split(":", 1)[1])
+    )):
+        module, scope, scope_records = selected[scope_key]
         lines.extend(
             [
-                f"    [{instance['id']}] = {{",
-                f"        name = {lua_string(instance['name'])},",
+                f"    [{lua_string(scope_key)}] = {{",
+                f"        name = {lua_string(scope['name'])},",
                 f"        season = {lua_string(module['title'])},",
                 f"        seasonSource = {lua_string(module['manifest_source'])},",
                 '        coverage = "Encounter Journal baseline; trash may be absent",',
                 "        debuffs = {",
             ]
         )
-        for record in sorted(instance_records, key=lambda item: item["spell_id"]):
+        for record in sorted(scope_records, key=lambda item: item["spell_id"]):
             lines.extend(
                 [
                     "            {",

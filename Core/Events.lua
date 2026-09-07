@@ -98,9 +98,13 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         if type(unit) == "number" and effectIndex == nil then
             effectIndex, unit = unit, "player"
         end
-        local _, isVerifiedMovement = ns.Escape:CaptureLossOfControl(unit, effectIndex)
-        if isVerifiedMovement and ns.Escape:CanWarnForUnit(unit) then
+        local _, isVerifiedMovement, movement = ns.Escape:CaptureLossOfControl(unit, effectIndex)
+        local universalSpell = ns.Escape:UniversalMovementAlertSpell(unit, movement)
+        if universalSpell or (isVerifiedMovement and ns.Escape:CanWarnForUnit(unit)) then
             ns.Sound:PlayMovementWarning()
+        end
+        if universalSpell and ns.MovementAlert then
+            ns.MovementAlert:Notify(unit, movement, universalSpell)
         end
 
     elseif event == "PLAYER_REGEN_DISABLED" then

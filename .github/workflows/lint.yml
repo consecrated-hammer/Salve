@@ -30,6 +30,8 @@ jobs:
           lua tests/test_escape.lua
           lua tests/test_dispel_layout.lua
           lua tests/test_sound.lua
+          lua tests/test_self_alert.lua
+          lua tests/test_movement_alert.lua
           lua tests/test_options.lua
           lua tests/test_options_build.lua
           lua tests/test_panel.lua

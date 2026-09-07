@@ -80,6 +80,7 @@ ns.defaults = {
     soundEnabled  = false,
     dispelSoundEnabled = false,
     movementSoundEnabled = false,
+    movementTextNotification = true,
     selfDispelNotification = true,
     soundChannel  = "Master",
     soundFile     = nil,

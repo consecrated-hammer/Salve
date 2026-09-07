@@ -25,9 +25,13 @@ O.NewPage({
         function(value) ns.Set("dispelSoundEnabled", value) end)
     local movementRow
     movementRow, y = O.Check(panel, "Play snare-removal alert sound",
-        "Play a sound for a verified root or snare you can remove.", y,
+        "Play a sound for a reviewed root or snare, or any root or snare Blessing of Freedom can remove.", y,
         movementSoundEnabled,
         function(value) ns.Set("movementSoundEnabled", value) end)
+    _, y = O.Check(panel, "Show Freedom movement text",
+        "Show a combat-text instruction for any ROOT or SNARE Blessing of Freedom can remove. It names only the affected party slot and never claims a cell is lit.", y,
+        function() return ns.db.movementTextNotification end,
+        function(value) ns.Set("movementTextNotification", value) end)
     _, y = O.Check(panel, "Show self-dispel combat text",
         "Show an instruction when a reviewed scripted dispel reaches you. It never marks a party member or a Salve cell.", y,
         function() return ns.db.selfDispelNotification end,
@@ -84,6 +88,7 @@ O.NewPage({
         ns.Set("soundEnabled", ns.defaults.soundEnabled)
         ns.Set("dispelSoundEnabled", ns.defaults.dispelSoundEnabled)
         ns.Set("movementSoundEnabled", ns.defaults.movementSoundEnabled)
+        ns.Set("movementTextNotification", ns.defaults.movementTextNotification)
         ns.Set("selfDispelNotification", ns.defaults.selfDispelNotification)
         ns.Set("soundChannel", ns.defaults.soundChannel)
         ns.Set("soundFile", ns.defaults.soundFile)

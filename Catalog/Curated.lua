@@ -8,7 +8,7 @@ end
 if not Salve.Sound or not Salve.Sound.RegisterData then return end
 
 Salve.Sound:RegisterData("Salve", {
-    [658] = {
+    ["instance:658"] = {
         name = "Pit of Saron",
         season = "Midnight Season 1",
         seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
@@ -36,7 +36,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [1209] = {
+    ["instance:1209"] = {
         name = "Skyreach",
         season = "Midnight Season 1",
         seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
@@ -44,7 +44,7 @@ Salve.Sound:RegisterData("Salve", {
         debuffs = {
         },
     },
-    [1592] = {
+    ["instance:1592"] = {
         name = "Sporefall",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
@@ -62,7 +62,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [1753] = {
+    ["instance:1753"] = {
         name = "Seat of the Triumvirate",
         season = "Midnight Season 1",
         seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
@@ -70,7 +70,7 @@ Salve.Sound:RegisterData("Salve", {
         debuffs = {
         },
     },
-    [1762] = {
+    ["instance:1762"] = {
         name = "Kings' Rest",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
@@ -228,7 +228,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [1877] = {
+    ["instance:1877"] = {
         name = "Temple of Sethraliss",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
@@ -306,7 +306,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2521] = {
+    ["instance:2521"] = {
         name = "Ruby Life Pools",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
@@ -364,7 +364,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2526] = {
+    ["instance:2526"] = {
         name = "Algeth'ar Academy",
         season = "Midnight Season 1",
         seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
@@ -382,7 +382,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2694] = {
+    ["instance:2694"] = {
         name = "Harandar",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
@@ -400,7 +400,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2771] = {
+    ["instance:2771"] = {
         name = "Voidstorm",
         season = "Midnight Season 1",
         seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
@@ -419,7 +419,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2805] = {
+    ["instance:2805"] = {
         name = "Windrunner Spire",
         season = "Midnight Season 1",
         seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
@@ -427,7 +427,7 @@ Salve.Sound:RegisterData("Salve", {
         debuffs = {
         },
     },
-    [2811] = {
+    ["instance:2811"] = {
         name = "Magisters' Terrace",
         season = "Midnight Season 1",
         seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
@@ -475,7 +475,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2813] = {
+    ["instance:2813"] = {
         name = "Murder Row",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
@@ -593,7 +593,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2825] = {
+    ["instance:2825"] = {
         name = "Den of Nalorakk",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
@@ -661,7 +661,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2859] = {
+    ["instance:2859"] = {
         name = "The Blinding Vale",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
@@ -719,7 +719,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2874] = {
+    ["instance:2874"] = {
         name = "Maisara Caverns",
         season = "Midnight Season 1",
         seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
@@ -757,7 +757,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2912] = {
+    ["instance:2912"] = {
         name = "The Voidspire",
         season = "Midnight Season 1",
         seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
@@ -825,7 +825,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2913] = {
+    ["instance:2913"] = {
         name = "March on Quel'Danas",
         season = "Midnight Season 1",
         seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
@@ -833,7 +833,7 @@ Salve.Sound:RegisterData("Salve", {
         debuffs = {
         },
     },
-    [2915] = {
+    ["instance:2915"] = {
         name = "Nexus-Point Xenas",
         season = "Midnight Season 1",
         seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
@@ -841,7 +841,7 @@ Salve.Sound:RegisterData("Salve", {
         debuffs = {
         },
     },
-    [2916] = {
+    ["instance:2916"] = {
         name = "Vaults of Atal'Utek",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
@@ -889,7 +889,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2923] = {
+    ["instance:2923"] = {
         name = "Voidscar Arena",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
@@ -957,7 +957,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2939] = {
+    ["instance:2939"] = {
         name = "The Dreamrift",
         season = "Midnight Season 1",
         seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
@@ -985,7 +985,53 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [2987] = {
+    ["instance:2952"] = {
+        name = "The Shadow Enclave",
+        season = "Midnight Season 2",
+        seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1299185,
+                dispelType = "Poison",
+                name = "Writhing Venom",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+        },
+    },
+    ["instance:2963"] = {
+        name = "The Grudge Pit",
+        season = "Midnight Season 2",
+        seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 424738,
+                dispelType = "Disease",
+                name = "Infectious Spores",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 424741,
+                dispelType = "Disease",
+                name = "Infectious Spores",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+        },
+    },
+    ["instance:2987"] = {
         name = "The Tidebound Grotto",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
@@ -993,7 +1039,7 @@ Salve.Sound:RegisterData("Salve", {
         debuffs = {
         },
     },
-    [2993] = {
+    ["instance:2993"] = {
         name = "Altar of Rezan",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
@@ -1071,12 +1117,22 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [3004] = {
+    ["instance:3004"] = {
         name = "The Venomous Abyss",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
         coverage = "Encounter Journal baseline; trash may be absent",
         debuffs = {
+            {
+                spellID = 1256547,
+                dispelType = "Magic",
+                name = "Shadow Laceration",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
             {
                 spellID = 1284471,
                 dispelType = "Magic",
@@ -1098,6 +1154,16 @@ Salve.Sound:RegisterData("Salve", {
                 },
             },
             {
+                spellID = 1290147,
+                dispelType = "Poison",
+                name = "Poison Bolt",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
                 spellID = 1295173,
                 dispelType = "Magic",
                 name = "Exploding Infection",
@@ -1105,6 +1171,16 @@ Salve.Sound:RegisterData("Salve", {
                 provenance = {
                     source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
                     build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1299465,
+                dispelType = "Magic",
+                name = "Spirit Bolt",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
                 },
             },
             {
@@ -1129,7 +1205,7 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
-    [3038] = {
+    ["instance:3038"] = {
         name = "Gnarldor Isle",
         season = "Midnight Season 2",
         seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
@@ -1139,6 +1215,110 @@ Salve.Sound:RegisterData("Salve", {
                 spellID = 1287861,
                 dispelType = "Poison",
                 name = "Venomblade Slash",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+        },
+    },
+    ["map:2395"] = {
+        name = "Eversong Woods",
+        season = "Midnight Season 2",
+        seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 58180,
+                dispelType = "Disease",
+                name = "Infected Wounds",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1246223,
+                dispelType = "Curse",
+                name = "Wracking Whispers",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1251368,
+                dispelType = "Poison",
+                name = "Poisonous Bite",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1265527,
+                dispelType = "Poison",
+                name = "Venom Bite",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+        },
+    },
+    ["map:2437"] = {
+        name = "Zul'Aman",
+        season = "Midnight Season 2",
+        seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1287005,
+                dispelType = "Poison",
+                name = "Poison Bolt",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+        },
+    },
+    ["map:2512"] = {
+        name = "The Coiled Isle",
+        season = "Midnight Season 2",
+        seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1295388,
+                dispelType = "Disease",
+                name = "Pestilent Screech",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1299185,
+                dispelType = "Poison",
+                name = "Writhing Venom",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1302867,
+                dispelType = "Disease",
+                name = "Festering Gash",
                 verified = true,
                 provenance = {
                     source = "in-game learning",

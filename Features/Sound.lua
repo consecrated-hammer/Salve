@@ -6,7 +6,7 @@ local addonName, ns = ...
 -- C_UnitAuras.AddAuraSound is the only native route that works for private
 -- auras. It accepts a unit token and one spell ID -- never an aura filter -- so
 -- Salve keeps a small, typed catalogue in Catalog/Curated.lua and selects only the
--- current instance's records for registration. See data/modules.json.
+-- current instance or outdoor map's records for registration. See data/modules.json.
 
 ns.Sound = {}
 local Sound = ns.Sound
@@ -101,21 +101,26 @@ function Sound:CurrentCures()
 end
 
 -- Public API called by Catalog/Curated.lua at file scope.
-function Sound:RegisterData(source, instances)
-    if type(source) ~= "string" or type(instances) ~= "table" then return false end
+function Sound:RegisterData(source, scopes)
+    if type(source) ~= "string" or type(scopes) ~= "table" then return false end
 
     local normalized = {}
-    for instanceID, instance in pairs(instances) do
-        instanceID = tonumber(instanceID)
-        if instanceID and type(instance) == "table" then
+    for key, scope in pairs(scopes) do
+        local scopeType, scopeID
+        if type(key) == "string" then
+            scopeType, scopeID = key:match("^(%a+):(%d+)$")
+            if scopeType ~= "instance" and scopeType ~= "map" then scopeType = nil end
+        end
+        -- Compatibility for pre-map generated catalogues and focused tests.
+        if not scopeType and tonumber(key) then scopeType, scopeID = "instance", tonumber(key) end
+        scopeID = tonumber(scopeID)
+        if scopeType and scopeID and type(scope) == "table" then
             local entry = {
-                name = instance.name,
-                season = instance.season,
-                coverage = instance.coverage,
+                name = scope.name, season = scope.season, coverage = scope.coverage,
                 debuffs = {},
             }
             local seen = {}
-            for _, record in ipairs(instance.debuffs or {}) do
+            for _, record in ipairs(scope.debuffs or {}) do
                 local spellID = type(record) == "table" and tonumber(record.spellID)
                 local dispelType = type(record) == "table" and record.dispelType
                 if spellID and VALID_DISPEL[dispelType] and record.verified == true
@@ -124,33 +129,34 @@ function Sound:RegisterData(source, instances)
                     entry.debuffs[#entry.debuffs + 1] = record
                 end
             end
-            normalized[instanceID] = entry
+            normalized[scopeType .. ":" .. scopeID] = entry
         end
     end
 
     self.sources[source] = normalized
-    self:PruneLearned(self.activeInstanceID)
-    if self.activeInstanceID > 0 then self:RequestRefresh() end
+    self:PruneLearned(self.activeScopeKey)
+    if self.activeScopeKey then self:RequestRefresh() end
     return true
 end
 
-function Sound:KnownCurated(instanceID, spellID)
-    local instance = self.sources.Salve and self.sources.Salve[instanceID]
-    if instance then
-        for _, record in ipairs(instance.debuffs) do
+function Sound:KnownCurated(scopeKey, spellID)
+    if type(scopeKey) == "number" then scopeKey = "instance:" .. scopeKey end
+    local scope = self.sources.Salve and self.sources.Salve[scopeKey]
+    if scope then
+        for _, record in ipairs(scope.debuffs) do
             if record.spellID == spellID then return true end
         end
     end
     return false
 end
 
-function Sound:PruneLearned(instanceID, scopeKey)
-    if not instanceID or instanceID <= 0 then return end
+function Sound:PruneLearned(scopeKey)
+    if type(scopeKey) ~= "string" then return end
     local bucket = ns.learned and ns.learned.auras
-        and ns.learned.auras[scopeKey or ("instance:" .. instanceID)]
+        and ns.learned.auras[scopeKey]
     if not bucket or type(bucket.spells) ~= "table" then return end
     for spellID in pairs(bucket.spells) do
-        if self:KnownCurated(instanceID, spellID) then bucket.spells[spellID] = nil end
+        if self:KnownCurated(scopeKey, spellID) then bucket.spells[spellID] = nil end
     end
 end
 
@@ -193,10 +199,11 @@ function Sound:ActivateCurrentInstance()
             ns.Print("learning now scoped to " .. self.activeScopeName)
         end
     end
-    self.activeModule = self.sources.Salve and "Built-in catalogue" or nil
+    self.activeModule = self.sources.Salve and self.sources.Salve[self.activeScopeKey]
+        and "Built-in catalogue" or nil
     self.lastFailure = nil
 
-    self:PruneLearned(self.activeInstanceID, self.activeScopeKey)
+    self:PruneLearned(self.activeScopeKey)
     self:Refresh()
     self:UpdateLearnRegistration()
 end
@@ -218,10 +225,10 @@ function Sound:ActiveCuratedRecords()
         end
     end
 
-    local instances = self.sources.Salve
-    local instance = instances and instances[self.activeInstanceID]
-    if instance then
-        for _, record in ipairs(instance.debuffs) do add(record) end
+    local scopes = self.sources.Salve
+    local scope = scopes and scopes[self.activeScopeKey]
+    if scope then
+        for _, record in ipairs(scope.debuffs) do add(record) end
     end
 
     table.sort(records, function(a, b) return a.spellID < b.spellID end)
@@ -241,10 +248,10 @@ end
 -- only effects this character has a matching cure for in the active scope.
 function Sound:ActiveSelfDispelAlerts()
     local cures, alerts = self:CurrentCures(), {}
-    local instances = self.sources.Salve
-    local instance = instances and instances[self.activeInstanceID]
-    if not instance then return alerts end
-    for _, record in ipairs(instance.debuffs) do
+    local scopes = self.sources.Salve
+    local scope = scopes and scopes[self.activeScopeKey]
+    if not scope then return alerts end
+    for _, record in ipairs(scope.debuffs) do
         if record.selfAlert == true and cures[record.dispelType] then
             alerts[record.spellID] = record
         end
@@ -439,10 +446,9 @@ function Sound:Test(quietSuccess)
 end
 
 -- Roots and snares cannot use C_UnitAuras.AddAuraSound: unlike dispels they
--- have no per-instance curated sound registration and this warning is only for
--- the player who can use a selected personal escape. LOSS_OF_CONTROL_ADDED is
--- already the authoritative player event, so play the same user-selected
--- alert once for each new movement impairment.
+-- have no per-instance curated sound registration. LOSS_OF_CONTROL_ADDED is
+-- the authoritative event. A reviewed effect, or one covered by an enabled
+-- universal answer such as Blessing of Freedom, can use this alert path.
 function Sound:PlayMovementWarning()
     if not movementSoundEnabled() then return false end
     local channel = ns.db.soundChannel or "Master"
@@ -542,7 +548,7 @@ function Sound:Learn(unit)
         local name = plain(aura.name)
         local dispelType = plain(aura.dispelName)
         if type(spellID) == "number" and VALID_DISPEL[dispelType] and cures[dispelType]
-            and not self:KnownCurated(self.activeInstanceID, spellID) then
+            and not self:KnownCurated(self.activeScopeKey, spellID) then
             local learned = ns.learned.auras
             local bucket = learned[self.activeScopeKey]
             if type(bucket) ~= "table" or type(bucket.spells) ~= "table" then

@@ -1,8 +1,8 @@
 ## Interface: 120100
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 1.5.10
-## X-ReleaseDate: 2026-09-04
+## Version: 1.5.11
+## X-ReleaseDate: 2026-09-08
 ## Notes: Compact clickable group-dispel panel built for Midnight's private aura rules.
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
 ## AllowAddOnTableAccess: 1
@@ -58,6 +58,9 @@ Catalog\Curated.lua
 
 # Self-only combat text for exceptional scripted dispels without a native icon.
 Features\SelfAlert.lua
+
+# Combat text for universally-answerable roots and snares, such as Freedom.
+Features\MovementAlert.lua
 
 # ☠ Box.lua and Handle.lua before Panel.lua: Panel builds both from Create().
 # Preview.lua comes after all three because its full-size test panel shares

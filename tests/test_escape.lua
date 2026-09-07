@@ -113,4 +113,16 @@ ns.Escape.HasAllyEscape = function() return true end
 equal(ns.Escape:CanWarnForUnit("party1"), true,
     "an ally-targeted escape warns for party members")
 
+UnitClass = function() return "Paladin", "PALADIN" end
+knownSpells = { [1044] = true }
+ns.Escape:Update()
+ns.db.escapes = { [1044] = true }
+local freedom = ns.Escape:UniversalMovementAlertSpell("party1", { locType = "ROOT" })
+equal(freedom.id, 1044,
+    "Blessing of Freedom universally alerts for an affected party member")
+equal(ns.Escape:UniversalMovementAlertSpell("player", { locType = "SNARE" }).id, 1044,
+    "Blessing of Freedom universally alerts for the player")
+equal(ns.Escape:UniversalMovementAlertSpell("party1", { locType = "STUN" }), nil,
+    "Blessing of Freedom never claims it can answer a non-movement effect")
+
 print("escape tests passed")

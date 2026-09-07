@@ -1,6 +1,6 @@
 {
   "interface": 120100,
-  "version": "1.5.10",
+  "version": "1.5.11",
   "modules": [
     {
       "folder": "Salve_Data_Midnight_S1",
@@ -40,8 +40,15 @@
         { "id": 2923, "name": "Voidscar Arena" },
         { "id": 2987, "name": "The Tidebound Grotto" },
         { "id": 2993, "name": "Altar of Rezan" },
+        { "id": 2952, "name": "The Shadow Enclave" },
+        { "id": 2963, "name": "The Grudge Pit" },
         { "id": 3004, "name": "The Venomous Abyss" },
         { "id": 3038, "name": "Gnarldor Isle" }
+      ],
+      "maps": [
+        { "id": 2395, "name": "Eversong Woods" },
+        { "id": 2437, "name": "Zul'Aman" },
+        { "id": 2512, "name": "The Coiled Isle" }
       ]
     }
   ]
