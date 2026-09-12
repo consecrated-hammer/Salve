@@ -18,8 +18,7 @@ local spellNames = {
 C_Spell = { GetSpellInfo = function(id) return { name = spellNames[id] or "Test spell" } end }
 
 C_LossOfControl = {
-    GetActiveLossOfControlDataByUnit = function(unit, index)
-        equal(unit, "party1", "loss-of-control unit")
+    GetActiveLossOfControlData = function(index)
         equal(index, 2, "loss-of-control index")
         return record
     end,
@@ -71,7 +70,7 @@ equal(#curated, 1, "curated movement ID is active before learning")
 equal(curated[1], 45678, "curated movement ID is retained")
 rebuilds = 0
 
-equal(ns.Escape:CaptureLossOfControl("party1", 2), true,
+equal(ns.Escape:CaptureLossOfControl("player", 2), true,
     "automatic root capture succeeds")
 equal(ns.learned.movement[12345], "Test Root", "automatic root stores spell")
 equal(rebuilds, 1, "automatic root requests panel rebuild")
@@ -79,20 +78,20 @@ equal(#prints, 1, "automatic root reports capture")
 local afterCapture = ns.Escape:AllSpellIDs()
 equal(#afterCapture, 1, "auto-captured roots do not activate the movement overlay")
 equal(afterCapture[1], 45678, "only reviewed movement data drives the overlay")
-local capturedAgain, isVerifiedMovement = ns.Escape:CaptureLossOfControl("party1", 2)
+local capturedAgain, isVerifiedMovement = ns.Escape:CaptureLossOfControl("player", 2)
 equal(capturedAgain, false,
     "automatic root de-duplicates spell")
 equal(isVerifiedMovement, false,
     "unreviewed roots do not become live movement impairments")
 
 record = { locType = "STUN", spellID = 23456, displayText = "Test Stun" }
-equal(ns.Escape:CaptureLossOfControl("party1", 2), false,
+equal(ns.Escape:CaptureLossOfControl("player", 2), false,
     "non-movement loss of control is ignored")
 equal(ns.learned.movement[23456], nil, "stun is not stored")
 
 ns.db.learnMode = false
 record = { locType = "SNARE", spellID = 34567, displayText = "Test Snare" }
-equal(ns.Escape:CaptureLossOfControl("party1", 2), true,
+equal(ns.Escape:CaptureLossOfControl("player", 2), true,
     "stale preference cannot disable automatic capture")
 equal(ns.learned.movement[34567], "Test Snare",
     "always-on learning stores movement effects")
@@ -110,19 +109,27 @@ equal(ns.Escape:CanWarnForUnit("player"), true,
 equal(ns.Escape:CanWarnForUnit("party1"), false,
     "a selected personal escape stays silent for party members")
 ns.Escape.HasAllyEscape = function() return true end
-equal(ns.Escape:CanWarnForUnit("party1"), true,
-    "an ally-targeted escape warns for party members")
+equal(ns.Escape:CanWarnForUnit("party1"), false,
+    "an ally-targeted escape still ignores party members")
 
 UnitClass = function() return "Paladin", "PALADIN" end
 knownSpells = { [1044] = true }
 ns.Escape:Update()
 ns.db.escapes = { [1044] = true }
-local freedom = ns.Escape:UniversalMovementAlertSpell("party1", { locType = "ROOT" })
+local freedom = ns.Escape:UniversalMovementAlertSpell("player", { locType = "ROOT" })
 equal(freedom.id, 1044,
-    "Blessing of Freedom universally alerts for an affected party member")
+    "Blessing of Freedom universally alerts for the player")
 equal(ns.Escape:UniversalMovementAlertSpell("player", { locType = "SNARE" }).id, 1044,
     "Blessing of Freedom universally alerts for the player")
 equal(ns.Escape:UniversalMovementAlertSpell("party1", { locType = "STUN" }), nil,
     "Blessing of Freedom never claims it can answer a non-movement effect")
 
+C_LossOfControl.GetActiveLossOfControlDataByUnit = function() error("restricted API must not be called") end
+record = { locType = "ROOT", spellID = 34568 }
+assert(ns.Escape:CaptureLossOfControl("player", 2))
+assert(not ns.Escape:CaptureLossOfControl("party1", 2))
+issecretvalue = function(value) return value == "SECRET" end
+record = { locType = "SECRET" }
+assert(not ns.Escape:CaptureLossOfControl("player", 2))
+assert(ns.Escape.lastCaptureStatus == "movement classification unavailable or secret")
 print("escape tests passed")

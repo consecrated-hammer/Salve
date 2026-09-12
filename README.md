@@ -41,9 +41,13 @@ it goes on right click automatically. Every detected action can be rebound.
 Evoker, Mage and Warlock. Available spells are detected automatically when you
 change specialisation or, for Warlocks, when your active demon changes.
 
-**Actionable roots and snares.** Enable a movement removal you actually use.
-Personal spells light only your cell; ally-targeted spells such as Blessing of
-Freedom can light and cast on any group member.
+**Personal movement notifications.** Enable Blessing of Freedom in Actions for
+notifications when Blizzard reports a root or snare on you. Alerts offers
+on-screen text, local chat messages, or both. **Movement chat tab** selects the
+local chat window; click it to cycle through available tabs. Closed tabs fall
+back to the default window. On-screen text can be previewed
+and dragged to a saved position. Movement notifications do not track party
+members or promise a movement highlight on a cell.
 
 ## Screenshots
 
@@ -152,8 +156,8 @@ Aura learning is always active. Outdoor discoveries are keyed to the current
 map; dungeon and raid discoveries are keyed to their instance. Salve listens
 for group aura changes and stores readable dispellable aura names, IDs and
 schools in the separate `SalveLearnedDB` block in its saved data; private auras
-cannot be learned. It also captures Blizzard-reported roots and snares for
-group members through the loss-of-control feed, so no command is needed during
+cannot be learned. It also captures your own Blizzard-reported roots and snares
+through the player loss-of-control feed, so no command is needed during
 a pull. `/salve learned clear` removes the recorded catalogue.
 
 ## Limitations

@@ -99,6 +99,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         if type(unit) == "number" and effectIndex == nil then
             effectIndex, unit = unit, "player"
         end
+        if unit ~= "player" then return end
         local _, isVerifiedMovement, movement = ns.Escape:CaptureLossOfControl(unit, effectIndex)
         local universalSpell = ns.Escape:UniversalMovementAlertSpell(unit, movement)
         if universalSpell or (isVerifiedMovement and ns.Escape:CanWarnForUnit(unit)) then
@@ -109,6 +110,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         end
 
     elseif event == "PLAYER_REGEN_DISABLED" then
+        if ns.MovementAlert and ns.MovementAlert.StopPreview then ns.MovementAlert:StopPreview() end
         -- Test cells are intentionally non-secure, but a preview must never
         -- cover the real clickable panel once combat begins.
         if ns.Preview then ns.Preview:Stop() end

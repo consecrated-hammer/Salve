@@ -5,6 +5,18 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.13] - 2026-09-13
+
+### Changed
+
+- Movement detection and notifications now cover only the player, using the
+  player loss-of-control API. Party movement notifications have been removed.
+- Personal Freedom text can appear on screen, in local chat, or both. On-screen
+  notifications have a draggable preview in Alerts and remember their position.
+- Diagnostics report the last player movement detection and text submission.
+- Local movement messages can target a chosen chat tab, with fallback to the
+  default chat window if the selected tab is closed.
+
 ## [1.5.12] - 2026-09-12
 
 ### Added

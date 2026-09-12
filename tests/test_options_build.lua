@@ -336,7 +336,7 @@ equal(findText("Show dispel-type icon") ~= nil, true,
     "Panel page offers the native dispel marker")
 equal(findText("Show self-dispel combat text") ~= nil, true,
     "Alerts page offers the optional self-dispel instruction")
-equal(findText("Show Freedom movement text") ~= nil, true,
+equal(findText("Show personal Freedom movement text") ~= nil, true,
     "Alerts page offers the optional Freedom instruction")
 local dispelIconPosition = findText("Bottom left")
 equal(dispelIconPosition.salveDropdown, true,

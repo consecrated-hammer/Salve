@@ -257,13 +257,12 @@ end
 -- ── Capture ────────────────────────────────────────────────────────────────
 --
 -- Aura data itself does not carry the mechanic. Blizzard's loss-of-control
--- feed does: LOSS_OF_CONTROL_ADDED identifies the affected group unit and its
+-- feed does: LOSS_OF_CONTROL_ADDED identifies the affected unit and its
 -- effect index, while C_LossOfControl supplies the ROOT/SNARE type and spell
 -- ID. That is the automatic learning path used here; guessing from every
 -- non-dispellable aura would fill the list with harmless effects.
 --
--- Always-on learning captures roots and snares automatically, including on
--- group members, from that loss-of-control feed.
+-- Learning and notifications use only the player's own API and events.
 local function capture(id, name)
     if type(id) ~= "number" or ns.learned.movement[id] then return false end
     ns.learned.movement[id] = type(name) == "string" and name or true
@@ -273,26 +272,36 @@ local function capture(id, name)
 end
 
 function Escape:CaptureLossOfControl(unit, effectIndex)
+    if unit ~= "player" then return false end
+    self.lastCaptureStatus = "player event received"
     if not (ns.db and C_LossOfControl) then return false end
     if type(effectIndex) ~= "number" then return false end
 
-    local getter = C_LossOfControl.GetActiveLossOfControlDataByUnit
-    local ok, data
-    if getter and type(unit) == "string" then
-        ok, data = pcall(getter, unit, effectIndex)
-    elseif unit == "player" and C_LossOfControl.GetActiveLossOfControlData then
-        ok, data = pcall(C_LossOfControl.GetActiveLossOfControlData, effectIndex)
-    else
+    local getter = C_LossOfControl.GetActiveLossOfControlData
+    if not getter then
+        self.lastCaptureStatus = "player loss-of-control API unavailable"
         return false
     end
-    if not ok or type(data) ~= "table" then return false end
+    local ok, data = pcall(getter, effectIndex)
+    if not ok or type(data) ~= "table" then
+        self.lastCaptureStatus = "player loss-of-control data unavailable"
+        return false
+    end
 
     local function plain(v)
         if issecretvalue and issecretvalue(v) then return nil end
         return v
     end
     local locType = plain(data.locType)
-    if locType ~= "ROOT" and locType ~= "SNARE" then return false, false end
+    if locType == nil then
+        self.lastCaptureStatus = "movement classification unavailable or secret"
+        return false, false
+    end
+    if locType ~= "ROOT" and locType ~= "SNARE" then
+        self.lastCaptureStatus = "not a root or snare"
+        return false, false
+    end
+    self.lastCaptureStatus = "player " .. locType .. " detected"
 
     ns.learned.movement = ns.learned.movement or {}
     local spellID = plain(data.spellID)
@@ -313,26 +322,23 @@ function Escape:IsPlayerUnit(unit)
     return ok and same == true
 end
 
--- A warning has the same scope as the visible movement slot. Personal escapes
--- are useful only on the player's own cell; an enabled ally-targeted escape
--- makes a party member's root or snare actionable as well.
+-- Movement warnings are personal, even when the selected spell can target allies.
 function Escape:CanWarnForUnit(unit)
-    if not self:Active() then return false end
-    return self:IsPlayerUnit(unit) or self:HasAllyEscape()
+    return unit == "player" and self:Active()
 end
 
 -- A broadly-worded warning needs a stronger promise than a curated spell-ID
 -- match. Blessing of Freedom explicitly removes and prevents movement
 -- impairment, so a ROOT or SNARE from Blizzard's loss-of-control feed is
--- enough to alert for every eligible group unit. Other escapes keep the
+-- enough to alert for the player. Other escapes keep the
 -- reviewed-ID gate above: mobility is not proof it answers an arbitrary root.
 function Escape:UniversalMovementAlertSpell(unit, movement)
+    if unit ~= "player" then return nil end
     if not movement or (movement.locType ~= "ROOT" and movement.locType ~= "SNARE") then
         return nil
     end
     for _, spell in ipairs(self:Enabled()) do
-        if spell.universalMovement and (spell.scope == ns.ESCAPE_ALLY
-                or spell.scope == ns.ESCAPE_AREA or self:IsPlayerUnit(unit)) then
+        if spell.universalMovement then
             return spell
         end
     end

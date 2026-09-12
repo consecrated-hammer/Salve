@@ -28,10 +28,44 @@ O.NewPage({
         "Play a sound for a reviewed root or snare, or any root or snare Blessing of Freedom can remove.", y,
         movementSoundEnabled,
         function(value) ns.Set("movementSoundEnabled", value) end)
-    _, y = O.Check(panel, "Show Freedom movement text",
-        "Show a combat-text instruction for any ROOT or SNARE Blessing of Freedom can remove. It names only the affected party slot and never claims a cell is lit.", y,
+    _, y = O.Check(panel, "Show personal Freedom movement text",
+        "Show a notification when you are rooted or snared and Blessing of Freedom is enabled in Actions.", y,
         function() return ns.db.movementTextNotification end,
         function(value) ns.Set("movementTextNotification", value) end)
+    local destinations = {}
+    for _, choice in ipairs({ { "SCREEN", "On-screen text" }, { "CHAT", "Chat window" }, { "BOTH", "Both" } }) do
+        local value, label = choice[1], choice[2]
+        destinations[#destinations + 1] = {
+            label = label, radio = true,
+            get = function() return (ns.db.movementTextOutput or "SCREEN") == value end,
+            set = function()
+                ns.Set("movementTextOutput", value)
+                if ns.MovementAlert then ns.MovementAlert:StopPreview() end
+            end,
+        }
+    end
+    _, y = O.MultiSelect(panel, "Movement text destination",
+        "Messages are visible only to you. Chat window prints locally; it never sends to a party, raid or channel.", y,
+        { items = destinations, summary = function()
+            for _, item in ipairs(destinations) do if item.get() then return item.label end end
+            return "On-screen text"
+        end }, 264)
+    _, y = O.DynamicCycle(panel, "Movement chat tab",
+        "Click to cycle through your chat tabs. Used for Chat window or Both. A closed tab falls back to the default window.", y,
+        function()
+            if ns.MovementAlert then return ns.MovementAlert:ChatWindows() end
+            return { 0 }, { "Default chat window" }
+        end,
+        function() return tonumber(ns.db.movementChatWindow) or 0 end,
+        function(value) ns.Set("movementChatWindow", value) end)
+    local preview = O.Button(panel, 220, 24)
+    preview:SetPoint("TOPLEFT", 16, y)
+    preview:SetText("Preview / move movement text")
+    preview:SetScript("OnClick", function() ns.MovementAlert:TogglePreview() end)
+    panel:HookScript("OnHide", function()
+        if ns.MovementAlert then ns.MovementAlert:StopPreview() end
+    end)
+    y = y - 32
     _, y = O.Check(panel, "Show self-dispel combat text",
         "Show an instruction when a reviewed scripted dispel reaches you. It never marks a party member or a Salve cell.", y,
         function() return ns.db.selfDispelNotification end,
@@ -89,6 +123,10 @@ O.NewPage({
         ns.Set("dispelSoundEnabled", ns.defaults.dispelSoundEnabled)
         ns.Set("movementSoundEnabled", ns.defaults.movementSoundEnabled)
         ns.Set("movementTextNotification", ns.defaults.movementTextNotification)
+        ns.Set("movementTextOutput", ns.defaults.movementTextOutput)
+        ns.Set("movementChatWindow", ns.defaults.movementChatWindow)
+        ns.db.movementTextX, ns.db.movementTextY = 0, 160
+        if ns.MovementAlert then ns.MovementAlert:Position() end
         ns.Set("selfDispelNotification", ns.defaults.selfDispelNotification)
         ns.Set("soundChannel", ns.defaults.soundChannel)
         ns.Set("soundFile", ns.defaults.soundFile)
