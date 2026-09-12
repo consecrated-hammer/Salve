@@ -57,7 +57,8 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         ns.RequestRebuild()
 
     elseif event == "PLAYER_SPECIALIZATION_CHANGED"
-        or event == "SPELLS_CHANGED" then
+        or event == "SPELLS_CHANGED"
+        or (event == "UNIT_PET" and arg1 == "player") then
         local dispelChanged = ns.UpdateDispelSpell()
         local escapeChanged = ns.Escape:Update()
         if dispelChanged or escapeChanged then
@@ -156,6 +157,11 @@ end
 -- then narrows this further to Salve's known dispel spell IDs.
 if frame.RegisterUnitEvent then
     frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
+    -- Warlock's Command Demon can become Singe Magic only while an Imp is
+    -- active. Filter at registration: other players' pets cannot affect this
+    -- character's armed dispel or justify a secure rebuild.
+    frame:RegisterUnitEvent("UNIT_PET", "player")
 else
     frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+    frame:RegisterEvent("UNIT_PET")
 end

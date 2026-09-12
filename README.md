@@ -38,8 +38,8 @@ it goes on right click automatically. Every detected action can be rebound.
 **Stack counts**, drawn by the game itself, so they follow its own rules.
 
 **All supported dispelling classes** — Paladin, Priest, Druid, Shaman, Monk,
-Evoker and Mage. Available spells are detected automatically when you change
-specialisation.
+Evoker, Mage and Warlock. Available spells are detected automatically when you
+change specialisation or, for Warlocks, when your active demon changes.
 
 **Actionable roots and snares.** Enable a movement removal you actually use.
 Personal spells light only your cell; ally-targeted spells such as Blessing of

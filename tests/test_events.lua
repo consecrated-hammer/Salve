@@ -6,7 +6,7 @@ end
 
 local handler
 local registered = {}
-local unitRegistration
+local unitRegistrations = {}
 local timers = {}
 local refreshes = 0
 local movementRefreshes = 0
@@ -28,7 +28,7 @@ CreateFrame = function()
             registered[event] = true
         end,
         RegisterUnitEvent = function(_, event, unit)
-            unitRegistration = { event = event, unit = unit }
+            unitRegistrations[event] = unit
         end,
     }
 end
@@ -95,15 +95,18 @@ local ns = {
 
 assert(loadfile("Core/Events.lua"))("Salve", ns)
 
-equal(unitRegistration.event, "UNIT_SPELLCAST_SUCCEEDED",
+equal(unitRegistrations.UNIT_SPELLCAST_SUCCEEDED, "player",
     "cast-success event registered as a unit event")
-equal(unitRegistration.unit, "player", "cast-success registration is player-only")
+equal(unitRegistrations.UNIT_PET, "player",
+    "pet-change registration is player-only")
 equal(registered.SPELL_UPDATE_COOLDOWN, nil,
     "global cooldown update event remains unregistered")
 equal(registered.PLAYER_REGEN_DISABLED, true,
     "combat start is registered to close preview safely")
 equal(registered.ENCOUNTER_END, true,
     "encounter end is registered to release structural rebuilds")
+equal(registered.UNIT_PET, nil,
+    "pet changes use the player-only unit subscription")
 equal(registered.COMBAT_LOG_EVENT_UNFILTERED, nil,
     "shared event router never subscribes to high-volume combat-log traffic")
 
@@ -124,6 +127,11 @@ equal(dispelRefreshes, 0,
     "escape-only spell discovery does not rebuild sound registrations")
 equal(rebuilds, 1, "escape-only spell discovery rebuilds the panel")
 equal(selfAlertUpdates, 1, "spell discovery refreshes the self-dispel listener")
+
+handler(nil, "UNIT_PET", "party1")
+equal(rebuilds, 1, "another unit's pet does not change the player's dispels")
+handler(nil, "UNIT_PET", "player")
+equal(rebuilds, 2, "the player's pet change refreshes Imp-only dispels")
 
 handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast-guid", 4987)
 equal(refreshes, 0, "dispel cooldown is not read inside the early cast event")

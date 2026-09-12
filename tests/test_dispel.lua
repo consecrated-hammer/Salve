@@ -88,4 +88,23 @@ equal(ns.primaryCures.Magic, nil, "non-Mistweaver Detox does not claim Magic")
 equal(ns.primaryCures.Poison, true, "non-Mistweaver Detox covers Poison")
 equal(ns.primaryCures.Disease, true, "non-Mistweaver Detox covers Disease")
 
+-- Singe Magic is an Imp-only Command Demon override, not a permanent Warlock
+-- spellbook entry. The panel must remain absent with another demon active.
+local commandDemonOverride = 119898
+C_Spell.GetOverrideSpell = function() return commandDemonOverride end
+class, knownSpells = "WARLOCK", {}
+equal(ns.UpdateDispelSpell(), true, "changing from Monk clears an unavailable Warlock dispel")
+equal(#ns.knownDispels, 0, "Warlock without an Imp has no friendly dispel armed")
+equal(ns.CanDispel(), false, "Warlock without an Imp cannot promise a dispel")
+
+commandDemonOverride = 212623
+equal(ns.UpdateDispelSpell(), true, "Imp override arms Singe Magic")
+equal(#ns.knownDispels, 1, "Imp exposes one friendly dispel")
+equal(ns.spellID, 212623, "Singe Magic is the secure spell")
+equal(ns.primaryCures.Magic, true, "Singe Magic covers Magic")
+
+commandDemonOverride = 119898
+equal(ns.UpdateDispelSpell(), true, "losing the Imp removes Singe Magic")
+equal(#ns.knownDispels, 0, "former Imp dispel is no longer exposed")
+
 print("dispel tests passed")

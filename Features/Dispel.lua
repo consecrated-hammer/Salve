@@ -64,6 +64,18 @@ local SPELLS = {
     MAGE = {
         { id = 475,                                 Curse = true },    -- Remove Curse
     },
+    WARLOCK = {
+        -- Singe Magic is the Imp form of Command Demon.  It must not make the
+        -- native filter promise Magic dispels while another demon is active:
+        -- the current override is the client-owned proof that it can be cast.
+        -- It also has a 15-second cooldown and removes one effect, so never
+        -- choose it ahead of a repeatable dispel should Warlock gain one.
+        { id = 212623, Magic = true, limited = true,
+            available = function()
+                return C_Spell and C_Spell.GetOverrideSpell
+                    and C_Spell.GetOverrideSpell(119898) == 212623
+            end },                                                       -- Singe Magic (Imp)
+    },
 }
 
 ns.spellID      = nil   -- primary, on left click
@@ -139,6 +151,11 @@ local function coverage(entry)
     return set, n
 end
 
+local function isAvailable(entry, castable)
+    if entry.available then return entry.available() end
+    return (castable and castable[entry.id]) or (not castable and known(entry.id))
+end
+
 -- Returns true when either selection changed, so callers know to rebuild.
 function ns.UpdateDispelSpell()
     local _, class = UnitClass("player")
@@ -159,7 +176,7 @@ function ns.UpdateDispelSpell()
     local available = {}
     ns.knownDispels = available
     for _, entry in ipairs(list) do
-        if (castable and castable[entry.id]) or (not castable and known(entry.id)) then
+        if isAvailable(entry, castable) then
             local name = nameOf(entry.id)
             if name then
                 local set, n = coverage(entry)
