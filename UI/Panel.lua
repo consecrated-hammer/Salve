@@ -7,6 +7,16 @@ local MAX_BOXES = 40
 
 Panel.boxes = {}
 
+function Panel:SetMovementPrompt(spell, active)
+    local spellID = spell and spell.id
+    local key = spellID and ns.Bindings and ns.Bindings:FirstKeyForSpell(spellID)
+    for _, box in ipairs(self.boxes) do
+        if box.unit == "player" then
+            ns.Box.SetMovementPrompt(box, active and key ~= nil)
+        end
+    end
+end
+
 -- The frame itself is anchored to the edge selected by Grid flow. Reversing
 -- cell coordinates alone would change roster order but still make a growing
 -- frame expand across the edge the player lined up with another addon.

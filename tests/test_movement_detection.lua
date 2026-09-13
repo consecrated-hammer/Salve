@@ -27,7 +27,7 @@ equal(detector.lastStatus, "speed reduced to 4.16 from 8.33", "diagnostic preser
 equal(detector:Sample(0.15), nil, "persistent slow alerts only once")
 
 current, runSpeed = 8.33, 8.33
-equal(detector:Sample(0.15), nil, "normal speed rearms the detector")
+equal(detector:Sample(0.15).kind, "CLEAR", "normal speed clears the active prompt")
 current, runSpeed = 4.16, 4.16
 assert(detector:Sample(0.15), "a later new speed drop alerts again")
 

@@ -15,12 +15,19 @@ local addonName, ns = ...
 local frame = CreateFrame("Frame", "SalveEventFrame")
 
 local function alertPlayerMovement(movement, isVerifiedMovement)
+    if movement and movement.kind == "CLEAR" then
+        if ns.Panel then ns.Panel:SetMovementPrompt(nil, false) end
+        return
+    end
     local spell = ns.Escape:MovementAlertSpell("player", movement)
     if spell or (isVerifiedMovement and ns.Escape:CanWarnForUnit("player")) then
         ns.Sound:PlayMovementWarning()
     end
     if spell and ns.MovementAlert then
         ns.MovementAlert:Notify("player", movement, spell)
+    end
+    if spell and movement and movement.kind == "SLOW" and ns.Panel then
+        ns.Panel:SetMovementPrompt(spell, true)
     end
 end
 
@@ -57,6 +64,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
 
     elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
         if ns.MovementDetection then ns.MovementDetection:Reset() end
+        if ns.Panel then ns.Panel:SetMovementPrompt(nil, false) end
         ns.Sound:ActivateCurrentInstance()
         if ns.SelfAlert and ns.SelfAlert.Update then ns.SelfAlert:Update() end
         if ns.Options.RefreshTroubleshooting then ns.Options.RefreshTroubleshooting() end

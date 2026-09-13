@@ -58,9 +58,10 @@ function Detector:Sample(elapsed)
     end
 
     if runSpeed >= self.baseline * RECOVERY_RATIO then
+        local wasAlerted = self.alerted
         self.alerted = false
         self.lastStatus = ("normal run speed %.2f"):format(runSpeed)
-        return nil
+        return wasAlerted and { kind = "CLEAR" } or nil
     end
     if self.alerted or runSpeed > self.baseline * DROP_RATIO then return nil end
     self.alerted = true

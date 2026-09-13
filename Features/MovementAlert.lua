@@ -116,7 +116,9 @@ function MovementAlert:Notify(unit, movement, spell)
     local kind = movement and (movement.kind or movement.locType)
     if kind ~= "ROOT" and kind ~= "SNARE" and kind ~= "SLOW" then return false end
     local effect = kind == "ROOT" and "ROOTED" or (kind == "SLOW" and "SLOWED" or "SNARED")
-    local delivered = show("|cffffa020YOU " .. effect .. " - "
+    local key = ns.Bindings and ns.Bindings.FirstKeyForSpell and ns.Bindings:FirstKeyForSpell(spell.id)
+    local action = key and ns.Bindings:Label(key):upper() .. ": " or ""
+    local delivered = show("|cffffa020YOU ARE " .. effect .. " — " .. action
         .. tostring(spell.name or "MOVEMENT REMOVAL"):upper() .. "|r")
     self.lastStatus = delivered and "message submitted" or "message output unavailable"
     return delivered

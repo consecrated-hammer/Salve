@@ -160,6 +160,10 @@ function Bindings:KeysForSpell(spellID)
     return keys
 end
 
+function Bindings:FirstKeyForSpell(spellID)
+    return self:KeysForSpell(spellID)[1]
+end
+
 -- One row in Options owns one action. Rebinding replaces every old chord for
 -- that spell, which keeps the page truthful instead of hiding duplicate
 -- bindings behind a single button.

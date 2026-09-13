@@ -12,16 +12,24 @@ assert(loadfile("Features/MovementAlert.lua"))("Salve", ns)
 equal(ns.MovementAlert:Notify("player", { locType = "ROOT" },
     { name = "Blessing of Freedom" }), true,
     "Freedom text emits locally for the player")
-equal(emitted[1].message, "|cffffa020YOU ROOTED - BLESSING OF FREEDOM|r",
+equal(emitted[1].message, "|cffffa020YOU ARE ROOTED — BLESSING OF FREEDOM|r",
     "Freedom text identifies only the player")
 
 ns.MovementAlert:Notify("player", { locType = "SNARE" }, { name = "Blessing of Freedom" })
-equal(emitted[2].message, "|cffffa020YOU SNARED - BLESSING OF FREEDOM|r",
+equal(emitted[2].message, "|cffffa020YOU ARE SNARED — BLESSING OF FREEDOM|r",
     "Freedom text distinguishes a player snare")
 
 ns.MovementAlert:Notify("player", { kind = "SLOW" }, { name = "Tiger's Lust" })
-equal(emitted[3].message, "|cffffa020YOU SLOWED - TIGER'S LUST|r",
+equal(emitted[3].message, "|cffffa020YOU ARE SLOWED — TIGER'S LUST|r",
     "speed detection uses the common movement alert renderer")
+
+ns.Bindings = {
+    FirstKeyForSpell = function() return "BUTTON2" end,
+    Label = function() return "Right click" end,
+}
+ns.MovementAlert:Notify("player", { kind = "SLOW" }, { id = 1044, name = "Blessing of Freedom" })
+equal(emitted[4].message, "|cffffa020YOU ARE SLOWED — RIGHT CLICK: BLESSING OF FREEDOM|r",
+    "movement alert states the actual configured action chord")
 
 equal(ns.MovementAlert:Notify("party1", { locType = "ROOT" }, { name = "Freedom" }), false, "party ignored")
 equal(ns.MovementAlert:Notify("player", { locType = "STUN" }, { name = "Freedom" }), false, "stuns ignored")
@@ -29,7 +37,7 @@ ns.db.movementTextNotification = false
 equal(ns.MovementAlert:Notify("party1", { locType = "ROOT" },
     { name = "Blessing of Freedom" }), false,
     "movement text respects its independent setting")
-equal(#emitted, 3, "disabled setting emits no text")
+equal(#emitted, 4, "disabled setting emits no text")
 
 print("movement alert tests passed")
 
@@ -54,7 +62,7 @@ end
 ns.db.movementTextNotification = true
 ns.db.movementTextOutput = "BOTH"
 assert(ns.MovementAlert:Notify("player", { locType = "ROOT" }, { name = "Freedom" }))
-assert(#emitted == 4 and screenMessage:find("YOU ROOTED", 1, true))
+assert(#emitted == 5 and screenMessage:find("YOU ARE ROOTED", 1, true))
 assert(shown and mouse == false)
 scripts.OnUpdate(nil, 5)
 assert(not shown)

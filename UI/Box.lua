@@ -220,6 +220,14 @@ local function CreateVisuals(box, registerCooldown)
     box.name:SetJustifyV("MIDDLE")
     StyleNameText(box)
 
+    -- Salve-owned response cue. Unlike the native aura fill, this can be
+    -- driven by a safe player-state signal (for example a measured slow)
+    -- without reading any aura metadata.
+    box.actionPrompt = box.textLayer:CreateTexture(nil, "BACKGROUND")
+    box.actionPrompt:SetAllPoints(box)
+    box.actionPrompt:SetColorTexture(1, 0.25, 0.02, 0.55)
+    box.actionPrompt:Hide()
+
     return box
 end
 
@@ -299,6 +307,7 @@ end
 -- Secure attributes. Out of combat only -- callers guard.
 function Box.Bind(box, unit)
     box.unit = unit
+    Box.SetMovementPrompt(box, false)
 
     box:SetAttribute("unit", unit)
 
@@ -306,6 +315,17 @@ function Box.Bind(box, unit)
     -- written, which is what keeps the box working through a fight with nothing
     -- of ours running. See Features/Bindings.lua.
     ns.Bindings:Apply(box)
+end
+
+function Box.SetMovementPrompt(box, active)
+    if not box or not box.actionPrompt then return end
+    if active then
+        box.actionPrompt:Show()
+        if box.border then box.border:SetBackdropBorderColor(1, 0.35, 0.04, 1) end
+    else
+        box.actionPrompt:Hide()
+        if box.border then box.border:SetBackdropBorderColor(0.55, 0.55, 0.55, 0.72) end
+    end
 end
 
 -- Name text and the clean-state dimming. Both are ours, both are safe in
