@@ -48,6 +48,7 @@ Features\Bindings.lua
 
 # Movement-impairing effects and the class spells that remove them.
 Features\Escape.lua
+Features\MovementDetection.lua
 
 # Alert sounds and the selector for the built-in, instance-scoped catalogue.
 Features\Sound.lua

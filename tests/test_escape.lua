@@ -114,6 +114,13 @@ ns.Escape.HasAllyEscape = function() return true end
 equal(ns.Escape:CanWarnForUnit("party1"), false,
     "an ally-targeted escape still ignores party members")
 
+UnitClass = function() return "Monk", "MONK" end
+knownSpells = { [116841] = true }
+ns.Escape:Update()
+ns.db.escapes = { [116841] = true }
+equal(ns.Escape:MovementAlertSpell("player", { kind = "SLOW" }).id, 116841,
+    "class capability registry maps Tiger's Lust to generic player slows")
+
 UnitClass = function() return "Paladin", "PALADIN" end
 knownSpells = { [1044] = true }
 ns.Escape:Update()

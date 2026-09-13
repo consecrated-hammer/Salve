@@ -113,8 +113,9 @@ end
 function MovementAlert:Notify(unit, movement, spell)
     if unit ~= "player" then return false end
     if not (ns.db and ns.db.movementTextNotification and spell) then return false end
-    if not movement or (movement.locType ~= "ROOT" and movement.locType ~= "SNARE") then return false end
-    local effect = movement and movement.locType == "SNARE" and "SNARED" or "ROOTED"
+    local kind = movement and (movement.kind or movement.locType)
+    if kind ~= "ROOT" and kind ~= "SNARE" and kind ~= "SLOW" then return false end
+    local effect = kind == "ROOT" and "ROOTED" or (kind == "SLOW" and "SLOWED" or "SNARED")
     local delivered = show("|cffffa020YOU " .. effect .. " - "
         .. tostring(spell.name or "MOVEMENT REMOVAL"):upper() .. "|r")
     self.lastStatus = delivered and "message submitted" or "message output unavailable"

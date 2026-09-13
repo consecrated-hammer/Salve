@@ -11,6 +11,10 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Beta builds now include their `-beta` suffix in the in-game add-on version
   and Salve diagnostics, matching the release tag shown on CurseForge.
+- Player-only speed drops now provide a fallback movement-impairment signal
+  when Blizzard emits no root/snare event. Ability capabilities, detection and
+  alert presentation are separate; only selected actions that explicitly
+  remove movement impairment can answer the generic slow alert.
 
 ## [1.5.14] - 2026-09-13
 

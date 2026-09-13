@@ -19,13 +19,17 @@ ns.MovementAlert:Notify("player", { locType = "SNARE" }, { name = "Blessing of F
 equal(emitted[2].message, "|cffffa020YOU SNARED - BLESSING OF FREEDOM|r",
     "Freedom text distinguishes a player snare")
 
+ns.MovementAlert:Notify("player", { kind = "SLOW" }, { name = "Tiger's Lust" })
+equal(emitted[3].message, "|cffffa020YOU SLOWED - TIGER'S LUST|r",
+    "speed detection uses the common movement alert renderer")
+
 equal(ns.MovementAlert:Notify("party1", { locType = "ROOT" }, { name = "Freedom" }), false, "party ignored")
 equal(ns.MovementAlert:Notify("player", { locType = "STUN" }, { name = "Freedom" }), false, "stuns ignored")
 ns.db.movementTextNotification = false
 equal(ns.MovementAlert:Notify("party1", { locType = "ROOT" },
     { name = "Blessing of Freedom" }), false,
     "movement text respects its independent setting")
-equal(#emitted, 2, "disabled setting emits no text")
+equal(#emitted, 3, "disabled setting emits no text")
 
 print("movement alert tests passed")
 
@@ -50,7 +54,7 @@ end
 ns.db.movementTextNotification = true
 ns.db.movementTextOutput = "BOTH"
 assert(ns.MovementAlert:Notify("player", { locType = "ROOT" }, { name = "Freedom" }))
-assert(#emitted == 3 and screenMessage:find("YOU ROOTED", 1, true))
+assert(#emitted == 4 and screenMessage:find("YOU ROOTED", 1, true))
 assert(shown and mouse == false)
 scripts.OnUpdate(nil, 5)
 assert(not shown)

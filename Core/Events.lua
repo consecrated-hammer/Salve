@@ -14,6 +14,16 @@ local addonName, ns = ...
 
 local frame = CreateFrame("Frame", "SalveEventFrame")
 
+local function alertPlayerMovement(movement, isVerifiedMovement)
+    local spell = ns.Escape:MovementAlertSpell("player", movement)
+    if spell or (isVerifiedMovement and ns.Escape:CanWarnForUnit("player")) then
+        ns.Sound:PlayMovementWarning()
+    end
+    if spell and ns.MovementAlert then
+        ns.MovementAlert:Notify("player", movement, spell)
+    end
+end
+
 frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     if event == "ADDON_LOADED" then
         if arg1 ~= addonName then return end
@@ -46,6 +56,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         ns.RequestRebuild()
 
     elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
+        if ns.MovementDetection then ns.MovementDetection:Reset() end
         ns.Sound:ActivateCurrentInstance()
         if ns.SelfAlert and ns.SelfAlert.Update then ns.SelfAlert:Update() end
         if ns.Options.RefreshTroubleshooting then ns.Options.RefreshTroubleshooting() end
@@ -101,13 +112,13 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         end
         if unit ~= "player" then return end
         local _, isVerifiedMovement, movement = ns.Escape:CaptureLossOfControl(unit, effectIndex)
-        local universalSpell = ns.Escape:UniversalMovementAlertSpell(unit, movement)
-        if universalSpell or (isVerifiedMovement and ns.Escape:CanWarnForUnit(unit)) then
-            ns.Sound:PlayMovementWarning()
-        end
-        if universalSpell and ns.MovementAlert then
-            ns.MovementAlert:Notify(unit, movement, universalSpell)
-        end
+        alertPlayerMovement(movement, isVerifiedMovement)
+
+    elseif event == "PLAYER_STARTED_MOVING" then
+        if ns.MovementDetection then ns.MovementDetection:Start() end
+
+    elseif event == "PLAYER_STOPPED_MOVING" then
+        if ns.MovementDetection then ns.MovementDetection:Stop() end
 
     elseif event == "PLAYER_REGEN_DISABLED" then
         if ns.MovementAlert and ns.MovementAlert.StopPreview then ns.MovementAlert:StopPreview() end
@@ -137,6 +148,12 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     end
 end)
 
+frame:SetScript("OnUpdate", function(_, elapsed)
+    local detector = ns.MovementDetection
+    local movement = detector and detector:Sample(elapsed)
+    if movement then alertPlayerMovement(movement, false) end
+end)
+
 for _, e in ipairs({
     "ADDON_LOADED",
     "PLAYER_LOGIN",
@@ -148,6 +165,8 @@ for _, e in ipairs({
     -- Deliberately not SPELL_UPDATE_COOLDOWN: it fires on every GCD. The
     -- player-only UNIT_SPELLCAST_SUCCEEDED registration below is the gate.
     "LOSS_OF_CONTROL_ADDED",
+    "PLAYER_STARTED_MOVING",
+    "PLAYER_STOPPED_MOVING",
     "ENCOUNTER_END",
     "PLAYER_REGEN_DISABLED",
     "PLAYER_REGEN_ENABLED",

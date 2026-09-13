@@ -39,6 +39,8 @@ local function buildReport()
         "Dispel sound: " .. yesNo(dispelSound),
         "Snare-removal sound: " .. yesNo(movementSound),
         "Player movement detection: " .. tostring(ns.Escape and ns.Escape.lastCaptureStatus or "no player events observed"),
+        "Player speed detection: " .. tostring(ns.MovementDetection and ns.MovementDetection.lastStatus
+            or "waiting for player movement"),
         "Player movement text: " .. tostring(ns.MovementAlert and ns.MovementAlert.lastStatus or "no message submitted"),
         "Aura learning: always on",
         "Cell-click audit: " .. yesNo(ns.db.clickAuditEnabled)

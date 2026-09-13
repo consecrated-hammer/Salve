@@ -35,16 +35,18 @@ ns.ESCAPE_AREA = "AREA"   -- ground-area group utility; place it near allies
 -- id, scope, and a note shown in the options so the choice is informed.
 ns.ESCAPE_SPELLS = {
     PALADIN = {
-        { id = 1044,   scope = "ALLY", universalMovement = true,
+        { id = 1044,   scope = "ALLY", impairments = { ROOT = true, SNARE = true, SLOW = true },
             note = "Removes and prevents movement impairment." },
         { id = 1022,   scope = "ALLY", note = "Blessing of Protection — physical effects." },
         { id = 642,    scope = "SELF", note = "Divine Shield — emergency self-clear; causes Forbearance." },
     },
     MONK = {
-        { id = 116841, scope = "ALLY", note = "Tiger's Lust — removes movement impairment." },
+        { id = 116841, scope = "ALLY", impairments = { ROOT = true, SNARE = true, SLOW = true },
+            note = "Tiger's Lust — removes movement impairment." },
     },
     HUNTER = {
-        { id = 54216,  scope = "ALLY", note = "Master's Call — needs a pet out." },
+        { id = 54216,  scope = "ALLY", impairments = { ROOT = true, SNARE = true, SLOW = true },
+            note = "Master's Call — needs a pet out." },
     },
     MAGE = {
         { id = 1953,   scope = "SELF", note = "Blink — breaks roots and snares." },
@@ -58,7 +60,8 @@ ns.ESCAPE_SPELLS = {
             note = "Ice Barrier — Energized Barriers removes snares." },
     },
     DEATHKNIGHT = {
-        { id = 212552, scope = "SELF", note = "Wraith Walk — removes movement impairment." },
+        { id = 212552, scope = "SELF", impairments = { ROOT = true, SNARE = true, SLOW = true },
+            note = "Wraith Walk — removes movement impairment." },
         { id = 48265,  scope = "SELF", note = "Death's Advance — passive resistance if talented." },
     },
     DRUID = {
@@ -66,7 +69,8 @@ ns.ESCAPE_SPELLS = {
         { id = 768,    scope = "SELF", note = "Cat Form — shifting breaks roots." },
     },
     SHAMAN = {
-        { id = 58875,  scope = "SELF", note = "Spirit Walk — Enhancement only." },
+        { id = 58875,  scope = "SELF", impairments = { ROOT = true, SNARE = true, SLOW = true },
+            note = "Spirit Walk — Enhancement only." },
         { id = 2645,   scope = "SELF", note = "Ghost Wolf — breaks snares with the right talent." },
         { id = 192077, scope = "AREA", requires = 462817,
             note = "Wind Rush Totem — Jet Stream removes snares for allies in its area." },
@@ -122,7 +126,7 @@ function Escape:Update()
             if name then
                 list[#list + 1] = {
                     id = entry.id, name = name,
-                    scope = entry.scope, universalMovement = entry.universalMovement,
+                    scope = entry.scope, impairments = entry.impairments,
                     note = entry.note,
                 }
             end
@@ -337,22 +341,27 @@ function Escape:CanWarnForUnit(unit)
     return unit == "player" and self:Active()
 end
 
--- A broadly-worded warning needs a stronger promise than a curated spell-ID
--- match. Blessing of Freedom explicitly removes and prevents movement
--- impairment, so a ROOT or SNARE from Blizzard's loss-of-control feed is
--- enough to alert for the player. Other escapes keep the
--- reviewed-ID gate above: mobility is not proof it answers an arbitrary root.
-function Escape:UniversalMovementAlertSpell(unit, movement)
+-- A broad player warning needs a stronger promise than a curated spell-ID
+-- match. The capability table records only actions whose spell text explicitly
+-- removes the observed impairment; ordinary mobility stays behind the reviewed
+-- catalogue gate above.
+function Escape:MovementAlertSpell(unit, movement)
     if unit ~= "player" then return nil end
-    if not movement or (movement.locType ~= "ROOT" and movement.locType ~= "SNARE") then
+    local kind = movement and (movement.kind or movement.locType)
+    if type(kind) ~= "string" then
         return nil
     end
     for _, spell in ipairs(self:Enabled()) do
-        if spell.universalMovement then
+        if spell.impairments and spell.impairments[kind] then
             return spell
         end
     end
     return nil
+end
+
+-- Compatibility name retained for the event router in older local copies.
+function Escape:UniversalMovementAlertSpell(unit, movement)
+    return self:MovementAlertSpell(unit, movement)
 end
 
 function Escape:DumpCaptured()

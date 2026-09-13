@@ -4,7 +4,7 @@ local function equal(actual, expected, label)
     end
 end
 
-local handler
+local handler, onUpdate
 local registered = {}
 local unitRegistrations = {}
 local timers = {}
@@ -18,11 +18,14 @@ local pendingFlushes = 0
 local movementWarnings = 0
 local movementTextAlerts = 0
 local selfAlertUpdates = 0
+local detectorStarts, detectorStops = 0, 0
+local speedObservation
 
 CreateFrame = function()
     return {
         SetScript = function(_, script, callback)
             if script == "OnEvent" then handler = callback end
+            if script == "OnUpdate" then onUpdate = callback end
         end,
         RegisterEvent = function(_, event)
             registered[event] = true
@@ -49,8 +52,9 @@ local ns = {
                 { locType = "ROOT" }
         end,
         CanWarnForUnit = function(_, unit) return unit == "player" end,
-        UniversalMovementAlertSpell = function(_, unit, movement)
-            if movement and movement.locType == "ROOT" and (unit == "player" or unit == "party1") then
+        MovementAlertSpell = function(_, unit, movement)
+            if movement and (movement.locType == "ROOT" or movement.locType == "SLOW")
+                and (unit == "player" or unit == "party1") then
                 return { id = 1044, name = "Blessing of Freedom" }
             end
         end,
@@ -69,6 +73,12 @@ local ns = {
             equal(spell.id, 1044, "movement text uses Freedom")
             movementTextAlerts = movementTextAlerts + 1
         end,
+    },
+    MovementDetection = {
+        Reset = function() end,
+        Start = function() detectorStarts = detectorStarts + 1 end,
+        Stop = function() detectorStops = detectorStops + 1 end,
+        Sample = function() return speedObservation end,
     },
     SelfAlert = {
         Update = function() selfAlertUpdates = selfAlertUpdates + 1 end,
@@ -105,6 +115,10 @@ equal(registered.PLAYER_REGEN_DISABLED, true,
     "combat start is registered to close preview safely")
 equal(registered.ENCOUNTER_END, true,
     "encounter end is registered to release structural rebuilds")
+equal(registered.PLAYER_STARTED_MOVING, true,
+    "player movement starts the local speed detector")
+equal(registered.PLAYER_STOPPED_MOVING, true,
+    "player movement stops the local speed detector")
 equal(registered.UNIT_PET, nil,
     "pet changes use the player-only unit subscription")
 equal(registered.COMBAT_LOG_EVENT_UNFILTERED, nil,
@@ -160,5 +174,14 @@ equal(movementTextAlerts, 1, "party movement produces no text")
 handler(nil, "LOSS_OF_CONTROL_ADDED", "party1", 5)
 equal(movementWarnings, 1, "non-movement loss of control never triggers Freedom")
 equal(movementTextAlerts, 1, "non-movement loss of control emits no Freedom text")
+
+handler(nil, "PLAYER_STARTED_MOVING")
+handler(nil, "PLAYER_STOPPED_MOVING")
+equal(detectorStarts, 1, "player movement begins speed sampling")
+equal(detectorStops, 1, "player movement ending stops speed sampling")
+speedObservation = { kind = "SLOW", locType = "SLOW" }
+onUpdate(nil, 0.15)
+equal(movementWarnings, 2, "speed observation uses the player warning path")
+equal(movementTextAlerts, 2, "speed observation uses the player text path")
 
 print("event routing tests passed")
