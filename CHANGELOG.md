@@ -5,16 +5,17 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.15-beta] - 2026-09-13
+## [1.5.15] - 2026-09-13
 
-### Changed
+### Added
 
-- Beta builds now include their `-beta` suffix in the in-game add-on version
-  and Salve diagnostics, matching the release tag shown on CurseForge.
 - Player-only speed drops now provide a fallback movement-impairment signal
   when Blizzard emits no root/snare event. Ability capabilities, detection and
   alert presentation are separate; only selected actions that explicitly
   remove movement impairment can answer the generic slow alert.
+- The player cell now highlights the configured movement-removal action while
+  the player is slowed. The cue remains visible while stationary and clears
+  when the readable ground-speed value recovers.
 
 ## [1.5.14] - 2026-09-13
 
