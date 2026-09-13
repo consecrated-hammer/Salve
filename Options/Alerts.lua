@@ -50,7 +50,9 @@ O.NewPage({
             for _, item in ipairs(destinations) do if item.get() then return item.label end end
             return "On-screen text"
         end }, 264)
-    _, y = O.DynamicCycle(panel, "Movement chat tab",
+    local chatTabY = y
+    local chatTabRow
+    chatTabRow, y = O.DynamicDropdown(panel, "Movement chat tab",
         "Click to cycle through your chat tabs. Used for Chat window or Both. A closed tab falls back to the default window.", y,
         function()
             if ns.MovementAlert then return ns.MovementAlert:ChatWindows() end
@@ -58,15 +60,16 @@ O.NewPage({
         end,
         function() return tonumber(ns.db.movementChatWindow) or 0 end,
         function(value) ns.Set("movementChatWindow", value) end)
+    local previewY = y
     local preview = O.Button(panel, 220, 24)
-    preview:SetPoint("TOPLEFT", 16, y)
+    preview:SetPoint("TOPLEFT", 16, previewY)
     preview:SetText("Preview / move movement text")
     preview:SetScript("OnClick", function() ns.MovementAlert:TogglePreview() end)
     panel:HookScript("OnHide", function()
         if ns.MovementAlert then ns.MovementAlert:StopPreview() end
     end)
-    y = y - 32
-    _, y = O.Check(panel, "Show self-dispel combat text",
+    local selfDispelRow
+    selfDispelRow, y = O.Check(panel, "Show self-dispel combat text",
         "Show an instruction when a reviewed scripted dispel reaches you. It never marks a party member or a Salve cell.", y,
         function() return ns.db.selfDispelNotification end,
         function(value) ns.Set("selfDispelNotification", value) end)
@@ -144,7 +147,14 @@ O.NewPage({
         end
         placeLabel(dispelRow)
         placeLabel(movementRow)
-        local y0 = y
+        local usesChat = (ns.db.movementTextOutput or "SCREEN") ~= "SCREEN"
+        chatTabRow:SetShown(usesChat)
+        local adjustedPreviewY = usesChat and previewY or chatTabY
+        preview:ClearAllPoints()
+        preview:SetPoint("TOPLEFT", 16, adjustedPreviewY)
+        selfDispelRow:ClearAllPoints()
+        selfDispelRow:SetPoint("TOPLEFT", 16, adjustedPreviewY - 32)
+        local y0 = adjustedPreviewY - 66
         soundDetails:ClearAllPoints()
         soundDetails:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, y0)
         if anySoundEnabled then y0 = y0 - soundDetailsHeight end

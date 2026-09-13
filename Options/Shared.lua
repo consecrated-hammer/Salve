@@ -681,13 +681,25 @@ function Options.Dropdown(panel, label, hint, y, values, labels, get, set, width
     return row, y - 34
 end
 
--- Like Cycle, but the option list is rebuilt every time it is drawn or clicked.
--- Needed wherever the choices depend on game state: the pages are built once at
--- ADDON_LOADED, while the spells you know change with every specialisation.
-function Options.DynamicCycle(panel, label, hint, y, optionsFn, get, set)
+-- A dropdown whose choices can change after the page is built. Chat windows and
+-- known spells are session state, so cycling a button is both hard to discover
+-- and too easy to overshoot.
+function Options.DynamicDropdown(panel, label, hint, y, optionsFn, get, set)
     local row = Options.Row(panel, y, 28, label, hint)
-    local btn = Options.Button(row, 190, 22)
+    local btn = Options.SelectButton(row, 190, 22)
     btn:SetPoint("RIGHT", row, "RIGHT", -8, 0)
+    btn.Text:ClearAllPoints()
+    btn.Text:SetPoint("LEFT", 10, 0)
+    btn.Text:SetPoint("RIGHT", -26, 0)
+    btn.Text:SetJustifyH("LEFT")
+
+    for _, spec in ipairs({ { -13, 2, -0.75 }, { -8, 2, 0.75 } }) do
+        local arrow = btn:CreateTexture(nil, "OVERLAY")
+        arrow:SetSize(7, 1)
+        arrow:SetPoint("RIGHT", spec[1], spec[2])
+        arrow:SetColorTexture(unpack(THEME.muted))
+        if arrow.SetRotation then arrow:SetRotation(spec[3]) end
+    end
 
     local function render()
         local values, labels = optionsFn()
@@ -700,21 +712,76 @@ function Options.DynamicCycle(panel, label, hint, y, optionsFn, get, set)
         btn:SetText(labels[1] or "—")
     end
 
-    btn:SetScript("OnClick", function()
-        local values = optionsFn()
-        if #values == 0 then return end
-        local cur = get()
-        for i, v in ipairs(values) do
-            if v == cur then
-                set(values[(i % #values) + 1])
-                render()
-                refreshAll(panel)
-                return
+    local menu, dismiss, items = nil, nil, {}
+    local function ensureMenu()
+        if menu then return end
+        dismiss = CreateFrame("Button", nil, UIParent)
+        dismiss:SetFrameStrata("FULLSCREEN_DIALOG")
+        dismiss:SetFrameLevel(199)
+        dismiss:SetAllPoints(UIParent)
+        dismiss:EnableMouse(true)
+        menu = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+        menu:SetFrameStrata("FULLSCREEN_DIALOG")
+        menu:SetFrameLevel(200)
+        menu:SetClampedToScreen(true)
+        menu:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            edgeSize = 1,
+        })
+        menu:SetBackdropColor(0.020, 0.027, 0.039, 1)
+        menu:SetBackdropBorderColor(unpack(THEME.menuEdge))
+        menu:SetScript("OnHide", function() dismiss:Hide() end)
+        dismiss:SetScript("OnClick", function() menu:Hide() end)
+    end
+
+    local function refreshMenu()
+        local values, labels = optionsFn()
+        menu:SetSize(190, math.max(1, #values) * 26 + 10)
+        for index, value in ipairs(values) do
+            local item = items[index]
+            if not item then
+                item = CreateFrame("Button", nil, menu, "BackdropTemplate")
+                item:SetSize(180, 24)
+                item:SetPoint("TOPLEFT", 5, -5 - (index - 1) * 26)
+                item:SetBackdrop({
+                    bgFile = "Interface\\Buttons\\WHITE8X8",
+                    edgeFile = "Interface\\Buttons\\WHITE8X8",
+                    edgeSize = 1,
+                })
+                item.activeBar = item:CreateTexture(nil, "ARTWORK")
+                item.activeBar:SetPoint("TOPLEFT")
+                item.activeBar:SetPoint("BOTTOMLEFT")
+                item.activeBar:SetWidth(3)
+                item.activeBar:SetColorTexture(unpack(THEME.selected))
+                item.label = item:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+                item.label:SetPoint("LEFT", 10, 0)
+                item.label:SetPoint("RIGHT", -8, 0)
+                item.label:SetJustifyH("LEFT")
+                item:SetScript("OnClick", function(self)
+                    set(self.value)
+                    render()
+                    refreshAll(panel)
+                    menu:Hide()
+                end)
+                items[index] = item
             end
+            item.value = value
+            item.label:SetText(labels[index] or "—")
+            item.activeBar:SetShown(get() == value)
+            item:SetShown(true)
         end
-        set(values[1])
-        render()
-        refreshAll(panel)
+        for index = #values + 1, #items do items[index]:Hide() end
+    end
+
+    btn:SetScript("OnClick", function()
+        ensureMenu()
+        if menu:IsShown() then menu:Hide(); return end
+        refreshMenu()
+        menu:ClearAllPoints()
+        menu:SetPoint("TOPLEFT", btn, "BOTTOMLEFT", 0, -5)
+        dismiss:Show()
+        menu:Show()
     end)
 
     attachHint(btn, label, hint)

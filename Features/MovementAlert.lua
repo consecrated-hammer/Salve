@@ -90,7 +90,7 @@ function MovementAlert:TogglePreview()
     if InCombatLockdown and InCombatLockdown() then return end
     self:Position()
     self.preview = true
-    self.frame.text:SetText("YOU ROOTED - BLESSING OF FREEDOM\nDrag to position; click Preview again to finish")
+    self.frame.text:SetText("YOU ARE ROOTED — BLESSING OF FREEDOM\nDrag to position; click Preview again to finish")
     self.frame:EnableMouse(true)
     self.frame:Show()
 end
