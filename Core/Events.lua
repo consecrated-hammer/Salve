@@ -132,6 +132,12 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         if ns.MovementDetection then
             alertPlayerMovement(ns.MovementDetection:CheckRecovery(), false)
             ns.MovementDetection:Stop()
+            -- Ground-area speed changes can arrive one frame after the player
+            -- releases movement. Recheck shortly afterwards so a prompt does
+            -- not stay latched after walking out of a hazard and stopping.
+            C_Timer.After(0.20, function()
+                alertPlayerMovement(ns.MovementDetection:CheckRecovery(), false)
+            end)
         end
 
     elseif event == "PLAYER_REGEN_DISABLED" then
