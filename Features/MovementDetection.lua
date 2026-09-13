@@ -2,7 +2,8 @@ local addonName, ns = ...
 
 -- Player-only movement signals. This knows nothing about classes, spells,
 -- locations or output; it only emits a conservative SLOW observation when
--- Blizzard reports the player's maximum ground speed has dropped sharply.
+-- Blizzard reports the player's ground-speed value has dropped sharply.  That
+-- value remains meaningful while standing still; current travel speed does not.
 ns.MovementDetection = {}
 local Detector = ns.MovementDetection
 
@@ -17,8 +18,8 @@ end
 
 function Detector:Reset()
     self.elapsed, self.baseline, self.alerted = 0, nil, false
-    self.active = false
-    self.lastStatus = "waiting for player movement"
+    self.active = true
+    self.lastStatus = "monitoring player ground speed"
 end
 
 function Detector:Start()
@@ -26,12 +27,11 @@ function Detector:Start()
 end
 
 function Detector:Stop()
-    self.active = false
-    self.elapsed = 0
-    if not self.alerted then return nil end
-    self.alerted = false
-    self.lastStatus = "movement stopped; cue cleared"
-    return { kind = "CLEAR" }
+    -- GetUnitSpeed's current-speed result becomes zero at rest, but its
+    -- run-speed result still represents the active ground-speed modifier.
+    -- Continue sampling it so a persistent area effect remains actionable
+    -- while the player stands still, and clears once it really ends.
+    self.lastStatus = "stationary; monitoring ground speed"
 end
 
 function Detector:AcknowledgeRemoval()
@@ -56,13 +56,13 @@ function Detector:Sample(elapsed)
         return nil
     end
 
-    local ok, current, runSpeed = pcall(GetUnitSpeed, "player")
+    local ok, _, runSpeed = pcall(GetUnitSpeed, "player")
     if not ok then
         self.lastStatus = "player speed unavailable or secret"
         return nil
     end
-    current, runSpeed = plain(current), plain(runSpeed)
-    if type(current) ~= "number" or type(runSpeed) ~= "number" or current <= 0 or runSpeed <= 0 then
+    runSpeed = plain(runSpeed)
+    if type(runSpeed) ~= "number" or runSpeed <= 0 then
         self.lastStatus = "player speed unavailable or secret"
         return nil
     end

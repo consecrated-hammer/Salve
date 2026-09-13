@@ -120,9 +120,9 @@ equal(registered.PLAYER_REGEN_DISABLED, true,
 equal(registered.ENCOUNTER_END, true,
     "encounter end is registered to release structural rebuilds")
 equal(registered.PLAYER_STARTED_MOVING, true,
-    "player movement starts the local speed detector")
+    "player movement keeps the local speed detector active")
 equal(registered.PLAYER_STOPPED_MOVING, true,
-    "player movement stops the local speed detector")
+    "player movement ending preserves ground-speed monitoring")
 equal(registered.UNIT_PET, nil,
     "pet changes use the player-only unit subscription")
 equal(registered.COMBAT_LOG_EVENT_UNFILTERED, nil,
@@ -182,7 +182,7 @@ equal(movementTextAlerts, 1, "non-movement loss of control emits no Freedom text
 handler(nil, "PLAYER_STARTED_MOVING")
 handler(nil, "PLAYER_STOPPED_MOVING")
 equal(detectorStarts, 1, "player movement begins speed sampling")
-equal(detectorStops, 1, "player movement ending stops speed sampling")
+equal(detectorStops, 1, "player movement ending preserves speed monitoring")
 speedObservation = { kind = "SLOW", locType = "SLOW" }
 onUpdate(nil, 0.15)
 equal(movementWarnings, 2, "speed observation uses the player warning path")
