@@ -22,18 +22,6 @@ function Detector:Reset()
     self.lastStatus = "monitoring player ground speed"
 end
 
-function Detector:Start()
-    self.active = true
-end
-
-function Detector:Stop()
-    -- GetUnitSpeed's current-speed result becomes zero at rest, but its
-    -- run-speed result still represents the active ground-speed modifier.
-    -- Continue sampling it so a persistent area effect remains actionable
-    -- while the player stands still, and clears once it really ends.
-    self.lastStatus = "stationary; monitoring ground speed"
-end
-
 function Detector:AcknowledgeRemoval()
     if not self.alerted then return nil end
     self.alerted = false
@@ -62,12 +50,21 @@ function Detector:Sample(elapsed)
         return nil
     end
     runSpeed = plain(runSpeed)
-    if type(runSpeed) ~= "number" or runSpeed <= 0 then
+    if type(runSpeed) ~= "number" then
         self.lastStatus = "player speed unavailable or secret"
         return nil
     end
-    if not self.baseline or runSpeed > self.baseline then
-        self.baseline, self.alerted = runSpeed, false
+
+    -- Establish one normal reference per zone, then retain it.  Raising the
+    -- reference for a temporary speed boost would turn ordinary speed after
+    -- that boost expires into a permanent false slow.  A zero run speed is a
+    -- valid severe impairment once a positive reference is known.
+    if not self.baseline then
+        if runSpeed <= 0 then
+            self.lastStatus = "awaiting a normal ground-speed reference"
+            return nil
+        end
+        self.baseline = runSpeed
         self.lastStatus = ("normal run speed %.2f"):format(runSpeed)
         return nil
     end
@@ -78,7 +75,10 @@ function Detector:Sample(elapsed)
         self.lastStatus = ("normal run speed %.2f"):format(runSpeed)
         return wasAlerted and { kind = "CLEAR" } or nil
     end
-    if self.alerted or runSpeed > self.baseline * DROP_RATIO then return nil end
+    if self.alerted or runSpeed > self.baseline * DROP_RATIO then
+        self.lastStatus = ("normal run speed %.2f"):format(runSpeed)
+        return nil
+    end
     self.alerted = true
     self.lastStatus = ("speed reduced to %.2f from %.2f"):format(runSpeed, self.baseline)
     return { kind = "SLOW", locType = "SLOW", baseline = self.baseline, runSpeed = runSpeed }

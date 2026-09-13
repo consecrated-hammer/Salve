@@ -26,7 +26,8 @@ local function alertPlayerMovement(movement, isVerifiedMovement)
     if spell and ns.MovementAlert then
         ns.MovementAlert:Notify("player", movement, spell)
     end
-    if spell and movement and movement.kind == "SLOW" and ns.Panel then
+    if spell and movement and (movement.kind == "SLOW"
+        or movement.locType == "ROOT" or movement.locType == "SNARE") and ns.Panel then
         ns.Panel:SetMovementPrompt(spell, true)
     end
 end
@@ -125,14 +126,6 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         local _, isVerifiedMovement, movement = ns.Escape:CaptureLossOfControl(unit, effectIndex)
         alertPlayerMovement(movement, isVerifiedMovement)
 
-    elseif event == "PLAYER_STARTED_MOVING" then
-        if ns.MovementDetection then ns.MovementDetection:Start() end
-
-    elseif event == "PLAYER_STOPPED_MOVING" then
-        if ns.MovementDetection then
-            alertPlayerMovement(ns.MovementDetection:Stop(), false)
-        end
-
     elseif event == "PLAYER_REGEN_DISABLED" then
         if ns.MovementAlert and ns.MovementAlert.StopPreview then ns.MovementAlert:StopPreview() end
         -- Test cells are intentionally non-secure, but a preview must never
@@ -178,8 +171,6 @@ for _, e in ipairs({
     -- Deliberately not SPELL_UPDATE_COOLDOWN: it fires on every GCD. The
     -- player-only UNIT_SPELLCAST_SUCCEEDED registration below is the gate.
     "LOSS_OF_CONTROL_ADDED",
-    "PLAYER_STARTED_MOVING",
-    "PLAYER_STOPPED_MOVING",
     "ENCOUNTER_END",
     "PLAYER_REGEN_DISABLED",
     "PLAYER_REGEN_ENABLED",

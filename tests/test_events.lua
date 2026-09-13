@@ -17,8 +17,8 @@ local dispelRefreshes = 0
 local pendingFlushes = 0
 local movementWarnings = 0
 local movementTextAlerts = 0
+local movementPrompts = 0
 local selfAlertUpdates = 0
-local detectorStarts, detectorStops = 0, 0
 local speedObservation
 
 CreateFrame = function()
@@ -74,13 +74,19 @@ local ns = {
             movementTextAlerts = movementTextAlerts + 1
         end,
     },
+    Panel = {
+        SetMovementPrompt = function(_, spell, active)
+            if not active then
+                equal(spell, nil, "clearing a movement prompt has no spell")
+                return
+            end
+            equal(spell.id, 1044, "movement prompt uses Freedom")
+            equal(active, true, "movement prompt is enabled")
+            movementPrompts = movementPrompts + 1
+        end,
+    },
     MovementDetection = {
         Reset = function() end,
-        Start = function() detectorStarts = detectorStarts + 1 end,
-        Stop = function()
-            detectorStops = detectorStops + 1
-            return { kind = "CLEAR" }
-        end,
         AcknowledgeRemoval = function() return { kind = "CLEAR" } end,
         Sample = function() return speedObservation end,
     },
@@ -119,10 +125,10 @@ equal(registered.PLAYER_REGEN_DISABLED, true,
     "combat start is registered to close preview safely")
 equal(registered.ENCOUNTER_END, true,
     "encounter end is registered to release structural rebuilds")
-equal(registered.PLAYER_STARTED_MOVING, true,
-    "player movement keeps the local speed detector active")
-equal(registered.PLAYER_STOPPED_MOVING, true,
-    "player movement ending preserves ground-speed monitoring")
+equal(registered.PLAYER_STARTED_MOVING, nil,
+    "ground-speed detector does not depend on movement start events")
+equal(registered.PLAYER_STOPPED_MOVING, nil,
+    "ground-speed detector continues sampling while stationary")
 equal(registered.UNIT_PET, nil,
     "pet changes use the player-only unit subscription")
 equal(registered.COMBAT_LOG_EVENT_UNFILTERED, nil,
@@ -172,6 +178,7 @@ equal(#timers, 3, "another unit's dispel does not schedule a sweep")
 handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
 equal(movementWarnings, 1, "player movement impairment plays one warning")
 equal(movementTextAlerts, 1, "player movement impairment receives Freedom text")
+equal(movementPrompts, 1, "player root receives the movement action prompt")
 handler(nil, "LOSS_OF_CONTROL_ADDED", "party1", 4)
 equal(movementWarnings, 1, "party movement is ignored")
 equal(movementTextAlerts, 1, "party movement produces no text")
@@ -179,13 +186,10 @@ handler(nil, "LOSS_OF_CONTROL_ADDED", "party1", 5)
 equal(movementWarnings, 1, "non-movement loss of control never triggers Freedom")
 equal(movementTextAlerts, 1, "non-movement loss of control emits no Freedom text")
 
-handler(nil, "PLAYER_STARTED_MOVING")
-handler(nil, "PLAYER_STOPPED_MOVING")
-equal(detectorStarts, 1, "player movement begins speed sampling")
-equal(detectorStops, 1, "player movement ending preserves speed monitoring")
 speedObservation = { kind = "SLOW", locType = "SLOW" }
 onUpdate(nil, 0.15)
 equal(movementWarnings, 2, "speed observation uses the player warning path")
 equal(movementTextAlerts, 2, "speed observation uses the player text path")
+equal(movementPrompts, 2, "speed observation receives the movement action prompt")
 
 print("event routing tests passed")

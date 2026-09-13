@@ -17,6 +17,12 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the player is slowed. The cue remains visible while stationary and clears
   when the readable ground-speed value recovers.
 
+### Fixed
+
+- Movement-speed detection keeps a stable normal reference through temporary
+  speed boosts, detects a zero ground-speed impairment, and uses the same
+  player-cell action cue for reported roots and snares.
+
 ## [1.5.14] - 2026-09-13
 
 ### Changed
