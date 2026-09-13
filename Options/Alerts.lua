@@ -53,7 +53,7 @@ O.NewPage({
     local chatTabY = y
     local chatTabRow
     chatTabRow, y = O.DynamicDropdown(panel, "Movement chat tab",
-        "Click to cycle through your chat tabs. Used for Chat window or Both. A closed tab falls back to the default window.", y,
+        "Choose the chat tab used for Chat window or Both. A closed tab falls back to the default window.", y,
         function()
             if ns.MovementAlert then return ns.MovementAlert:ChatWindows() end
             return { 0 }, { "Default chat window" }

@@ -685,9 +685,13 @@ end
 -- known spells are session state, so cycling a button is both hard to discover
 -- and too easy to overshoot.
 function Options.DynamicDropdown(panel, label, hint, y, optionsFn, get, set)
-    local row = Options.Row(panel, y, 28, label, hint)
-    local btn = Options.SelectButton(row, 190, 22)
-    btn:SetPoint("RIGHT", row, "RIGHT", -8, 0)
+    local row = Options.Row(panel, y, 54, nil, hint)
+    local title = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    title:SetPoint("TOPLEFT", 0, 0)
+    title:SetText(label)
+    title:SetTextColor(unpack(THEME.muted))
+    local btn = Options.SelectButton(row, 264, 30)
+    btn:SetPoint("TOPLEFT", 0, -15)
     btn.Text:ClearAllPoints()
     btn.Text:SetPoint("LEFT", 10, 0)
     btn.Text:SetPoint("RIGHT", -26, 0)
@@ -737,12 +741,13 @@ function Options.DynamicDropdown(panel, label, hint, y, optionsFn, get, set)
 
     local function refreshMenu()
         local values, labels = optionsFn()
-        menu:SetSize(190, math.max(1, #values) * 26 + 10)
+        local menuWidth = btn:GetWidth() or 264
+        menu:SetSize(menuWidth, math.max(1, #values) * 26 + 10)
         for index, value in ipairs(values) do
             local item = items[index]
             if not item then
                 item = CreateFrame("Button", nil, menu, "BackdropTemplate")
-                item:SetSize(180, 24)
+                item:SetSize(menuWidth - 10, 24)
                 item:SetPoint("TOPLEFT", 5, -5 - (index - 1) * 26)
                 item:SetBackdrop({
                     bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -785,11 +790,12 @@ function Options.DynamicDropdown(panel, label, hint, y, optionsFn, get, set)
     end)
 
     attachHint(btn, label, hint)
+    attachTitleHint(row, title, label, hint)
 
     panel.salveRefresh[#panel.salveRefresh + 1] = render
     render()
 
-    return row, y - 34
+    return row, y - 54
 end
 
 -- A compact custom menu that can mix mutually exclusive base modes with
