@@ -297,17 +297,27 @@ function Escape:CaptureLossOfControl(unit, effectIndex)
         self.lastCaptureStatus = "movement classification unavailable or secret"
         return false, false
     end
+    -- Loss-of-control entries are transient: by the time a player opens a
+    -- diagnostic window, GetActiveLossOfControlData commonly returns nothing.
+    -- Preserve the readable classification here so an unfamiliar hazard can
+    -- be evaluated from a report without guessing from its dungeon or name.
+    local spellID = plain(data.spellID)
+    local displayText = plain(data.displayText)
     if locType ~= "ROOT" and locType ~= "SNARE" then
-        self.lastCaptureStatus = "not a root or snare"
+        local detail = tostring(locType)
+        if type(spellID) == "number" then detail = detail .. ", spell " .. spellID end
+        if type(displayText) == "string" and displayText ~= "" then
+            detail = detail .. " (" .. displayText .. ")"
+        end
+        self.lastCaptureStatus = "not a root or snare: " .. detail
         return false, false
     end
     self.lastCaptureStatus = "player " .. locType .. " detected"
 
     ns.learned.movement = ns.learned.movement or {}
-    local spellID = plain(data.spellID)
     local movement = {
         spellID = spellID,
-        name = plain(data.displayText),
+        name = displayText,
         locType = locType,
     }
     -- The second result says the effect is reviewed for the live overlay and

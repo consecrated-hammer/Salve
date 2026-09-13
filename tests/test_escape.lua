@@ -88,6 +88,8 @@ record = { locType = "STUN", spellID = 23456, displayText = "Test Stun" }
 equal(ns.Escape:CaptureLossOfControl("player", 2), false,
     "non-movement loss of control is ignored")
 equal(ns.learned.movement[23456], nil, "stun is not stored")
+equal(ns.Escape.lastCaptureStatus, "not a root or snare: STUN, spell 23456 (Test Stun)",
+    "non-movement diagnostic preserves the transient event details")
 
 ns.db.learnMode = false
 record = { locType = "SNARE", spellID = 34567, displayText = "Test Snare" }
