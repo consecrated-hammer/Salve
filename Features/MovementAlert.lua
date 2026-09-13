@@ -88,6 +88,12 @@ end
 function MovementAlert:TogglePreview()
     if self.preview then self:StopPreview() return end
     if InCombatLockdown and InCombatLockdown() then return end
+    local message = "|cffffa020YOU ARE ROOTED — BLESSING OF FREEDOM|r"
+    local destination = ns.db.movementTextOutput or "SCREEN"
+    if destination == "CHAT" or destination == "BOTH" then
+        self:PrintChat(message)
+        if destination == "CHAT" then return end
+    end
     self:Position()
     self.preview = true
     self.frame.text:SetText("YOU ARE ROOTED — BLESSING OF FREEDOM\nDrag to position; click Preview again to finish")

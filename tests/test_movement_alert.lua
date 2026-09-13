@@ -69,6 +69,7 @@ assert(not shown)
 ns.MovementAlert:TogglePreview()
 assert(shown and mouse and ns.MovementAlert.preview)
 assert(screenMessage:find("YOU ARE ROOTED", 1, true), "preview uses the live alert grammar")
+assert(#emitted == 6, "both-destination preview also prints to local chat")
 scripts.OnDragStop()
 assert(ns.db.movementTextX == 50 and ns.db.movementTextY == 200)
 ns.MovementAlert:StopPreview()
@@ -85,11 +86,14 @@ SendChatMessage = function() error("notifications must never send chat") end
 ns.db.movementTextOutput, ns.db.movementChatWindow = "CHAT", 3
 assert(ns.MovementAlert:Notify("player", { locType = "ROOT" }, { name = "Freedom" }))
 assert(#tabMessages == 1 and #defaultMessages == 0)
+ns.MovementAlert:TogglePreview()
+assert(#tabMessages == 2 and not shown and not ns.MovementAlert.preview,
+    "chat-only preview uses the selected chat tab without an on-screen preview")
 local values, labels = ns.MovementAlert:ChatWindows()
 assert(values[2] == 3 and labels[2] == "My alerts (3)")
 tabName = "Renamed alerts"
 assert(select(2, ns.MovementAlert:ChatWindows())[2] == "Renamed alerts (3)")
 tabName = ""
 ns.MovementAlert:PrintChat("fallback")
-assert(#tabMessages == 1 and #defaultMessages == 1)
+assert(#tabMessages == 2 and #defaultMessages == 1)
 assert(select(2, ns.MovementAlert:ChatWindows())[2] == "Missing tab; using default")

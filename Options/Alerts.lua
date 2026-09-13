@@ -63,11 +63,20 @@ O.NewPage({
     local previewY = y
     local preview = O.Button(panel, 220, 24)
     preview:SetPoint("TOPLEFT", 16, previewY)
-    preview:SetText("Preview / move movement text")
+    local function previewLabel()
+        local destination = ns.db.movementTextOutput or "SCREEN"
+        if destination == "CHAT" then return "Preview movement text in chat" end
+        if destination == "BOTH" then return "Preview / move text + chat" end
+        return "Preview / move movement text"
+    end
+    preview:SetText(previewLabel())
     preview:SetScript("OnClick", function() ns.MovementAlert:TogglePreview() end)
     panel:HookScript("OnHide", function()
         if ns.MovementAlert then ns.MovementAlert:StopPreview() end
     end)
+    panel.salveRefresh[#panel.salveRefresh + 1] = function()
+        preview:SetText(previewLabel())
+    end
     local selfDispelRow
     selfDispelRow, y = O.Check(panel, "Show self-dispel combat text",
         "Show an instruction when a reviewed scripted dispel reaches you. It never marks a party member or a Salve cell.", y,
