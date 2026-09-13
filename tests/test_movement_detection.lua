@@ -33,9 +33,6 @@ assert(detector:Sample(0.15), "a later new speed drop alerts again")
 equal(detector:AcknowledgeRemoval().kind, "CLEAR", "using the suggested movement action clears its cue")
 
 detector.alerted = true
-current, runSpeed = 8.33, 8.33
-equal(detector:CheckRecovery().kind, "CLEAR", "stopping at normal speed clears a stale cue")
-
-detector:Stop()
+equal(detector:Stop().kind, "CLEAR", "stopping clears the transient movement cue")
 equal(detector:Sample(1), nil, "stopped movement never samples speed")
 print("movement detection tests passed")

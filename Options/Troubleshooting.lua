@@ -7,7 +7,7 @@ end
 
 local function moduleStatus()
     if not ns.Sound:NeedsData() then return "off" end
-    return ns.Sound.activeModule or "built-in catalogue unavailable"
+    return ns.Sound.activeModule or "no built-in data for this instance"
 end
 
 local function statusText()

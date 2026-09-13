@@ -77,9 +77,11 @@ local ns = {
     MovementDetection = {
         Reset = function() end,
         Start = function() detectorStarts = detectorStarts + 1 end,
-        Stop = function() detectorStops = detectorStops + 1 end,
+        Stop = function()
+            detectorStops = detectorStops + 1
+            return { kind = "CLEAR" }
+        end,
         AcknowledgeRemoval = function() return { kind = "CLEAR" } end,
-        CheckRecovery = function() return nil end,
         Sample = function() return speedObservation end,
     },
     SelfAlert = {
@@ -181,9 +183,6 @@ handler(nil, "PLAYER_STARTED_MOVING")
 handler(nil, "PLAYER_STOPPED_MOVING")
 equal(detectorStarts, 1, "player movement begins speed sampling")
 equal(detectorStops, 1, "player movement ending stops speed sampling")
-equal(#timers, 4, "stopping schedules a deferred speed-recovery check")
-equal(timers[4].delay, 0.20, "speed recovery waits for the client state to settle")
-timers[4].callback()
 speedObservation = { kind = "SLOW", locType = "SLOW" }
 onUpdate(nil, 0.15)
 equal(movementWarnings, 2, "speed observation uses the player warning path")
