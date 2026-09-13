@@ -77,6 +77,7 @@ O.NewPage({
     panel.salveRefresh[#panel.salveRefresh + 1] = function()
         preview:SetText(previewLabel())
     end
+    y = y - 32
     local selfDispelRow
     selfDispelRow, y = O.Check(panel, "Show self-dispel combat text",
         "Show an instruction when a reviewed scripted dispel reaches you. It never marks a party member or a Salve cell.", y,
@@ -157,6 +158,7 @@ O.NewPage({
         placeLabel(dispelRow)
         placeLabel(movementRow)
         local usesChat = (ns.db.movementTextOutput or "SCREEN") ~= "SCREEN"
+        if not usesChat and chatTabRow.salveCloseMenu then chatTabRow.salveCloseMenu() end
         chatTabRow:SetShown(usesChat)
         local adjustedPreviewY = usesChat and previewY or chatTabY
         preview:ClearAllPoints()

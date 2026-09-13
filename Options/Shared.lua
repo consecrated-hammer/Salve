@@ -686,6 +686,7 @@ end
 -- and too easy to overshoot.
 function Options.DynamicDropdown(panel, label, hint, y, optionsFn, get, set)
     local row = Options.Row(panel, y, 54, nil, hint)
+    row.salveHintTitle = label
     local title = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     title:SetPoint("TOPLEFT", 0, 0)
     title:SetText(label)
@@ -717,6 +718,9 @@ function Options.DynamicDropdown(panel, label, hint, y, optionsFn, get, set)
     end
 
     local menu, dismiss, items = nil, nil, {}
+    row.salveCloseMenu = function()
+        if menu then menu:Hide() end
+    end
     local function ensureMenu()
         if menu then return end
         dismiss = CreateFrame("Button", nil, UIParent)

@@ -5,6 +5,20 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.16] - 2026-09-13
+
+### Changed
+
+- The movement chat-tab setting is now a standard dropdown, shown only when
+  movement text includes chat output.
+- Movement-text previews now honour the selected destination: on-screen,
+  selected chat tab, or both.
+
+### Fixed
+
+- Preview wording now matches live alerts: “YOU ARE ROOTED”.
+- Dynamic chat-tab dropdown options now use Salve's standard dark menu styling.
+
 ## [1.5.15] - 2026-09-13
 
 ### Added
