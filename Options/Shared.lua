@@ -743,6 +743,14 @@ function Options.DynamicDropdown(panel, label, hint, y, optionsFn, get, set)
         local values, labels = optionsFn()
         local menuWidth = btn:GetWidth() or 264
         menu:SetSize(menuWidth, math.max(1, #values) * 26 + 10)
+        local function paint(item, active, hovered)
+            item:SetBackdropColor(unpack((active or hovered)
+                and THEME.menuActive or THEME.rail))
+            item:SetBackdropBorderColor(0, 0, 0, 0)
+            item.activeBar:SetShown(active)
+            item.label:SetTextColor(active and 1 or THEME.muted[1],
+                active and 1 or THEME.muted[2], active and 1 or THEME.muted[3])
+        end
         for index, value in ipairs(values) do
             local item = items[index]
             if not item then
@@ -763,6 +771,12 @@ function Options.DynamicDropdown(panel, label, hint, y, optionsFn, get, set)
                 item.label:SetPoint("LEFT", 10, 0)
                 item.label:SetPoint("RIGHT", -8, 0)
                 item.label:SetJustifyH("LEFT")
+                item:HookScript("OnEnter", function(self)
+                    paint(self, get() == self.value, true)
+                end)
+                item:HookScript("OnLeave", function(self)
+                    paint(self, get() == self.value, false)
+                end)
                 item:SetScript("OnClick", function(self)
                     set(self.value)
                     render()
@@ -773,7 +787,7 @@ function Options.DynamicDropdown(panel, label, hint, y, optionsFn, get, set)
             end
             item.value = value
             item.label:SetText(labels[index] or "—")
-            item.activeBar:SetShown(get() == value)
+            paint(item, get() == value, false)
             item:SetShown(true)
         end
         for index = #values + 1, #items do items[index]:Hide() end
