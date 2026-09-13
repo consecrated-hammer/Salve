@@ -5,6 +5,13 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.15-beta] - 2026-09-13
+
+### Changed
+
+- Beta builds now include their `-beta` suffix in the in-game add-on version
+  and Salve diagnostics, matching the release tag shown on CurseForge.
+
 ## [1.5.14] - 2026-09-13
 
 ### Changed
