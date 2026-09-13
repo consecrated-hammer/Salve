@@ -30,6 +30,26 @@ function Detector:Stop()
     self.elapsed = 0
 end
 
+function Detector:AcknowledgeRemoval()
+    if not self.alerted then return nil end
+    self.alerted = false
+    self.lastStatus = "movement action used; awaiting speed recovery"
+    return { kind = "CLEAR" }
+end
+
+-- Stopping outside a ground hazard makes currentSpeed zero, but runSpeed is
+-- still a readable maximum. Use it solely to clear an already-issued prompt;
+-- a stopped player can never create a new slow alert from this path.
+function Detector:CheckRecovery()
+    if not self.alerted or not self.baseline or type(GetUnitSpeed) ~= "function" then return nil end
+    local ok, _, runSpeed = pcall(GetUnitSpeed, "player")
+    runSpeed = ok and plain(runSpeed) or nil
+    if type(runSpeed) ~= "number" or runSpeed < self.baseline * RECOVERY_RATIO then return nil end
+    self.alerted = false
+    self.lastStatus = ("normal run speed %.2f"):format(runSpeed)
+    return { kind = "CLEAR" }
+end
+
 function Detector:Sample(elapsed)
     if not self.active then return nil end
     self.elapsed = (self.elapsed or 0) + (tonumber(elapsed) or 0)
@@ -45,7 +65,11 @@ function Detector:Sample(elapsed)
         return nil
     end
 
-    local current, runSpeed = GetUnitSpeed("player")
+    local ok, current, runSpeed = pcall(GetUnitSpeed, "player")
+    if not ok then
+        self.lastStatus = "player speed unavailable or secret"
+        return nil
+    end
     current, runSpeed = plain(current), plain(runSpeed)
     if type(current) ~= "number" or type(runSpeed) ~= "number" or current <= 0 or runSpeed <= 0 then
         self.lastStatus = "player speed unavailable or secret"

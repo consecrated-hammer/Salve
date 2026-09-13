@@ -99,6 +99,9 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- commit the real Cleanse/Purify/etc. cooldown first.
         local movementSpellID = ns.Binding:ObserveMovementCast(arg1, arg3)
         if movementSpellID then
+            if ns.MovementDetection then
+                alertPlayerMovement(ns.MovementDetection:AcknowledgeRemoval(), false)
+            end
             C_Timer.After(0, function()
                 ns.Binding:RefreshMovementCooldowns("deferred player movement removal",
                     movementSpellID)
@@ -126,7 +129,10 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         if ns.MovementDetection then ns.MovementDetection:Start() end
 
     elseif event == "PLAYER_STOPPED_MOVING" then
-        if ns.MovementDetection then ns.MovementDetection:Stop() end
+        if ns.MovementDetection then
+            alertPlayerMovement(ns.MovementDetection:CheckRecovery(), false)
+            ns.MovementDetection:Stop()
+        end
 
     elseif event == "PLAYER_REGEN_DISABLED" then
         if ns.MovementAlert and ns.MovementAlert.StopPreview then ns.MovementAlert:StopPreview() end

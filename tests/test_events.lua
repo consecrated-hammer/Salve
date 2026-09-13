@@ -78,6 +78,8 @@ local ns = {
         Reset = function() end,
         Start = function() detectorStarts = detectorStarts + 1 end,
         Stop = function() detectorStops = detectorStops + 1 end,
+        AcknowledgeRemoval = function() return { kind = "CLEAR" } end,
+        CheckRecovery = function() return nil end,
         Sample = function() return speedObservation end,
     },
     SelfAlert = {
