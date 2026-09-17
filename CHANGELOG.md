@@ -5,6 +5,12 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.17] - 2026-09-18
+
+### Added
+
+- Provisional WoW Forever support through the client-safe Camelot package.
+
 ## [1.5.16] - 2026-09-13
 
 ### Changed

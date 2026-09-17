@@ -21,6 +21,8 @@ license-output: LICENSE.txt
 ignore:
   - .github
   - .pkgmeta
+  - Salve_Camelot.toc
+  - DEVELOPMENT.md
   - .gitignore
   - data
   - docs

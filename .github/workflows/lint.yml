@@ -51,12 +51,13 @@ jobs:
               printf '%s\n' Core.lua >> /tmp/on_disk
               sort -o /tmp/on_disk /tmp/on_disk
             else
-              find "$dir" -maxdepth 1 -name '*.lua' -printf '%f\n' | sort > /tmp/on_disk
+              find "$dir" -maxdepth 1 -name '*.lua' -print | sort > /tmp/on_disk
             fi
             diff -u /tmp/in_toc /tmp/on_disk
           }
 
           check_toc . Salve.toc
+          check_toc . Salve_Camelot.toc
 
   data:
     runs-on: ubuntu-latest

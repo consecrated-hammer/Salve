@@ -3,6 +3,13 @@
 **A compact clickable dispel panel for World of Warcraft.** Click a lit group
 member to cast the removal spell assigned to that mouse button.
 
+> **Camelot preview (local development only):** the package includes the
+> Retail-style AuraContainer implementation in `Salve_Camelot.toc`. Its
+> `16001` is the provisional Forever beta interface target, corroborated by
+> current Forever packages; it still requires in-client verification and has
+> not been released or tagged
+> on CurseForge.
+
 [![CurseForge](https://img.shields.io/curseforge/v/1653368?style=flat-square&color=4c9a7a&label=curseforge)](https://www.curseforge.com/wow/addons/salve)
 [![Downloads](https://img.shields.io/curseforge/dt/1653368?style=flat-square&color=4c9a7a&label=downloads)](https://www.curseforge.com/wow/addons/salve)
 [![License](https://img.shields.io/badge/license-GPL--3.0-4c9a7a?style=flat-square)](LICENSE.txt)

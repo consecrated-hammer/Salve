@@ -1,0 +1,49 @@
+## Interface: 16001
+## Title: Salve (Camelot Retail-Compatibility Preview)
+## Author: consecrated-hammer
+## Version: 1.5.17
+## X-ReleaseDate: 2026-09-18
+## Notes: Provisional Retail-style Salve backend for Camelot testing.
+## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
+## IconTexture: Interface\AddOns\Salve\Textures\Salve
+## X-License: GPL-3.0
+## X-Website: https://github.com/consecrated-hammer/Salve
+## X-CurseForge: https://www.curseforge.com/wow/addons/salve
+## X-Curse-Project-ID: 1653368
+## X-Salve-Target: Camelot (provisional Retail-style compatibility)
+## X-Salve-ProvisionalInterface: 16001 is a provisional Forever beta target; verify it in the client.
+
+# Camelot is now assumed to inherit Retail-like in-combat addon restrictions.
+# Keep this load order identical to Salve.toc: the native AuraContainer path
+# is the only candidate that respects Retail's private-aura model.
+Core.lua
+Core\Config.lua
+Core\ClickLog.lua
+Features\Dispel.lua
+Features\AuraBinding.lua
+Features\Visibility.lua
+Features\Bindings.lua
+Features\Escape.lua
+Features\MovementDetection.lua
+Features\Sound.lua
+Catalog\Curated.lua
+Features\SelfAlert.lua
+Features\MovementAlert.lua
+UI\Box.lua
+UI\Handle.lua
+UI\Panel.lua
+UI\Preview.lua
+UI\Broker.lua
+UI\Minimap.lua
+Options\Shared.lua
+Options\Salve.lua
+Options\Tooltips.lua
+Options\Dispel.lua
+Options\Visibility.lua
+Options\Alerts.lua
+Options\Commands.lua
+Options\Troubleshooting.lua
+Options\LearnedSpells.lua
+Options\About.lua
+Core\Events.lua
+Core\Slash.lua
