@@ -95,7 +95,7 @@ jobs:
       - name: Package and release Forever build
         uses: BigWigsMods/packager@v2
         with:
-          args: -n "{package}-{version}-Forever"
+          args: -n "{package-name}-{project-version}-Forever:{package-name} {project-version} (WoW Forever)"
         env:
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
