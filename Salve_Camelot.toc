@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## Title: Salve (Camelot Retail-Compatibility Preview)
 ## Author: consecrated-hammer
-## Version: 1.5.18
+## Version: 1.5.19
 ## X-ReleaseDate: 2026-09-18
 ## Notes: Provisional Retail-style Salve backend for Camelot testing.
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
