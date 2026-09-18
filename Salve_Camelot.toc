@@ -1,9 +1,9 @@
 ## Interface: 16001
-## Title: Salve (WoW Forever Beta)
+## Title: Salve (WoW Forever)
 ## Author: consecrated-hammer
-## Version: 1.5.20
+## Version: 1.5.21
 ## X-ReleaseDate: 2026-09-18
-## Notes: WoW Forever (Camelot) beta build using Salve's Mainline backend.
+## Notes: WoW Forever (Camelot) build using Salve's Mainline backend.
 ## AllowLoadGameType: camelot
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
 ## IconTexture: Interface\AddOns\Salve\Textures\Salve
