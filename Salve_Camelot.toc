@@ -1,19 +1,19 @@
 ## Interface: 16001
-## Title: Salve (Camelot Retail-Compatibility Preview)
+## Title: Salve (WoW Forever Beta)
 ## Author: consecrated-hammer
-## Version: 1.5.19
+## Version: 1.5.20
 ## X-ReleaseDate: 2026-09-18
-## Notes: Provisional Retail-style Salve backend for Camelot testing.
+## Notes: WoW Forever (Camelot) beta build using Salve's Mainline backend.
+## AllowLoadGameType: camelot
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
 ## IconTexture: Interface\AddOns\Salve\Textures\Salve
 ## X-License: GPL-3.0
 ## X-Website: https://github.com/consecrated-hammer/Salve
 ## X-CurseForge: https://www.curseforge.com/wow/addons/salve
 ## X-Curse-Project-ID: 1653368
-## X-Salve-Target: Camelot (provisional Retail-style compatibility)
-## X-Salve-ProvisionalInterface: 16001 is a provisional Forever beta target; verify it in the client.
+## X-Salve-Target: Camelot
 
-# Camelot is now assumed to inherit Retail-like in-combat addon restrictions.
+# Camelot uses the Mainline API family and Retail-style in-combat addon restrictions.
 # Keep this load order identical to Salve.toc: the native AuraContainer path
 # is the only candidate that respects Retail's private-aura model.
 Core.lua

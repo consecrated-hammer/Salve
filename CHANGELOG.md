@@ -5,6 +5,12 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.20] - 2026-09-18
+
+### Changed
+
+- Identify the Camelot TOC as WoW Forever beta and declare the `camelot` load game type.
+
 ## [1.5.19] - 2026-09-18
 
 ### Fixed
