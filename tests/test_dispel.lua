@@ -107,4 +107,20 @@ commandDemonOverride = 119898
 equal(ns.UpdateDispelSpell(), true, "losing the Imp removes Singe Magic")
 equal(#ns.knownDispels, 0, "former Imp dispel is no longer exposed")
 
+-- Demonology's Grimoire: Imp Lord dispels the caster when summoned, then
+-- transforms into targetable Singe Magic for the remainder of its cooldown.
+-- That is a distinct override source from the regular Imp Command Demon.
+local impLordOverride = 1276452
+C_Spell.GetOverrideSpell = function(spellID)
+    if spellID == 119898 then return commandDemonOverride end
+    if spellID == 1276452 then return impLordOverride end
+end
+equal(ns.UpdateDispelSpell(), false, "ready Imp Lord does not promise a targeted dispel")
+impLordOverride = 212623
+equal(ns.UpdateDispelSpell(), true, "Imp Lord cooldown override arms targetable Singe Magic")
+equal(ns.spellID, 212623, "Imp Lord uses the Singe Magic secure spell")
+equal(ns.primaryCures.Magic, true, "Imp Lord Singe Magic covers Magic")
+impLordOverride = 1276452
+equal(ns.UpdateDispelSpell(), true, "Imp Lord returning from cooldown removes targetable Singe Magic")
+
 print("dispel tests passed")

@@ -1,10 +1,11 @@
 ## Interface: 120100
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 1.5.21
-## X-ReleaseDate: 2026-09-18
+## Version: 1.5.22
+## X-ReleaseDate: 2026-09-19
 ## Notes: Compact clickable group-dispel panel built for Midnight's private aura rules.
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
+## LoadSavedVariablesFirst: 1
 ## AllowAddOnTableAccess: 1
 # ☠ No extension, and it must be a TGA or BLP. WoW does not load PNG.
 ## IconTexture: Interface\AddOns\Salve\Textures\Salve

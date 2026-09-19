@@ -65,16 +65,18 @@ local SPELLS = {
         { id = 475,                                 Curse = true },    -- Remove Curse
     },
     WARLOCK = {
-        -- Singe Magic is the Imp form of Command Demon.  It must not make the
-        -- native filter promise Magic dispels while another demon is active:
-        -- the current override is the client-owned proof that it can be cast.
+        -- Singe Magic can be the Imp form of Command Demon, or the temporary
+        -- follow-up to Demonology's Grimoire: Imp Lord.  Neither appears as a
+        -- permanent spellbook entry. Do not promise Magic dispels until the
+        -- client reports the live override that can actually be cast.
         -- It also has a 15-second cooldown and removes one effect, so never
         -- choose it ahead of a repeatable dispel should Warlock gain one.
         { id = 212623, Magic = true, limited = true,
             available = function()
-                return C_Spell and C_Spell.GetOverrideSpell
-                    and C_Spell.GetOverrideSpell(119898) == 212623
-            end },                                                       -- Singe Magic (Imp)
+                if not (C_Spell and C_Spell.GetOverrideSpell) then return false end
+                return C_Spell.GetOverrideSpell(119898) == 212623
+                    or C_Spell.GetOverrideSpell(1276452) == 212623
+            end },                                                       -- Singe Magic (Imp / Imp Lord)
     },
 }
 

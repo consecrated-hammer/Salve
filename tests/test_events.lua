@@ -137,6 +137,9 @@ equal(registered.COMBAT_LOG_EVENT_UNFILTERED, nil,
 handler(nil, "PLAYER_REGEN_DISABLED")
 equal(previewStops, 1, "combat start closes live panel preview")
 
+handler(nil, "PLAYER_LEAVING_WORLD")
+equal(movementPrompts, 0, "leaving the world clears any player movement prompt before transfer speeds arrive")
+
 handler(nil, "ENCOUNTER_END")
 equal(pendingFlushes, 0, "encounter-end rebuild waits for engine state to settle")
 equal(#timers, 1, "encounter end schedules one deferred structural flush")
@@ -190,6 +193,6 @@ speedObservation = { kind = "SLOW", locType = "SLOW" }
 onUpdate(nil, 0.15)
 equal(movementWarnings, 2, "speed observation uses the player warning path")
 equal(movementTextAlerts, 2, "speed observation uses the player text path")
-equal(movementPrompts, 2, "speed observation receives the movement action prompt")
+equal(movementPrompts, 1, "speed observation does not light the player-cell response cue")
 
 print("event routing tests passed")

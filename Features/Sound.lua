@@ -219,7 +219,7 @@ function Sound:ActiveCuratedRecords()
     local function add(record)
         if type(record) ~= "table" then return end
         local spellID = tonumber(record.spellID)
-        if spellID and cures[record.dispelType] and not seen[spellID] then
+        if spellID and record.verified == true and cures[record.dispelType] and not seen[spellID] then
             seen[spellID] = true
             records[#records + 1] = record
         end
@@ -345,7 +345,10 @@ function Sound:Refresh()
         end
     end
 
-    local records = self:ActiveRecords()
+    -- Native aura sounds are registered by spell ID only. Unlike the cell
+    -- overlay, that API accepts no RAID_PLAYER_DISPELLABLE predicate, so never
+    -- promote learned/type-only observations into an automatic alert.
+    local records = self:ActiveCuratedRecords()
     local units = self:CurrentUnitTokens()
     self.expected = #records * #units
     if self.expected == 0 then return end

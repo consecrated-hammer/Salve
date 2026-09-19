@@ -15,7 +15,9 @@ assert(loadfile("Features/MovementDetection.lua"))("Salve", ns)
 local detector = ns.MovementDetection
 detector:Reset()
 equal(detector:Sample(0.10), nil, "sampling waits for its short interval")
-equal(detector:Sample(0.05), nil, "normal speed establishes a baseline")
+equal(detector:Sample(0.05), nil, "first normal sample begins the settle window")
+equal(detector.lastStatus, "awaiting a settled ground-speed reference", "diagnostic records baseline settling")
+for _ = 1, 66 do detector:Sample(0.15) end
 equal(detector.lastStatus, "normal run speed 8.33", "diagnostic preserves normal baseline")
 
 current, runSpeed = 4.16, 4.16
@@ -41,4 +43,16 @@ current, runSpeed = 0, 8.33
 equal(detector:Sample(0.15).kind, "CLEAR", "standing still at normal run speed clears the prompt")
 current, runSpeed = 0, 0
 equal(detector:Sample(0.15).kind, "SLOW", "zero ground speed is a severe slow")
+
+-- Zone transfers can briefly expose an anomalous high or low movement state.
+-- Use neither one as the new normal reference when the settled zone returns
+-- the real ground speed.
+detector:Reset()
+current, runSpeed = 12, 12
+equal(detector:Sample(0.15), nil, "zone-transition speed starts only a settling baseline")
+current, runSpeed = 3, 3
+equal(detector:Sample(0.15), nil, "one transient low sample does not become the baseline")
+current, runSpeed = 8.33, 8.33
+for _ = 1, 66 do detector:Sample(0.15) end
+equal(detector.lastStatus, "normal run speed 8.33", "settled zone speed becomes the normal reference")
 print("movement detection tests passed")

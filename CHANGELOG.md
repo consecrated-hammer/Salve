@@ -5,6 +5,18 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.22] - 2026-09-19
+
+### Fixed
+
+- Recognise Demonology's **Grimoire: Imp Lord** Singe Magic override while the
+  Imp Lord cooldown is active, alongside the regular Imp Command Demon path.
+- Ignore unstable player speed reports while entering or leaving a world, so
+  zone and dungeon transitions cannot trigger a false movement-removal alert.
+- Reserve the gold player-cell movement cue for verified roots and snares;
+  inferred speed changes no longer light it.
+- Restrict automatic dispel sounds to explicitly verified built-in records.
+
 ## [1.5.21] - 2026-09-18
 
 ### Changed

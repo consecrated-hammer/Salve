@@ -12,7 +12,7 @@ function ns.GetMetadata(key)
     return GetAddOnMetadata and GetAddOnMetadata(addonName, key)
 end
 
-ns.VERSION = ns.GetMetadata("Version") or "1.5.16"
+ns.VERSION = ns.GetMetadata("Version") or "1.5.22"
 -- Development revision for distinguishing synced installs that share the same
 -- release version. Surface this in /salve debug before debugging live code.
 ns.REVISION = "1.5.16"

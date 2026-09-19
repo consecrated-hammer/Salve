@@ -95,6 +95,7 @@ ns.Sound:RegisterData("Salve", {
             { spellID = 1001, dispelType = "Magic", verified = true },
             { spellID = 1002, dispelType = "Disease", verified = true },
             { spellID = 1003, dispelType = "Poison", verified = false },
+            { spellID = 1004, dispelType = "Magic", verified = false },
         },
     },
     ["map:42"] = {

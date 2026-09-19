@@ -26,7 +26,11 @@ local function alertPlayerMovement(movement, isVerifiedMovement)
     if spell and ns.MovementAlert then
         ns.MovementAlert:Notify("player", movement, spell)
     end
-    if spell and movement and (movement.kind == "SLOW"
+    -- A speed drop is only an inference: terrain, transfers and client-side
+    -- movement-state changes can produce one without a removable impairment.
+    -- Reserve Salve's high-visibility gold player-cell cue for the explicit
+    -- loss-of-control signal, which supplies a real ROOT/SNARE classification.
+    if isVerifiedMovement and spell and movement and (movement.kind == "SLOW"
         or movement.locType == "ROOT" or movement.locType == "SNARE") and ns.Panel then
         ns.Panel:SetMovementPrompt(spell, true)
     end
@@ -62,6 +66,13 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         ns.Minimap:Create()
         ns.Minimap:Update()
         ns.RequestRebuild()
+
+    elseif event == "PLAYER_LEAVING_WORLD" then
+        -- Dungeon exits can report a zero/transfer movement speed before the
+        -- destination's PLAYER_ENTERING_WORLD event. Reset before that sample
+        -- is ever compared against the old zone's reference speed.
+        if ns.MovementDetection then ns.MovementDetection:Reset() end
+        if ns.Panel then ns.Panel:SetMovementPrompt(nil, false) end
 
     elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
         if ns.MovementDetection then ns.MovementDetection:Reset() end
@@ -163,6 +174,7 @@ end)
 for _, e in ipairs({
     "ADDON_LOADED",
     "PLAYER_LOGIN",
+    "PLAYER_LEAVING_WORLD",
     "PLAYER_ENTERING_WORLD",
     "ZONE_CHANGED_NEW_AREA",
     "GROUP_ROSTER_UPDATE",
