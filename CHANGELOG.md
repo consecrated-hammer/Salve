@@ -5,6 +5,13 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.23] - 2026-09-19
+
+### Fixed
+
+- Let minimap-button collectors such as MinimapButtonBag retain Salve's icon
+  in their collapsed menu after a settings refresh.
+
 ## [1.5.22] - 2026-09-19
 
 ### Fixed

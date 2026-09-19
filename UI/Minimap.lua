@@ -125,6 +125,13 @@ end
 
 function Minimap_:Update()
     if not self.button then return end
-    self.button:SetShown(ns.db.showMinimap and true or false)
+    -- MBB and similar minimap-button collectors replace Show/Hide on a
+    -- collected icon.  Do not use SetShown here: it bypasses that contract and
+    -- can restore an icon that the collector has deliberately collapsed.
+    if ns.db.showMinimap then
+        self.button:Show()
+    else
+        self.button:Hide()
+    end
     if self.place then self.place(ns.db.minimapAngle or 225) end
 end
