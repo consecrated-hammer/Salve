@@ -84,6 +84,37 @@ local SPELLS = {
     },
 }
 
+-- Forever is a legacy-style game with a Mainline-shaped addon API. Keep its
+-- catalogue separate from Retail: shared spell IDs can have different names,
+-- ranks, or schools, and importing an old cure into Retail would arm a secure
+-- button that the current character cannot actually cast.
+--
+-- `ids` is an ascending rank family. The resolver selects the highest
+-- positively known member, but secure buttons continue to receive its name.
+local CAMELOT_SPELLS = {
+    PALADIN = {
+        { id = 1152, Poison = true, Disease = true },                  -- Purify, level 8
+        { id = 4987, Magic = true, Poison = true, Disease = true },    -- Cleanse, level 42
+    },
+    PRIEST = {
+        { id = 528, Disease = true },                                  -- Cure Disease, level 14
+        { id = 552, Disease = true, priority = 2 },                    -- Abolish Disease, level 32
+        { id = 527, ids = { 527, 988 }, Magic = true },                -- Dispel Magic ranks
+    },
+    DRUID = {
+        { id = 8946, Poison = true },                                  -- Cure Poison, level 14
+        { id = 2782, Curse = true },                                   -- Remove Curse, level 24
+        { id = 2893, Poison = true, priority = 2 },                    -- Abolish Poison, level 26
+    },
+    SHAMAN = {
+        { id = 526, Poison = true },                                   -- Cure Poison, level 16
+        { id = 2870, Disease = true },                                 -- Cure Disease, level 22
+    },
+    MAGE = {
+        { id = 475, Curse = true },                                    -- Remove Curse
+    },
+}
+
 ns.spellID      = nil   -- primary, on left click
 ns.spellName    = nil
 ns.primaryCures = {}
@@ -113,7 +144,7 @@ local function activeSpellbook()
     local ok, lineCount = pcall(C_SpellBook.GetNumSpellBookSkillLines)
     if not ok or type(lineCount) ~= "number" then return nil end
 
-    local spells = {}
+    local spells, observed = {}, {}
     local spellType = Enum.SpellBookItemType and Enum.SpellBookItemType.Spell
     for lineIndex = 1, math.min(lineCount, 128) do
         local lineOK, lineInfo = pcall(C_SpellBook.GetSpellBookSkillLineInfo, lineIndex)
@@ -128,11 +159,12 @@ local function activeSpellbook()
                         or item.itemType == spellType)
                 if isSpell and item.isOffSpec ~= true and type(item.spellID) == "number" then
                     spells[item.spellID] = true
+                    observed[#observed + 1] = item.spellID
                 end
             end
         end
     end
-    return spells
+    return spells, observed
 end
 
 local function nameOf(spellID)
@@ -157,29 +189,111 @@ local function coverage(entry)
     return set, n
 end
 
-local function isAvailable(entry, castable)
-    if entry.available then return entry.available() end
-    if not castable then return known(entry.id) end
-    if castable[entry.id] then return true end
+local function entryIDs(entry)
+    return entry.ids or { entry.id }
+end
+
+-- Return the exact learned rank/action ID.  The secure button still receives
+-- the spell name, which lets the client choose its current rank, while this
+-- ID keeps diagnostics and cooldown matching honest on legacy spellbooks.
+local function availableID(entry, castable)
+    if entry.available then return entry.available() and entry.id or nil end
+    local found
+    for _, spellID in ipairs(entryIDs(entry)) do
+        if castable and castable[spellID] then found = spellID end
+    end
+    if found then return found end
+    if not castable then
+        for _, spellID in ipairs(entryIDs(entry)) do
+            if known(spellID) then found = spellID end
+        end
+        return found
+    end
     -- Forever's Mainline-shaped spellbook can enumerate only part of a legacy
     -- class book. Its Camelot TOC is the explicit client boundary: merge a
     -- legacy positive only there, while Retail retains its strict active-spec
     -- spellbook filter and never arms an off-spec secure action.
-    return ns.isCamelot and known(entry.id) or false
+    if ns.isCamelot then
+        for _, spellID in ipairs(entryIDs(entry)) do
+            if known(spellID) then found = spellID end
+        end
+    end
+    return found
+end
+
+local function idsText(entry)
+    local ids = {}
+    for _, spellID in ipairs(entryIDs(entry)) do ids[#ids + 1] = tostring(spellID) end
+    return table.concat(ids, ", ")
+end
+
+local function sameCures(a, b)
+    for _, t in ipairs(ns.DISPEL_TYPES) do
+        if not not a.cures[t] ~= not not b.cures[t] then return false end
+    end
+    return true
+end
+
+local function betterPrimary(candidate, current)
+    if not current or candidate.count > current.count then return true end
+    -- A cure-vs-abolish preference is meaningful only within the same school.
+    -- It must never make Poison win over an otherwise equivalent Curse cure.
+    return candidate.count == current.count and sameCures(candidate, current)
+        and candidate.priority > current.priority
+end
+
+-- Copy-ready evidence for a missing Forever ability report. This is deliberately
+-- read-only: it lets us add a verified catalogue entry without allowing an
+-- arbitrary spell name/ID to become a secure group-frame action.
+function ns.BuildForeverDispelReport()
+    if not ns.isCamelot then
+        return "Salve Forever spell report\nThis report is available in the WoW Forever build only."
+    end
+
+    local _, class = UnitClass("player")
+    local list = CAMELOT_SPELLS[class] or {}
+    local castable, observed = activeSpellbook()
+    local lines = {
+        "Salve Forever spell report",
+        "Class: " .. tostring(class or "unknown"),
+        "Curated direct-target cures:",
+    }
+    if #list == 0 then
+        lines[#lines + 1] = "  none for this class"
+    end
+    for _, entry in ipairs(list) do
+        local spellID = availableID(entry, castable)
+        local name = nameOf(spellID or entry.id) or ("Spell " .. tostring(entry.id))
+        lines[#lines + 1] = "  " .. (spellID and "known" or "missing") .. ": "
+            .. name .. " [" .. idsText(entry) .. "] — " .. ns.CuresText(coverage(entry))
+    end
+    lines[#lines + 1] = "Spellbook entries observed: " .. tostring(observed and #observed or 0)
+    if observed and #observed > 0 then
+        for _, spellID in ipairs(observed) do
+            lines[#lines + 1] = "  " .. tostring(spellID) .. ": "
+                .. tostring(nameOf(spellID) or "unknown")
+        end
+    else
+        lines[#lines + 1] = "  unavailable or incomplete in this client API"
+    end
+    lines[#lines + 1] = "Note: Salve does not bind manually entered spell IDs. Pet, self-only, and area actions require separate verified support."
+    return table.concat(lines, "\n")
 end
 
 -- Returns true when either selection changed, so callers know to rebuild.
 function ns.UpdateDispelSpell()
     local _, class = UnitClass("player")
-    local list = SPELLS[class]
+    local list = (ns.isCamelot and CAMELOT_SPELLS or SPELLS)[class]
 
     local oldPrimary, oldSecondary = ns.spellID, ns.secondaryID
+    local oldSignature = ns.dispelSignature
 
     ns.spellID, ns.spellName, ns.primaryCures      = nil, nil, {}
     ns.secondaryID, ns.secondaryName, ns.secondaryCures = nil, nil, {}
 
     if not list then
-        return oldPrimary ~= nil or oldSecondary ~= nil
+        ns.knownDispels, ns.dispelSignature = {}, ""
+        return oldPrimary ~= nil or oldSecondary ~= nil or oldSignature ~= ""
     end
 
     -- Everything the character actually has. Exposed so the options panel can
@@ -188,17 +302,26 @@ function ns.UpdateDispelSpell()
     local available = {}
     ns.knownDispels = available
     for _, entry in ipairs(list) do
-        if isAvailable(entry, castable) then
-            local name = nameOf(entry.id)
+        local spellID = availableID(entry, castable)
+        if spellID then
+            local name = nameOf(spellID)
             if name then
                 local set, n = coverage(entry)
                 available[#available + 1] = {
-                    id = entry.id, name = name, cures = set, count = n,
+                    id = spellID, name = name, cures = set, count = n,
+                    priority = entry.priority or 0,
+                    aliases = entryIDs(entry),
                     limited = entry.limited,
                 }
             end
         end
     end
+
+    local signature = {}
+    for _, s in ipairs(available) do
+        signature[#signature + 1] = tostring(s.id) .. ":" .. ns.CuresText(s.cures)
+    end
+    ns.dispelSignature = table.concat(signature, "|")
 
     -- Primary: the broadest REPEATABLE dispel.
     --
@@ -209,18 +332,18 @@ function ns.UpdateDispelSpell()
     --   Repeatability first, then coverage.
     local best
     for _, s in ipairs(available) do
-        if not s.limited and (not best or s.count > best.count) then best = s end
+        if not s.limited and betterPrimary(s, best) then best = s end
     end
 
     -- Only fall back to a cooldown spell if it is genuinely all there is.
     if not best then
         for _, s in ipairs(available) do
-            if not best or s.count > best.count then best = s end
+            if betterPrimary(s, best) then best = s end
         end
     end
 
     if not best then
-        return oldPrimary ~= nil or oldSecondary ~= nil
+        return oldPrimary ~= nil or oldSecondary ~= nil or oldSignature ~= ns.dispelSignature
     end
 
     ns.spellID, ns.spellName, ns.primaryCures = best.id, best.name, best.cures
@@ -246,6 +369,7 @@ function ns.UpdateDispelSpell()
     end
 
     return ns.spellID ~= oldPrimary or ns.secondaryID ~= oldSecondary
+        or oldSignature ~= ns.dispelSignature
 end
 
 function ns.CanDispel()

@@ -166,6 +166,12 @@ local function showCopyReport()
     showCopyText("Copy Salve report", buildReport())
 end
 
+local function showCopyForeverSpellReport()
+    local report = ns.BuildForeverDispelReport and ns.BuildForeverDispelReport()
+        or "Salve Forever spell report\nSpell-report support is unavailable."
+    showCopyText("Copy Forever spell report", report)
+end
+
 local function showCopyClickLog()
     local content = ns.ClickLog and ns.ClickLog:Export()
         or "Salve cell-click audit\nno click-log storage is available"
@@ -173,6 +179,7 @@ local function showCopyClickLog()
 end
 
 O.ShowDiagnosticReport = showCopyReport
+O.ShowForeverSpellReport = showCopyForeverSpellReport
 
 O.NewPage({
     name = "Troubleshooting",
@@ -222,6 +229,12 @@ O.NewPage({
     copy:SetText("Copy report")
     O.AttachHint(copy, "Copy report", "Open a report you can paste into a bug report.")
     copy:SetScript("OnClick", showCopyReport)
+    local forever = O.Button(panel, 165, 22)
+    forever:SetPoint("LEFT", copy, "RIGHT", 8, 0)
+    forever:SetText("Copy Forever spells")
+    O.AttachHint(forever, "Copy Forever spells",
+        "Copy the detected Forever cure families and observed spellbook IDs for a missing-ability report. This never enables manually entered spells.")
+    forever:SetScript("OnClick", showCopyForeverSpellReport)
     y = y - 48
 
     _, y = O.Header(panel, "Aura learning", y)

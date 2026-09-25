@@ -116,6 +116,9 @@ end
 local function knownSpell(spellID)
     for _, s in ipairs(ns.knownDispels or {}) do
         if s.id == spellID then return s, "DISPEL" end
+        for _, alias in ipairs(s.aliases or {}) do
+            if alias == spellID then return s, "DISPEL" end
+        end
     end
     for _, s in ipairs(ns.knownEscapes or {}) do
         if s.id == spellID then return s, "ESCAPE" end
@@ -147,7 +150,8 @@ end
 function Bindings:SpellID(entry)
     if entry.role == ns.ROLE_PRIMARY then return ns.spellID end
     if entry.role == ns.ROLE_SECONDARY then return ns.secondaryID or ns.spellID end
-    return entry.spell
+    local spell = knownSpell(entry.spell)
+    return spell and spell.id or entry.spell
 end
 
 function Bindings:KeysForSpell(spellID)
@@ -348,6 +352,9 @@ function Bindings:IsDispelSpell(spellID)
     if type(spellID) ~= "number" then return false end
     for _, s in ipairs(ns.knownDispels or {}) do
         if s.id == spellID then return true end
+        for _, alias in ipairs(s.aliases or {}) do
+            if alias == spellID then return true end
+        end
     end
     return false
 end

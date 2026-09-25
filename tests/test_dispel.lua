@@ -27,7 +27,7 @@ equal(ns.primaryCures.Disease, nil, "Purify does not claim untalented Disease re
 
 -- Improved Purify modifies Purify itself, rather than adding a separate cast.
 knownSpells[390632] = true
-equal(ns.UpdateDispelSpell(), false, "talent upgrade leaves the selected spell unchanged")
+equal(ns.UpdateDispelSpell(), true, "talent coverage upgrade refreshes the resolved catalogue")
 equal(ns.primaryCures.Disease, true, "Improved Purify adds Disease coverage")
 
 -- Shadow's separate Purify Disease remains available as a secondary answer.
@@ -79,6 +79,47 @@ ns.UpdateDispelSpell()
 equal(#ns.knownDispels, 1, "Forever Cure Poison is not hidden by a partial spellbook")
 equal(ns.spellID, 8946, "Cure Poison is the available Forever dispel")
 equal(ns.primaryCures.Poison, true, "Cure Poison covers Poison")
+
+-- The Forever catalogue is intentionally distinct from Retail's. Its early
+-- Paladin cure is Purify, not the late Cleanse spell Retail normally sees.
+class, knownSpells = "PALADIN", { [1152] = true }
+ns.UpdateDispelSpell()
+equal(ns.spellID, 1152, "Forever Paladin detects early Purify")
+equal(ns.primaryCures.Poison, true, "Forever Purify covers Poison")
+equal(ns.primaryCures.Disease, true, "Forever Purify covers Disease")
+
+-- A rank-only legacy spellbook must resolve the rank actually known. This is
+-- important for cooldown observation and for saved bindings after a trainer
+-- upgrade, while the secure frame still casts the localized spell name.
+class, knownSpells = "PRIEST", { [988] = true }
+ns.UpdateDispelSpell()
+equal(ns.spellID, 988, "Forever Dispel Magic resolves its known higher rank")
+equal(ns.primaryCures.Magic, true, "Forever higher Dispel Magic rank covers Magic")
+equal(ns.knownDispels[1].aliases[1], 527, "rank family retains its base alias")
+equal(ns.knownDispels[1].aliases[2], 988, "rank family retains its upgraded alias")
+
+class, knownSpells = "DRUID", { [8946] = true, [2782] = true, [2893] = true }
+ns.UpdateDispelSpell()
+equal(ns.spellID, 2893, "Forever Abolish Poison is preferred over Cure Poison")
+equal(ns.primaryCures.Poison, true, "Forever Abolish Poison covers Poison")
+equal(ns.secondaryID, 2782, "Forever Remove Curse becomes the secondary cure")
+equal(ns.secondaryCures.Curse, true, "Forever Remove Curse covers Curse")
+equal(ns.secondaryCures.Poison, nil, "Forever Remove Curse never claims Poison")
+
+class, knownSpells = "DRUID", { [2782] = true, [2893] = true }
+ns.UpdateDispelSpell()
+equal(ns.spellID, 2782, "Abolish preference never overrides an unrelated Curse cure")
+equal(ns.secondaryID, 2893, "Abolish Poison remains available as the secondary cure")
+
+class, knownSpells = "SHAMAN", { [526] = true, [2870] = true }
+ns.UpdateDispelSpell()
+equal(ns.spellID, 526, "Forever Shaman detects Cure Poison")
+equal(ns.secondaryID, 2870, "Forever Shaman detects Cure Disease as secondary")
+
+local foreverReport = ns.BuildForeverDispelReport()
+if not foreverReport:find("526", 1, true) or not foreverReport:find("Curated direct-target cures", 1, true) then
+    error("Forever spell report omits curated Shaman evidence")
+end
 
 ns.isCamelot = nil
 ns.UpdateDispelSpell()

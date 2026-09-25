@@ -92,4 +92,16 @@ ns.Bindings:ClearSpellBinding(1022)
 equal(#ns.Bindings:List(), 0,
     "clearing the final action does not silently restore defaults")
 
+-- A saved custom binding to an earlier legacy rank follows the same spell
+-- family after the character trains the higher rank.
+ns.knownDispels = { { id = 988, name = "Dispel Magic", aliases = { 527, 988 } } }
+ns.db.bindings = { { key = "BUTTON1", spell = 527 } }
+ns.db.bindingsCustom = true
+equal(ns.Bindings:SpellID(ns.db.bindings[1]), 988,
+    "legacy-rank binding resolves to the current learned rank")
+equal(ns.Bindings:Describe(ns.db.bindings[1]), "Dispel Magic",
+    "legacy-rank binding retains its action after a trainer upgrade")
+equal(ns.Bindings:IsDispelSpell(988), true,
+    "current learned rank drives cooldown matching")
+
 print("binding tests passed")

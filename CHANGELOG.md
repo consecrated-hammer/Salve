@@ -7,6 +7,22 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.5.26] - 2026-09-26
+
+### Added
+
+- Curated WoW Forever direct-target dispels: Paladin Purify and Cleanse;
+  Priest Cure Disease, Abolish Disease and ranked Dispel Magic; Druid Cure
+  Poison, Remove Curse and Abolish Poison; Shaman Cure Poison and Cure Disease;
+  and Mage Remove Curse.
+- A copy-ready Forever spell report (`/salve forever`) for reporting missing
+  spells without allowing arbitrary spell IDs to be bound to group frames.
+
+### Fixed
+
+- Keep Forever spell families separate from Retail, retain existing bindings
+  across rank upgrades, and correct Druid Remove Curse to cover Curse only.
+
 ## [1.5.25] - 2026-09-25
 
 ### Fixed

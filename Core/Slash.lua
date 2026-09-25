@@ -28,6 +28,14 @@ SlashCmdList.SALVE = function(msg)
     elseif cmd == "version" then
         ns.Print("version " .. tostring(ns.VERSION) .. "  revision " .. tostring(ns.REVISION))
 
+    elseif cmd == "forever" or cmd == "spells" then
+        if ns.Options and ns.Options.ShowForeverSpellReport then
+            ns.Options.ShowForeverSpellReport()
+        else
+            ns.Print(ns.BuildForeverDispelReport and ns.BuildForeverDispelReport()
+                or "Forever spell reporting is unavailable.")
+        end
+
     elseif cmd == "debug" or cmd == "probe" then
         if arg == "copy" and ns.Options and ns.Options.ShowDiagnosticReport then
             ns.Options.ShowDiagnosticReport()
@@ -60,6 +68,7 @@ SlashCmdList.SALVE = function(msg)
         ns.Print("|cff4c9a7aDiagnostics|r")
         ns.Print("|cffffd100/salve debug|r — print a diagnostic report")
         ns.Print("|cffffd100/salve debug copy|r — open a selectable diagnostic report")
+        ns.Print("|cffffd100/salve forever|r — copy a Forever cure/spellbook report")
         ns.Print("|cffffd100/salve snares|r — list auto-captured root and snare spell IDs")
         ns.Print("|cff4c9a7aLearning|r")
         ns.Print("|cffffd100/salve learned|r | |cffffd100learned clear|r — list or clear recorded auras")
