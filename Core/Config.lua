@@ -96,7 +96,6 @@ ns.defaults = {
     -- you have opted in to. Learned discoveries deliberately live in the
     -- separate SalveLearnedDB saved-variable block, not in preferences.
     escapes         = {},
-    movementColour  = { r = 0.92, g = 0.20, b = 0.08, a = 0.68 },
     -- Each bound movement action may draw its own coloured clock-hand edge.
     -- Colours and enabled state are stored by spell ID for every class.
     movementSweepSpellID = nil,
@@ -124,8 +123,89 @@ local function copyDefaults(dst, src)
     return dst
 end
 
+local function resetIfWrongType(db, key, expected)
+    if type(db[key]) ~= expected then
+        -- Table defaults are templates, never shared live state. Sharing one
+        -- here would let a damaged saved variable mutate fresh profiles later.
+        db[key] = type(ns.defaults[key]) == "table"
+            and copyDefaults({}, ns.defaults[key]) or ns.defaults[key]
+    end
+end
+
+local function numberInRange(db, key, minimum, maximum, integer)
+    local value = tonumber(db[key])
+    -- Lua accepts "nan" as a number. It is unusable for layout arithmetic and
+    -- min/max results vary by client, so treat it like any other bad input.
+    if not value or value ~= value then value = ns.defaults[key] end
+    value = math.max(minimum, math.min(maximum, value))
+    db[key] = integer and math.floor(value + 0.5) or value
+end
+
+local function enumOrDefault(db, key, allowed)
+    if not allowed[db[key]] then db[key] = ns.defaults[key] end
+end
+
+local function validPoint(point)
+    local anchors = {
+        TOPLEFT = true, TOP = true, TOPRIGHT = true, LEFT = true, CENTER = true,
+        RIGHT = true, BOTTOMLEFT = true, BOTTOM = true, BOTTOMRIGHT = true,
+    }
+    if type(point) ~= "table" then return false end
+    local x, y = tonumber(point[3]), tonumber(point[4])
+    return anchors[point[1]] and anchors[point[2]]
+        and type(x) == "number" and x == x and type(y) == "number" and y == y
+end
+
+local function normalizePreferences(db)
+    for _, key in ipairs({ "bindings", "visibility", "escapes", "movementSweepSpellIDs",
+        "movementSweepColours" }) do
+        resetIfWrongType(db, key, "table")
+    end
+    for _, key in ipairs({ "showNames", "showTooltip", "tooltipUnitInfo", "tooltipActions",
+        "tooltipSpellDescriptions", "showDispelTypeIcon", "showStacks", "useClassColours",
+        "showWhenClean", "showHandle", "showStartupMessage", "bindingsCustom", "clickAuditEnabled",
+        "soundEnabled", "dispelSoundEnabled", "movementSoundEnabled", "movementTextNotification",
+        "selfDispelNotification", "showMinimap" }) do
+        resetIfWrongType(db, key, "boolean")
+    end
+    for _, key in ipairs({ "scale", "cleanAlpha" }) do numberInRange(db, key, 0, key == "scale" and 3 or 1) end
+    numberInRange(db, "columns", 1, 40, true)
+    numberInRange(db, "boxWidth", 8, 200, true)
+    numberInRange(db, "boxHeight", 8, 200, true)
+    numberInRange(db, "spacing", 0, 40, true)
+    numberInRange(db, "nameFontSize", 6, 48, true)
+    numberInRange(db, "cooldownFontSize", 6, 48, true)
+    numberInRange(db, "dispelTypeIconSize", 8, 64, true)
+    numberInRange(db, "minimapAngle", 0, 360)
+    numberInRange(db, "movementChatWindow", 0, 20, true)
+    enumOrDefault(db, "orientation", { HORIZONTAL = true, VERTICAL = true })
+    enumOrDefault(db, "horizontalGrowth", { LEFT = true, RIGHT = true })
+    enumOrDefault(db, "verticalGrowth", { UP = true, DOWN = true })
+    enumOrDefault(db, "visibilityMode", { ALWAYS = true, NEVER = true })
+    enumOrDefault(db, "tooltipAnchor", { LEFT = true, RIGHT = true, TOP = true, BOTTOM = true, CURSOR = true })
+    enumOrDefault(db, "nameJustifyH", { LEFT = true, CENTER = true, RIGHT = true })
+    enumOrDefault(db, "nameJustifyV", { TOP = true, MIDDLE = true, BOTTOM = true })
+    enumOrDefault(db, "cooldownJustifyH", { LEFT = true, CENTER = true, RIGHT = true })
+    enumOrDefault(db, "cooldownJustifyV", { TOP = true, MIDDLE = true, BOTTOM = true })
+    enumOrDefault(db, "dispelTypeIconPosition", {
+        TOPLEFT = true, TOPRIGHT = true, BOTTOMLEFT = true, BOTTOMRIGHT = true, CENTER = true,
+    })
+    enumOrDefault(db, "movementTextOutput", { SCREEN = true, CHAT = true, BOTH = true })
+    enumOrDefault(db, "soundChannel", { Master = true, SFX = true, Music = true, Ambience = true, Dialog = true })
+    enumOrDefault(db, "handlePosition", {
+        TOPLEFT = true, TOPRIGHT = true, BOTTOMLEFT = true, BOTTOMRIGHT = true,
+    })
+    if db.soundFile ~= nil and type(db.soundFile) ~= "string" and type(db.soundFile) ~= "number" then
+        db.soundFile = ns.defaults.soundFile
+    end
+    if not validPoint(db.point) then db.point = { unpack(ns.defaults.point) } end
+    if not validPoint(db.settingsPoint) then db.settingsPoint = { unpack(ns.defaults.settingsPoint) } end
+end
+
 function ns.InitConfig()
-    SalveDB = SalveDB or {}
+    -- SavedVariables are user-controlled persisted input. Recover from a
+    -- partial write or third-party edit instead of failing ADDON_LOADED.
+    SalveDB = type(SalveDB) == "table" and SalveDB or {}
     local oldSchema = tonumber(SalveDB.schemaVersion) or 1
     SalveDB = copyDefaults(SalveDB, ns.defaults)
 
@@ -216,22 +296,26 @@ function ns.InitConfig()
         SalveDB.movementSweepSpellID = nil
         SalveDB.schemaVersion = 9
     end
+    -- A profile from a newer build can otherwise retain a fictional future
+    -- schema forever after a partial sync. This build owns schema 9.
+    SalveDB.schemaVersion = 9
 
     -- Learning supplies the coverage that encounter-journal data cannot,
     -- especially for trash roots and snares. It is always active in 1.4.0;
     -- preserve the key only as an internal compatibility signal.
     SalveDB.learnMode = true
+    normalizePreferences(SalveDB)
 
     -- Normalize on every load, not only at the schema boundary. A profile can
     -- reach schema 4 before an older synced Options file finishes writing its
     -- duplicate rows. Secure attributes can hold only one action per mouse
     -- chord, so duplicates are never meaningful and are safe to collapse.
     local deduped, seen = {}, {}
-    for _, entry in ipairs(type(SalveDB.bindings) == "table" and SalveDB.bindings or {}) do
+    for _, entry in ipairs(SalveDB.bindings) do
         local key = type(entry) == "table" and entry.key
-        if type(key) ~= "string" or not seen[key] then
+        if type(entry) == "table" and type(key) == "string" and not seen[key] then
             deduped[#deduped + 1] = entry
-            if type(key) == "string" then seen[key] = true end
+            seen[key] = true
         end
     end
     SalveDB.bindings = deduped
@@ -295,7 +379,7 @@ local GEOMETRY = {
     columns = true, boxWidth = true, boxHeight = true, spacing = true,
     scale = true, showNames = true, showStacks = true, orientation = true,
     horizontalGrowth = true, verticalGrowth = true,
-    bindings = true, escapes = true, movementColour = true,
+    bindings = true, escapes = true,
     showDispelTypeIcon = true,
     dispelTypeIconSize = true, dispelTypeIconPosition = true,
     -- ☠ visibilityMode belongs here even though it changes no geometry: the

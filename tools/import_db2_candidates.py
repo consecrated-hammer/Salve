@@ -6,6 +6,8 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
+import tempfile
 from pathlib import Path
 
 
@@ -14,7 +16,7 @@ MODULES_PATH = ROOT / "data" / "modules.json"
 DEBUFFS_PATH = ROOT / "data" / "debuffs.csv"
 FIELDS = [
     "module", "instance_id", "spell_id", "spell_name", "dispel_type",
-    "source", "source_build", "verified",
+    "source", "source_build", "verified", "self_alert",
 ]
 DISPEL_TYPES = {1: "Magic", 2: "Curse", 3: "Disease", 4: "Poison"}
 SOURCE = "wago.tools DB2 JournalEncounterSection+SpellCategories"
@@ -23,6 +25,23 @@ SOURCE = "wago.tools DB2 JournalEncounterSection+SpellCategories"
 def read_csv(path: Path):
     with path.open(newline="", encoding="utf-8") as handle:
         yield from csv.DictReader(handle)
+
+
+def write_csv_atomically(path: Path, rows: list[dict[str, str]]) -> None:
+    """Replace the catalogue only after a complete compatible CSV exists."""
+    with tempfile.NamedTemporaryFile(
+        "w", newline="", encoding="utf-8", dir=path.parent,
+        prefix=f".{path.name}.", suffix=".tmp", delete=False,
+    ) as handle:
+        temporary = Path(handle.name)
+        writer = csv.DictWriter(handle, fieldnames=FIELDS, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+    try:
+        os.replace(temporary, path)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
 
 
 def main() -> int:
@@ -100,6 +119,7 @@ def main() -> int:
             "source_build": args.build,
             # Import is candidate generation. A human review promotes the row.
             "verified": "false",
+            "self_alert": "",
         }
 
     retained = []
@@ -116,10 +136,7 @@ def main() -> int:
             module_order[row["module"]], int(row["instance_id"]), int(row["spell_id"])
         )
     )
-    with DEBUFFS_PATH.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=FIELDS, lineterminator="\n")
-        writer.writeheader()
-        writer.writerows(retained)
+    write_csv_atomically(DEBUFFS_PATH, retained)
 
     print(f"imported {len(candidates)} unverified DB2 candidates for {len(selected)} module(s)")
     print("review the CSV, set approved rows verified=true, then regenerate the catalogue")

@@ -56,6 +56,19 @@ local movementCooldownDurationObject = {}
 local appliedMovementDuration
 local movementDispelTextureBinds = 0
 local createdTextures = {}
+local auraContainerLoads = 0
+local auraContainerLoaded = false
+local latestContainerCalls = {}
+
+C_AddOns = {
+    IsAddOnLoaded = function(addon) return addon == "Blizzard_AuraContainer" and auraContainerLoaded end,
+    LoadAddOn = function(addon)
+        if addon == "Blizzard_AuraContainer" then
+            auraContainerLoaded = true
+            auraContainerLoads = auraContainerLoads + 1
+        end
+    end,
+}
 
 C_Spell = {
     GetSpellCooldownDuration = function(spellID)
@@ -103,13 +116,17 @@ end
 
 CreateFrame = function(frameType)
     local container = {}
+    local calls = {}
+    latestContainerCalls = calls
+    calls[#calls + 1] = "create:" .. tostring(frameType)
     function container:SetAllPoints() end
     function container:SetParent() end
-    function container:SetUnit() end
-    function container:SetEnabled() end
+    function container:SetUnit() calls[#calls + 1] = "unit" end
+    function container:SetEnabled() calls[#calls + 1] = "enabled" end
     function container:UpdateAllAuras() end
     function container:AddAuraGroup() end
     function container:AddAuraSlot(slotKey, filter, options)
+        calls[#calls + 1] = "slot"
         capturedFilter = filter
         capturedSlotOptions = options
         capturedSlots[slotKey] = { filter = filter, options = options }
@@ -141,6 +158,13 @@ rejectDispel = false
 local accepted = box()
 equal(ns.Binding:Attach(accepted, "player"), true,
     "valid dispel carrier attaches")
+equal(auraContainerLoads, 1, "the load-on-demand AuraContainer addon is loaded before probing")
+local slotIndex, unitIndex
+for index, call in ipairs(latestContainerCalls) do
+    if call == "slot" then slotIndex = index end
+    if call == "unit" then unitIndex = index end
+end
+equal(slotIndex < unitIndex, true, "the aura slot is declared before SetUnit registers UNIT_AURA")
 equal(anchoredTo.salveDispel, accepted, "returned dispel slot is anchored over its Salve box")
 equal(capturedSlots.salveDispel.filter, "HARMFUL|RAID_PLAYER_DISPELLABLE",
     "dispel slot requires Blizzard's per-character dispellable classification")

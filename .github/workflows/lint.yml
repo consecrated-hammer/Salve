@@ -19,24 +19,11 @@ jobs:
           find . -name '*.lua' -not -path './.git/*' -print0 \
             | xargs -0 -n1 luac -p
 
-      - name: Test sound module lifecycle
+      - name: Run every Lua regression test
         run: |
-          lua tests/test_config.lua
-          lua tests/test_core.lua
-          lua tests/test_aura_binding.lua
-          lua tests/test_bindings.lua
-          lua tests/test_click_log.lua
-          lua tests/test_events.lua
-          lua tests/test_escape.lua
-          lua tests/test_dispel_layout.lua
-          lua tests/test_sound.lua
-          lua tests/test_self_alert.lua
-          lua tests/test_movement_alert.lua
-          lua tests/test_options.lua
-          lua tests/test_options_build.lua
-          lua tests/test_panel.lua
-          lua tests/test_preview.lua
-          lua tests/test_slash.lua
+          set -e
+          find tests -maxdepth 1 -type f -name 'test_*.lua' -print | sort \
+            | while IFS= read -r test; do lua "$test"; done
 
       - name: Check each addon's Lua files against its own TOC
         run: |
@@ -46,7 +33,7 @@ jobs:
             awk '!/^[[:space:]]*(#|$)/ { gsub(/\\/, "/"); if ($0 ~ /\.lua$/) print }' \
               "$toc" | tr -d '\r' | sort > /tmp/in_toc
             if [ "$dir" = "." ]; then
-              find Core Data Features Options UI -name '*.lua' -print \
+              find Core Catalog Features Options UI -name '*.lua' -print \
                 | sort > /tmp/on_disk
               printf '%s\n' Core.lua >> /tmp/on_disk
               sort -o /tmp/on_disk /tmp/on_disk
@@ -66,3 +53,6 @@ jobs:
 
       - name: Validate built-in catalogue
         run: python3 tools/generate_data_modules.py --check
+
+      - name: Test maintenance tools
+        run: python3 tests/test_tools.py

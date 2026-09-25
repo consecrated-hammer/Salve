@@ -32,7 +32,6 @@ function Detector:Reset()
 end
 
 function Detector:AcknowledgeRemoval()
-    if not self.alerted then return nil end
     self.alerted = false
     self.lastStatus = "movement action used; awaiting speed recovery"
     return { kind = "CLEAR" }

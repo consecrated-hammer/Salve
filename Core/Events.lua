@@ -20,7 +20,12 @@ local function alertPlayerMovement(movement, isVerifiedMovement)
         return
     end
     local spell = ns.Escape:MovementAlertSpell("player", movement)
-    if spell or (isVerifiedMovement and ns.Escape:CanWarnForUnit("player")) then
+    -- Audio and the gold cue share the same conservative gate. A matching
+    -- movement ability alone does not prove an inferred speed drop is curable.
+    local actionable = isVerifiedMovement and spell and movement
+        and (movement.kind == "SLOW" or movement.locType == "ROOT"
+            or movement.locType == "SNARE")
+    if actionable then
         ns.Sound:PlayMovementWarning()
     end
     if spell and ns.MovementAlert then
@@ -30,8 +35,7 @@ local function alertPlayerMovement(movement, isVerifiedMovement)
     -- movement-state changes can produce one without a removable impairment.
     -- Reserve Salve's high-visibility gold player-cell cue for the explicit
     -- loss-of-control signal, which supplies a real ROOT/SNARE classification.
-    if isVerifiedMovement and spell and movement and (movement.kind == "SLOW"
-        or movement.locType == "ROOT" or movement.locType == "SNARE") and ns.Panel then
+    if actionable and ns.Panel then
         ns.Panel:SetMovementPrompt(spell, true)
     end
 end

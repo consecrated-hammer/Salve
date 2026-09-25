@@ -336,11 +336,6 @@ function Escape:IsPlayerUnit(unit)
     return ok and same == true
 end
 
--- Movement warnings are personal, even when the selected spell can target allies.
-function Escape:CanWarnForUnit(unit)
-    return unit == "player" and self:Active()
-end
-
 -- A broad player warning needs a stronger promise than a curated spell-ID
 -- match. The capability table records only actions whose spell text explicitly
 -- removes the observed impairment; ordinary mobility stays behind the reviewed
@@ -357,11 +352,6 @@ function Escape:MovementAlertSpell(unit, movement)
         end
     end
     return nil
-end
-
--- Compatibility name retained for the event router in older local copies.
-function Escape:UniversalMovementAlertSpell(unit, movement)
-    return self:MovementAlertSpell(unit, movement)
 end
 
 function Escape:DumpCaptured()

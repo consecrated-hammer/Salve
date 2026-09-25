@@ -123,7 +123,7 @@ local ns = {
         visibilityMode = "ALWAYS", soundEnabled = false, dispelSoundEnabled = false,
         movementSoundEnabled = false, movementTextNotification = true,
         selfDispelNotification = true, soundChannel = "Master",
-        soundFile = nil, movementColour = { r = 0.92, g = 0.20, b = 0.08, a = 0.68 },
+        soundFile = nil,
         point = { "CENTER", "CENTER", 0, -140 },
         settingsPoint = { "CENTER", "CENTER", 0, 0 },
         horizontalGrowth = "RIGHT", verticalGrowth = "DOWN",
@@ -143,7 +143,6 @@ local ns = {
         dispelSoundEnabled = false, movementSoundEnabled = false, movementTextNotification = true,
         selfDispelNotification = true, soundChannel = "Master", bindings = {}, escapes = {},
         movementSweepSpellIDs = { [1044] = true }, movementSweepColours = {},
-        movementColour = { r = 0.2, g = 0.3, b = 0.4, a = 0.5 },
         settingsPoint = { "CENTER", "CENTER", 0, 0 },
         horizontalGrowth = "RIGHT", verticalGrowth = "DOWN",
     },
@@ -192,6 +191,7 @@ ns.Sound = {
     registered = 0, expected = 0,
     NeedsData = function() return true end,
     ActiveRecords = function() return {} end,
+    ActiveSoundRecords = function() return {} end,
     CurrentCures = function() return { Magic = true } end,
     ActivateCurrentInstance = function() end,
     Test = function() return true end,
@@ -224,6 +224,7 @@ ns.Bindings = {
 }
 
 assert(loadfile("Options/Shared.lua"))("Salve", ns)
+assert(loadfile("Options/Window.lua"))("Salve", ns)
 for _, path in ipairs({
     "Options/Salve.lua", "Options/Tooltips.lua", "Options/Dispel.lua", "Options/Visibility.lua",
     "Options/Alerts.lua",

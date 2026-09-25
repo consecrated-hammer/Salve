@@ -15,7 +15,8 @@ local function statusText()
         "Zone: " .. tostring(ns.Sound.activeScopeName or "World")
             .. " (" .. tostring(ns.Sound.activeScopeKey or "world:0") .. ")",
         "Sound data: " .. moduleStatus(),
-        "Spell IDs: " .. tostring(#ns.Sound:ActiveRecords()),
+        "Catalogue + learned spell IDs: " .. tostring(#ns.Sound:ActiveRecords()),
+        "Sound-candidate spell IDs: " .. tostring(#ns.Sound:ActiveSoundRecords()),
         "Sound registrations: " .. tostring(ns.Sound.registered)
             .. "/" .. tostring(ns.Sound.expected),
         "Build: " .. tostring(ns.REVISION or ns.VERSION or "unknown"),
@@ -46,7 +47,10 @@ local function buildReport()
         "Cell-click audit: " .. yesNo(ns.db.clickAuditEnabled)
             .. " (" .. tostring(ns.ClickLog and ns.ClickLog:Count() or 0) .. " entries)",
         "Cures: " .. ns.CuresText(ns.Sound:CurrentCures()),
-        "Spell IDs: " .. tostring(#ns.Sound:ActiveRecords()),
+        "Catalogue + learned spell IDs: " .. tostring(#ns.Sound:ActiveRecords()),
+        "Sound-candidate spell IDs: " .. tostring(#ns.Sound:ActiveSoundRecords()),
+        "Dispel sound policy: built-in catalogue and known cure school; not a live dispellability check",
+        "Movement sound policy: verified removal candidate and matching enabled ability only",
         "Sound registrations: " .. tostring(ns.Sound.registered)
             .. "/" .. tostring(ns.Sound.expected),
         "Aura filter: " .. tostring(ns.DISPELLABLE_FILTER),

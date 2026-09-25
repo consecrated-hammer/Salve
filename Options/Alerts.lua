@@ -20,12 +20,12 @@ O.NewPage({
 
     local dispelRow
     dispelRow, y = O.Check(panel, "Play dispel alert sound",
-        "Play a sound when Salve detects a dispellable aura.", y,
+        "Play a sound for built-in catalogue auras in this zone whose dispel school matches a known cure. This spell-ID list cannot exactly mirror the cell's live dispellability filter; learned-only auras do not trigger sounds.", y,
         dispelSoundEnabled,
         function(value) ns.Set("dispelSoundEnabled", value) end)
     local movementRow
     movementRow, y = O.Check(panel, "Play snare-removal alert sound",
-        "Play a sound for a reviewed root or snare, or any root or snare Blessing of Freedom can remove.", y,
+        "Play a sound only for a reviewed root or snare with a matching enabled remedy. Inferred speed drops stay silent, just as they leave the gold cell unlit.", y,
         movementSoundEnabled,
         function(value) ns.Set("movementSoundEnabled", value) end)
     _, y = O.Check(panel, "Show personal Freedom movement text",

@@ -14,6 +14,8 @@ local ns = {}
 assert(loadfile("Features/MovementDetection.lua"))("Salve", ns)
 local detector = ns.MovementDetection
 detector:Reset()
+equal(detector:AcknowledgeRemoval().kind, "CLEAR",
+    "using a movement action clears a cue even before speed detection alerted")
 equal(detector:Sample(0.10), nil, "sampling waits for its short interval")
 equal(detector:Sample(0.05), nil, "first normal sample begins the settle window")
 equal(detector.lastStatus, "awaiting a settled ground-speed reference", "diagnostic records baseline settling")

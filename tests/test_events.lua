@@ -18,6 +18,7 @@ local pendingFlushes = 0
 local movementWarnings = 0
 local movementTextAlerts = 0
 local movementPrompts = 0
+local movementPromptClears = 0
 local selfAlertUpdates = 0
 local speedObservation
 
@@ -51,7 +52,6 @@ local ns = {
             return false, unit == "player" and index == 4,
                 { locType = "ROOT" }
         end,
-        CanWarnForUnit = function(_, unit) return unit == "player" end,
         MovementAlertSpell = function(_, unit, movement)
             if movement and (movement.locType == "ROOT" or movement.locType == "SLOW")
                 and (unit == "player" or unit == "party1") then
@@ -78,6 +78,7 @@ local ns = {
         SetMovementPrompt = function(_, spell, active)
             if not active then
                 equal(spell, nil, "clearing a movement prompt has no spell")
+                movementPromptClears = movementPromptClears + 1
                 return
             end
             equal(spell.id, 1044, "movement prompt uses Freedom")
@@ -170,8 +171,11 @@ equal(refreshes, 1, "deferred dispel refresh reaches cooldown widgets")
 handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast-guid", 12345)
 equal(#timers, 2, "ordinary player casts do not schedule a GCD sweep")
 
+local clearsBeforeMovementCast = movementPromptClears
 handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast-guid", 1044)
 equal(#timers, 3, "movement removal schedules one deferred border-sweep refresh")
+equal(movementPromptClears, clearsBeforeMovementCast + 1,
+    "using a movement action clears its gold cue even without an active speed alert")
 timers[3].callback()
 equal(movementRefreshes, 1, "movement removal refreshes border-sweep widgets")
 
@@ -191,8 +195,21 @@ equal(movementTextAlerts, 1, "non-movement loss of control emits no Freedom text
 
 speedObservation = { kind = "SLOW", locType = "SLOW" }
 onUpdate(nil, 0.15)
-equal(movementWarnings, 2, "speed observation uses the player warning path")
+equal(movementWarnings, 1, "inferred speed observation never plays a movement warning")
 equal(movementTextAlerts, 2, "speed observation uses the player text path")
 equal(movementPrompts, 1, "speed observation does not light the player-cell response cue")
+
+handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 3)
+equal(movementWarnings, 1, "unreviewed loss-of-control effect stays silent despite a matching ability")
+equal(movementPrompts, 1, "unreviewed loss-of-control effect stays unlit")
+handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 5)
+equal(movementWarnings, 1, "missing loss-of-control data stays silent")
+ns.Escape.MovementAlertSpell = function() return nil end
+handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
+equal(movementWarnings, 1, "verified effect without a matching enabled remedy stays silent")
+equal(movementPrompts, 1, "no remedy means no gold cue either")
+speedObservation = { kind = "CLEAR" }
+onUpdate(nil, 0.15)
+equal(movementWarnings, 1, "clearing movement state is silent")
 
 print("event routing tests passed")

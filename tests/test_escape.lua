@@ -105,15 +105,6 @@ UnitIsUnit = function(left, right) return left == "raid2" and right == "player" 
 equal(ns.Escape:IsPlayerUnit("player"), true, "player token is recognized")
 equal(ns.Escape:IsPlayerUnit("raid2"), true, "player raid token is recognized")
 equal(ns.Escape:IsPlayerUnit("party1"), false, "other unit is not treated as the player")
-ns.db.escapes = { [212653] = true }
-equal(ns.Escape:CanWarnForUnit("player"), true,
-    "a selected personal escape warns for the player")
-equal(ns.Escape:CanWarnForUnit("party1"), false,
-    "a selected personal escape stays silent for party members")
-ns.Escape.HasAllyEscape = function() return true end
-equal(ns.Escape:CanWarnForUnit("party1"), false,
-    "an ally-targeted escape still ignores party members")
-
 UnitClass = function() return "Monk", "MONK" end
 knownSpells = { [116841] = true }
 ns.Escape:Update()
@@ -125,12 +116,12 @@ UnitClass = function() return "Paladin", "PALADIN" end
 knownSpells = { [1044] = true }
 ns.Escape:Update()
 ns.db.escapes = { [1044] = true }
-local freedom = ns.Escape:UniversalMovementAlertSpell("player", { locType = "ROOT" })
+local freedom = ns.Escape:MovementAlertSpell("player", { locType = "ROOT" })
 equal(freedom.id, 1044,
     "Blessing of Freedom universally alerts for the player")
-equal(ns.Escape:UniversalMovementAlertSpell("player", { locType = "SNARE" }).id, 1044,
+equal(ns.Escape:MovementAlertSpell("player", { locType = "SNARE" }).id, 1044,
     "Blessing of Freedom universally alerts for the player")
-equal(ns.Escape:UniversalMovementAlertSpell("party1", { locType = "STUN" }), nil,
+equal(ns.Escape:MovementAlertSpell("party1", { locType = "STUN" }), nil,
     "Blessing of Freedom never claims it can answer a non-movement effect")
 
 C_LossOfControl.GetActiveLossOfControlDataByUnit = function() error("restricted API must not be called") end

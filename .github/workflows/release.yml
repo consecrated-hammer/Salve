@@ -65,6 +65,23 @@ jobs:
       - name: Validate generated built-in catalogue
         run: python3 tools/generate_data_modules.py --check
 
+      # A tag is an irreversible public release. Run exactly the same Lua 5.1
+      # syntax and behavioural checks as pull-request CI before packaging it.
+      - name: Install Lua 5.1 for release verification
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes lua5.1
+
+      - name: Verify Lua sources and regression tests
+        run: |
+          set -e
+          find . -name '*.lua' -not -path './.git/*' -print0 | xargs -0 -n1 luac5.1 -p
+          find tests -maxdepth 1 -type f -name 'test_*.lua' -print | sort \
+            | while IFS= read -r test; do lua5.1 "$test"; done
+
+      - name: Test maintenance tools
+        run: python3 tests/test_tools.py
+
       # Publish ONLY this version's notes. .pkgmeta points the packager at
       # RELEASE_NOTES.md rather than CHANGELOG.md, so what reaches CurseForge is
       # exactly the section below and never the whole history.

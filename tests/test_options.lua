@@ -50,6 +50,7 @@ local ns = {
         expected = 0,
         NeedsData = function() return false end,
         ActiveRecords = function() return {} end,
+        ActiveSoundRecords = function() return {} end,
         CurrentCures = function() return { Magic = true, Disease = true } end,
     },
     Binding = {
@@ -115,6 +116,12 @@ equal(pages[7].group, "REFERENCE", "Troubleshooting is a Reference page")
 local report = ns.Options.BuildDiagnosticReport()
 if not report:find("Version: 0.1.0", 1, true) then error("report omits version") end
 if not report:find("Aura engine: ready", 1, true) then error("report omits engine state") end
+if not report:find("Sound-candidate spell IDs: 0", 1, true) then
+    error("report omits separate sound candidate count")
+end
+if not report:find("Catalogue + learned spell IDs: 0", 1, true) then
+    error("report conflates learned metadata with sound candidates")
+end
 if not report:find("Cooldown casts: 1 seen", 1, true) then
     error("copy report omits cooldown diagnostics")
 end

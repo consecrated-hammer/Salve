@@ -5,6 +5,30 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.5.24] - 2026-09-25
+
+### Fixed
+
+- Restore pre-dev1 catalogue-based dispel sounds; remove the empty approval
+  gate introduced in dev1. Coverage remains scope- and cure-school-based, not
+  identical to the cell's live dispellability check.
+- Apply the gold movement cue's verified-effect and enabled-remedy checks to
+  automatic movement sounds; inferred speed drops no longer play them.
+- Distinguish catalogue/learned spell counts from sound-candidate counts in diagnostics.
+- Clear the personal movement cue whenever its bound removal is cast, including
+  when the player occupies a raid token rather than the literal `player` token.
+- Repair malformed saved settings at load time instead of allowing a partial
+  sync or edited SavedVariables file to break the panel or settings window.
+- Make local staging atomic and runtime-only; it no longer copies hidden files,
+  release material or development sources into the installed addon folder.
+- Make tag releases run the complete Lua 5.1 and maintenance-tool test suites
+  before packaging, and make CI discover every regression test automatically.
+- Load Blizzard's AuraContainer before creating Salve's panel and declare its
+  aura slots before binding the unit, so WoW Forever registers `UNIT_AURA` and
+  can populate the panel.
+
 ## [1.5.23] - 2026-09-19
 
 ### Fixed

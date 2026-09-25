@@ -11,7 +11,9 @@ function Panel:SetMovementPrompt(spell, active)
     local spellID = spell and spell.id
     local key = spellID and ns.Bindings and ns.Bindings:FirstKeyForSpell(spellID)
     for _, box in ipairs(self.boxes) do
-        if box.unit == "player" then
+        local isPlayer = box.unit == "player"
+            or (ns.Escape and ns.Escape.IsPlayerUnit and ns.Escape:IsPlayerUnit(box.unit))
+        if isPlayer then
             ns.Box.SetMovementPrompt(box, active and key ~= nil)
         end
     end

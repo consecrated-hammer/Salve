@@ -1,8 +1,8 @@
 ## Interface: 16001
 ## Title: Salve (WoW Forever)
 ## Author: consecrated-hammer
-## Version: 1.5.23
-## X-ReleaseDate: 2026-09-19
+## Version: 1.5.24
+## X-ReleaseDate: 2026-09-25
 ## Notes: WoW Forever (Camelot) build using Salve's Mainline backend.
 ## AllowLoadGameType: camelot
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
@@ -37,6 +37,7 @@ UI\Preview.lua
 UI\Broker.lua
 UI\Minimap.lua
 Options\Shared.lua
+Options\Window.lua
 Options\Salve.lua
 Options\Tooltips.lua
 Options\Dispel.lua

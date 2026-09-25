@@ -15,6 +15,15 @@ local ns = {
         horizontalGrowth = "RIGHT",
         verticalGrowth = "DOWN",
     },
+    Escape = {
+        IsPlayerUnit = function(_, unit) return unit == "raid3" end,
+    },
+    Bindings = {
+        FirstKeyForSpell = function(_, spellID) return spellID == 1044 and "BUTTON2" end,
+    },
+    Box = {
+        SetMovementPrompt = function(box, active) box.prompt = active end,
+    },
 }
 
 assert(loadfile("UI/Panel.lua"))("Salve", ns)
@@ -94,5 +103,12 @@ equal(ns.Panel:NormalizeGrowthAnchor(anchored), true,
 equal(ns.db.point[1], "TOPRIGHT", "right-to-left stores right edge anchor")
 equal(ns.db.point[3], 114, "right edge coordinate is preserved")
 equal(anchoredPoint[1], "TOPRIGHT", "frame is reanchored at right edge")
+
+-- The player's frame can have a raid token. Gold movement guidance must not
+-- silently disappear merely because that token is not literally "player".
+ns.Panel.boxes = { { unit = "raid3" }, { unit = "party1" } }
+ns.Panel:SetMovementPrompt({ id = 1044 }, true)
+equal(ns.Panel.boxes[1].prompt, true, "raid-token player receives movement prompt")
+equal(ns.Panel.boxes[2].prompt, nil, "other party member does not receive player prompt")
 
 print("panel layout tests passed")

@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -16,6 +18,7 @@ EXCLUDED_DIRECTORIES = {
 }
 EXCLUDED_NAMES = {".gitignore", ".pkgmeta", "CHANGELOG.md", "README.md", "DEVELOPMENT.md"}
 EXCLUDED_SUFFIXES = {".ps1", ".py", ".sh", ".zip", ".tmp", ".pyc"}
+RUNTIME_SUFFIXES = {".lua", ".xml", ".tga", ".blp", ".ogg", ".mp3", ".wav"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -34,13 +37,13 @@ def staged_version(source_toc: Path, existing_toc: Path, enabled: bool) -> str |
     source = re.search(r"^## Version:\s*(.+?)\s*$", source_toc.read_text(encoding="utf-8"), re.MULTILINE)
     if not source:
         raise SystemExit(f"TOC has no Version metadata: {source_toc}")
-    base = re.sub(r"-dev-\d+$", "", source.group(1))
+    base = re.sub(r"-dev-?\d+$", "", source.group(1))
     number = 1
     if existing_toc.is_file():
-        previous = re.search(r"^## Version:\s*" + re.escape(base) + r"-dev-(\d+)\s*$", existing_toc.read_text(encoding="utf-8"), re.MULTILINE)
+        previous = re.search(r"^## Version:\s*" + re.escape(base) + r"-dev-?(\d+)\s*$", existing_toc.read_text(encoding="utf-8"), re.MULTILINE)
         if previous:
             number = int(previous.group(1)) + 1
-    return f"{base}-dev-{number}"
+    return f"{base}-dev{number}"
 
 
 def leatrix_style_toc(source_toc: Path, addon_name: str) -> str:
@@ -66,13 +69,19 @@ def leatrix_style_toc(source_toc: Path, addon_name: str) -> str:
 
 
 def should_copy(relative_path: Path) -> bool:
-    if any(part in EXCLUDED_DIRECTORIES for part in relative_path.parts[:-1]):
+    if any(part.startswith(".") or part in EXCLUDED_DIRECTORIES for part in relative_path.parts):
         return False
     if relative_path.name in EXCLUDED_NAMES or relative_path.suffix.lower() in EXCLUDED_SUFFIXES:
         return False
-    if relative_path.suffix.lower() == ".toc":
+    if relative_path.suffix.lower() not in RUNTIME_SUFFIXES or relative_path.suffix.lower() == ".toc":
         return False
     return True
+
+
+def copy_client_tocs(source: Path, destination: Path) -> None:
+    """Preserve each client-discovered top-level TOC filename."""
+    for source_toc in source.glob("*.toc"):
+        shutil.copy2(source_toc, destination / source_toc.name)
 
 
 def main() -> int:
@@ -94,26 +103,46 @@ def main() -> int:
         raise SystemExit("refusing an unsafe destination")
     dev_version = staged_version(toc, destination / f"{args.addon_name}.toc", args.dev)
 
-    if destination.exists():
-        shutil.rmtree(destination)
-    destination.mkdir(parents=True)
+    output.mkdir(parents=True, exist_ok=True)
+    stage_root = Path(tempfile.mkdtemp(prefix=f".{args.addon_name}.stage-", dir=output))
+    staged_addon = stage_root / args.addon_name
+    backup = output / f".{args.addon_name}.previous"
+    try:
+        staged_addon.mkdir()
+        for path in source.rglob("*"):
+            if not path.is_file():
+                continue
+            relative = path.relative_to(source)
+            if should_copy(relative):
+                target = staged_addon / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(path, target)
 
-    for path in source.rglob("*"):
-        if not path.is_file():
-            continue
-        relative = path.relative_to(source)
-        if should_copy(relative):
-            target = destination / relative
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(path, target)
+        # Keep every top-level client TOC. Retail and Camelot discover their
+        # respective AddonName.toc / AddonName_Camelot.toc files; renaming a
+        # selected Camelot TOC to the generic name makes Forever skip it.
+        copy_client_tocs(source, staged_addon)
+        staged_toc = staged_addon / toc.relative_to(source)
+        if args.leatrix_style:
+            staged_toc.write_text(leatrix_style_toc(toc, args.addon_name), encoding="utf-8")
+        if dev_version:
+            staged_toc.write_text(re.sub(r"^## Version:\s*.+?$", f"## Version: {dev_version}", staged_toc.read_text(encoding="utf-8"), flags=re.MULTILINE), encoding="utf-8")
 
-    staged_toc = destination / f"{args.addon_name}.toc"
-    if args.leatrix_style:
-        staged_toc.write_text(leatrix_style_toc(toc, args.addon_name), encoding="utf-8")
-    else:
-        shutil.copy2(toc, staged_toc)
-    if dev_version:
-        staged_toc.write_text(re.sub(r"^## Version:\s*.+?$", f"## Version: {dev_version}", staged_toc.read_text(encoding="utf-8"), flags=re.MULTILINE), encoding="utf-8")
+        if backup.exists():
+            shutil.rmtree(backup)
+        if destination.exists():
+            os.replace(destination, backup)
+        try:
+            os.replace(staged_addon, destination)
+        except BaseException:
+            if backup.exists() and not destination.exists():
+                os.replace(backup, destination)
+            raise
+        if backup.exists():
+            shutil.rmtree(backup)
+    finally:
+        if stage_root.exists():
+            shutil.rmtree(stage_root)
     print(f"Staged {args.addon_name} from {args.toc} at {destination}" + (f" ({dev_version})" if dev_version else ""))
     return 0
 

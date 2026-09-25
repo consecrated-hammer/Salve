@@ -235,11 +235,11 @@ function Sound:ActiveCuratedRecords()
     return records
 end
 
-function Sound:ActiveCuratedSpellIDs()
-    local records = self:ActiveCuratedRecords()
-    local ids = {}
-    for _, record in ipairs(records) do ids[#ids + 1] = record.spellID end
-    return ids
+-- Sound candidates use the pre-dev1 catalogue policy: current scope, verified
+-- metadata and a known cure for that school. This is not a live dispellability
+-- test; keep learned-only observations out of native sound registrations.
+function Sound:ActiveSoundRecords()
+    return self:ActiveCuratedRecords()
 end
 
 -- A tiny subset of curated dispels may be server-scripted, so Blizzard gives
@@ -346,9 +346,9 @@ function Sound:Refresh()
     end
 
     -- Native aura sounds are registered by spell ID only. Unlike the cell
-    -- overlay, that API accepts no RAID_PLAYER_DISPELLABLE predicate, so never
-    -- promote learned/type-only observations into an automatic alert.
-    local records = self:ActiveCuratedRecords()
+    -- overlay, that API accepts no RAID_PLAYER_DISPELLABLE predicate. Use the
+    -- scope/cure-matched built-in catalogue; never auto-promote learned records.
+    local records = self:ActiveSoundRecords()
     local units = self:CurrentUnitTokens()
     self.expected = #records * #units
     if self.expected == 0 then return end
@@ -623,9 +623,9 @@ function Sound:StatusText()
         loader = self.activeModule or "no matching built-in data"
     end
     local records = self:ActiveRecords()
-    return ("%s (%s)\n%s\n%d actionable spell IDs; %d/%d registrations active"):format(
+    return ("%s (%s)\n%s\n%d catalogue + learned IDs; %d sound-candidate IDs; %d/%d registrations active"):format(
         self.activeScopeName or "World", self.activeScopeKey or "world:0",
-        loader, #records, self.registered, self.expected)
+        loader, #records, #self:ActiveSoundRecords(), self.registered, self.expected)
 end
 
 function Sound:Report()
@@ -641,7 +641,8 @@ function Sound:Report()
     if not self:NeedsData() then moduleStatus = "no active data" end
     ns.Print("  catalogue: " .. moduleStatus)
     ns.Print("  cures: " .. ns.CuresText(self:CurrentCures()))
-    ns.Print("  actionable IDs: " .. tostring(#self:ActiveRecords()))
+    ns.Print("  catalogue + learned IDs: " .. tostring(#self:ActiveRecords()))
+    ns.Print("  sound-candidate IDs: " .. tostring(#self:ActiveSoundRecords()))
     ns.Print("  registrations: " .. tostring(self.registered) .. "/" .. tostring(self.expected))
     local argKey, argVal = soundArg()
     ns.Print("  payload: " .. argKey .. " = " .. tostring(argVal))

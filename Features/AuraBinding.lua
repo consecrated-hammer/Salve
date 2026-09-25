@@ -55,7 +55,6 @@ ns.Binding = {}
 local Binding = ns.Binding
 
 local SLOT_KEY = "salveDispel"
-local MOVE_SLOT_KEY = "salveMovement"
 
 local function currentDispelTypes()
     local types = {}
@@ -105,19 +104,6 @@ local function dispelIconPosition()
         BOTTOMRIGHT = true, CENTER = true,
     }
     return valid[position] and position or "BOTTOMLEFT"
-end
-
-local function movementColour()
-    local colour = ns.db and ns.db.movementColour or nil
-    return tonumber(colour and colour.r) or 0.92,
-        tonumber(colour and colour.g) or 0.20,
-        tonumber(colour and colour.b) or 0.08,
-        tonumber(colour and colour.a) or 0.68
-end
-
-local function movementColourSignature()
-    local r, g, b, a = movementColour()
-    return ("%.3f,%.3f,%.3f,%.3f"):format(r, g, b, a)
 end
 
 -- ── Capability probe ───────────────────────────────────────────────────────
@@ -322,6 +308,23 @@ end
 -- "successfully" to a container with no unit or no event registration --
 -- boxes that never light up and never report a failure.
 local REQUIRED = { "AddAuraSlot", "SetUnit", "SetEnabled" }
+local AURA_CONTAINER_ADDON = "Blizzard_AuraContainer"
+
+-- Forever ships AuraContainer as a load-on-demand Blizzard addon.  Its own
+-- consumers load that addon before creating the template; without it,
+-- CreateFrame can fail or return a partial frame even though the API exists.
+-- Retail already has it loaded in the normal UI path, so this is a no-op there.
+local function ensureAuraContainerLoaded()
+    local api = C_AddOns
+    local isLoaded = api and api.IsAddOnLoaded or IsAddOnLoaded
+    local load = api and api.LoadAddOn or LoadAddOn
+    if type(load) ~= "function" then return end
+    if type(isLoaded) == "function" then
+        local ok, loaded = pcall(isLoaded, AURA_CONTAINER_ADDON)
+        if ok and loaded then return end
+    end
+    pcall(load, AURA_CONTAINER_ADDON)
+end
 
 local function probe()
     if Binding.caps then return Binding.caps end
@@ -337,6 +340,7 @@ local function probe()
 
     local caps = { container = false, methods = {}, usable = false }
 
+    ensureAuraContainerLoaded()
     local ok, c = pcall(CreateFrame, "AuraContainer", nil, UIParent,
         "CustomAuraContainerTemplate")
     if ok and c then
@@ -529,39 +533,12 @@ local function initializeFrame(box)
     end
 end
 
--- Movement-impairment overlay. This is deliberately a red-orange fill, rather
--- than the normal dispel colour or a subtle border: it means "move yourself
--- out" and remains recognisable at Decursive-sized cells.
---
--- This must NOT use AddDispelTypeTexture/SetAuraBorder. Those APIs drive art
--- from an aura's dispel school, and roots/snares (including Entangling Roots)
--- normally have none. The slot button itself is shown only for its native
--- spell-ID match; ordinary child regions inherit that visibility.
-local function initializeMovementFrame(box)
-    return function(b)
-        pcall(function()
-            if b.SetMouseClickEnabled then b:SetMouseClickEnabled(false) end
-            if b.SetMouseMotionEnabled then b:SetMouseMotionEnabled(false) end
-        end)
-        pcall(b.SetSize, b, box:GetWidth(), box:GetHeight())
-
-        if not b.salveMovementFill then
-            local fill = b:CreateTexture(nil, "OVERLAY")
-            fill:SetAllPoints()
-            b.salveMovementFill = fill
-        end
-        b.salveMovementFill:SetColorTexture(movementColour())
-
-        -- Do not register these as dispel textures: the button's native
-        -- spell-ID filter owns their visibility by parent inheritance.
-    end
-end
-
 -- ── Attaching one box ──────────────────────────────────────────────────────
 
 function Binding:Container(box)
     if box.auraContainer then return box.auraContainer end
 
+    ensureAuraContainerLoaded()
     local ok, c = pcall(CreateFrame, "AuraContainer", nil, box,
         "CustomAuraContainerTemplate")
     if not ok or not c then return nil end
@@ -608,13 +585,6 @@ function Binding:Attach(box, unit)
         tostring(ns.db.showDispelTypeIcon ~= false),
         dispelIconSize(), dispelIconPosition(),
         dispelTypeSignature(),
-        -- ☠ The movement slot is baked in at creation like everything else, so
-        --   enabling an escape or learning a new snare has to change the
-        --   signature or already-bound boxes would never pick it up.
-        ns.Escape and #ns.Escape:AllSpellIDs() or 0,
-        ns.Escape and tostring(ns.Escape:Active()) or "false",
-        ns.Escape and tostring(ns.Escape:HasAllyEscape()) or "false",
-        movementColourSignature(),
     }, "|")
 
     -- Fast path: same slot, possibly a different unit, possibly parked.
@@ -736,10 +706,6 @@ function Binding:Attach(box, unit)
     --   aura events, that no later rebuild would ever retry -- one member
     --   permanently unlit, silently, with the fast path above hiding it. That is
     --   the exact shape a changed or partially-supported API would take.
-    if caps.methods.SetUnit and not pcall(c.SetUnit, c, unit) then
-        return restoreFallback("AuraContainer rejected SetUnit")
-    end
-
     box.salveVisualBindFailure = nil
     -- Keep this exactly to Blizzard's by-me filter, the same normal-dispel
     -- path used by Danders. Spell-ID filters are identity-gated and silently
@@ -762,6 +728,14 @@ function Binding:Attach(box, unit)
         return restoreFallback(self.lastFailure)
     end
 
+    -- SetUnit evaluates event registration against the container's declared
+    -- content.  Forever's native AuraContainer leaves UNIT_AURA unregistered
+    -- if it runs before AddAuraSlot, so the unit must be assigned only after
+    -- the slot is fully declared and anchored.
+    if caps.methods.SetUnit and not pcall(c.SetUnit, c, unit) then
+        return restoreFallback("AuraContainer rejected SetUnit")
+    end
+
     -- Do not declare a movement slot. Its only selector is includeSpellIDs,
     -- which the client silently ignores for harmful auras on friendly frames.
     -- A broad HARMFUL fallback would make every bleed and ground effect look
@@ -769,7 +743,8 @@ function Binding:Attach(box, unit)
     -- fail dark and retain the curated native movement sounds as the warning.
     self.lastMovementFailure = "movement cell warning disabled: spell-ID filtering is identity-gated"
 
-    -- ☠ LAST. This is what registers the container for aura events.
+    -- Enable after the slot and unit are ready so the engine starts from a
+    -- complete binding.
     if caps.methods.SetEnabled and not pcall(c.SetEnabled, c, true) then
         return restoreFallback("AuraContainer rejected SetEnabled")
     end

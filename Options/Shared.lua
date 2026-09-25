@@ -317,103 +317,6 @@ function Options.Slider(panel, label, hint, y, minV, maxV, step, get, set, fmt, 
     return row, y - 34
 end
 
--- A cycling button rather than a dropdown: the dropdown API churned hard in
--- 12.0, and a three-option control does not need a menu to be usable.
-function Options.Cycle(panel, label, hint, y, values, labels, get, set)
-    local row = Options.Row(panel, y, 28, label, hint)
-    local btn = Options.Button(row, 160, 22)
-    btn:SetPoint("RIGHT", row, "RIGHT", -8, 0)
-
-    local function render()
-        local cur = get()
-        for i, v in ipairs(values) do
-            if v == cur then btn:SetText(labels[i]) return end
-        end
-        btn:SetText(labels[1])
-    end
-    render()
-
-    btn:SetScript("OnClick", function()
-        local cur = get()
-        for i, v in ipairs(values) do
-            if v == cur then
-                set(values[(i % #values) + 1])
-                render()
-                refreshAll(panel)
-                return
-            end
-        end
-        set(values[1])
-        render()
-        refreshAll(panel)
-    end)
-    attachHint(btn, label, hint)
-
-    panel.salveRefresh[#panel.salveRefresh + 1] = render
-    return row, y - 34
-end
-
--- Two short choices under one heading. Alignment reads much faster as a pair:
--- Horizontal and Vertical belong together, not as two full-width sections.
-function Options.CyclePair(panel, heading, y, left, right)
-    local groupTitle = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    groupTitle:SetPoint("TOPLEFT", PAD_L, y)
-    groupTitle:SetText(heading)
-    groupTitle:SetTextColor(unpack(THEME.accent))
-
-    local function makeChoice(x, spec)
-        local title = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        title:SetPoint("TOPLEFT", x, y - 20)
-        title:SetText(spec.label)
-
-        local btn = Options.SelectButton(panel, 150, 20)
-        btn:SetPoint("TOPLEFT", x, y - 35)
-        btn.salveTitle = title
-
-        local function render()
-            local values = type(spec.values) == "function"
-                and spec.values() or spec.values
-            local labels = type(spec.labels) == "function"
-                and spec.labels() or spec.labels
-            local current = spec.get()
-            for i, value in ipairs(values) do
-                if value == current then
-                    btn:SetText(labels[i])
-                    return
-                end
-            end
-            btn:SetText(labels[1])
-        end
-
-        btn:SetScript("OnClick", function()
-            local values = type(spec.values) == "function"
-                and spec.values() or spec.values
-            local current = spec.get()
-            for i, value in ipairs(values) do
-                if value == current then
-                    spec.set(values[(i % #values) + 1])
-                    render()
-                    refreshAll(panel)
-                    return
-                end
-            end
-            spec.set(values[1])
-            render()
-            refreshAll(panel)
-        end)
-
-        attachHint(btn, heading .. " — " .. spec.label, spec.hint)
-        attachTitleHint(panel, title, heading .. " — " .. spec.label, spec.hint)
-        panel.salveRefresh[#panel.salveRefresh + 1] = render
-        render()
-        return btn
-    end
-
-    local leftButton = makeChoice(PAD_L, left)
-    local rightButton = makeChoice(206, right)
-    return leftButton, rightButton, y - 72
-end
-
 -- Two compact menu-backed selects under one heading. Each closed control is a
 -- complete field in its own right: label, then select. Do not wrap it in a
 -- second card; that double surface makes a two-column row feel cramped.
@@ -987,43 +890,9 @@ function Options.PageReset(panel, y, reset, label)
     return button, y - 40
 end
 
--- ── Page construction ──────────────────────────────────────────────────────
-
--- ☠ PAGES ARE QUEUED HERE, NOT BUILT. Option files run while the TOC loads,
---   which is BEFORE ADDON_LOADED and therefore before ns.InitConfig() has made
---   ns.db exist. Building at file scope meant every page captured a nil db and
---   the first getter call took the whole options system down with it -- no
---   pages registered at all. Core/Events.lua calls BuildAll() once the saved
---   variables are real.
-Options.queue = {}
-
-function Options.NewPage(spec, build)
-    if type(spec) == "string" then spec = { name = spec } end
-    spec.build = build
-    Options.queue[#Options.queue + 1] = spec
-end
-
-function Options.BuildAll()
-    Options.CreateWindow()
-    Options.CreateLauncher()
-    Options.queue = {}
-end
-
--- ADDON_LOADED is the normal construction point, after saved variables exist.
--- If another addon or the client interrupts that pass, retry once when the
--- player explicitly opens Salve rather than leaving the slash command as a
--- dead end. Keep the error so it can be reported without requiring Lua errors
--- to be enabled just to learn why the window did not appear.
-function Options.EnsureBuilt()
-    if Options.window then return true end
-    local ok, err = pcall(Options.BuildAll)
-    if ok and Options.window then
-        Options.buildError = nil
-        return true
-    end
-    Options.buildError = tostring(err or "settings window was not created")
-    return false
-end
+-- ── Page content and shell construction ────────────────────────────────────
+-- Queueing/opening lives in Options/Window.lua so pages and reusable controls
+-- can evolve without relying on TOC-side initialization order.
 
 -- Builds one content page inside Salve's movable window. Blizzard Settings
 -- remains only as a familiar launcher; owning the actual window lets Salve be
@@ -1353,18 +1222,4 @@ function Options.CreateLauncher()
         InterfaceOptions_AddCategory(panel)
         Options.rootCategory = panel
     end
-end
-
-function ns.OpenOptions(pageName)
-    if not ns.Options.EnsureBuilt() then
-        ns.Print("settings could not be built: "
-            .. tostring(ns.Options.buildError or "unknown error"))
-        return
-    end
-    if SettingsPanel and SettingsPanel.IsShown and SettingsPanel:IsShown() then
-        if HideUIPanel then HideUIPanel(SettingsPanel) else SettingsPanel:Hide() end
-    end
-    ns.Options.ShowPage(pageName)
-    ns.Options.window:Show()
-    ns.Options.window:Raise()
 end

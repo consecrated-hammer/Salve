@@ -38,7 +38,6 @@ equal(ns.db.dispelSoundEnabled, false, "dispel alert sound defaults off")
 equal(ns.db.movementSoundEnabled, false, "snare-removal sound defaults off")
 equal(ns.db.movementTextNotification, true, "Freedom movement text defaults on")
 equal(ns.db.selfDispelNotification, true, "self-dispel combat text defaults on")
-equal(ns.db.movementColour.r, 0.92, "movement alert colour defaults to red-orange")
 equal(type(ns.db.movementSweepSpellIDs), "table", "movement sweep selections default to a table")
 equal(type(ns.db.movementSweepColours), "table", "movement sweep colours default to a table")
 equal(ns.db.showStartupMessage, true, "startup message defaults on")
@@ -69,9 +68,6 @@ equal(changedKey, "soundEnabled", "sound setting identifies changed key")
 
 ns.Set("selfDispelNotification", false)
 equal(selfAlertRefreshes, 1, "self-dispel setting updates only its combat-log listener")
-
-ns.Set("movementColour", { r = 0.1, g = 0.2, b = 0.3, a = 0.4 })
-equal(ns.db.movementColour.a, 0.4, "movement alert colour persists selected opacity")
 
 SalveDB = {
     schemaVersion = 3,
@@ -117,5 +113,41 @@ ns.InitConfig()
 equal(ns.db.movementSweepSpellIDs[1044], true,
     "legacy single sweep selection migrates into the multi-sweep set")
 equal(ns.db.movementSweepSpellID, nil, "legacy single sweep selection is cleared")
+
+-- SavedVariables are persisted input, not trusted Lua. A bad or partly
+-- written profile must recover to independent sane values on the next load.
+SalveDB = {
+    schemaVersion = "future",
+    bindings = "broken",
+    visibility = false,
+    escapes = 17,
+    movementSweepSpellIDs = "broken",
+    movementSweepColours = "broken",
+    scale = "nan",
+    columns = 0,
+    point = { "CENTER" },
+    settingsPoint = "broken",
+    handlePosition = "MIDDLE",
+    soundFile = {},
+    tooltipAnchor = "DIAGONAL",
+    soundChannel = "Unknown",
+}
+SalveLearnedDB = nil
+ns.InitConfig()
+equal(ns.db.schemaVersion, 9, "invalid schema is normalized")
+equal(type(ns.db.bindings), "table", "invalid bindings are repaired")
+equal(type(ns.db.visibility), "table", "invalid visibility is repaired")
+equal(type(ns.db.escapes), "table", "invalid escapes are repaired")
+equal(ns.db.scale, 1, "invalid scale is repaired")
+equal(ns.db.columns, 1, "columns are clamped to a safe minimum")
+equal(ns.db.point[1], "CENTER", "invalid panel point is repaired")
+equal(ns.db.settingsPoint[1], "CENTER", "invalid settings point is repaired")
+equal(ns.db.tooltipAnchor, "RIGHT", "invalid tooltip anchor is repaired")
+equal(ns.db.soundChannel, "Master", "invalid sound channel is repaired")
+equal(ns.db.handlePosition, "TOPLEFT", "invalid handle position is repaired")
+equal(ns.db.soundFile, nil, "invalid sound file is repaired")
+ns.db.bindings.injected = true
+ns.InitConfig()
+equal(ns.defaults.bindings.injected, nil, "repaired table defaults are not shared")
 
 print("config tests passed")

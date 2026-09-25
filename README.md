@@ -152,12 +152,14 @@ mouse input cannot be changed on a protected frame during combat.
 
 **Alert sound** is optional and off by default. Salve carries its small,
 built-in seasonal catalogue in the same addon folder, then registers only the
-current instance's catalogued spell IDs matching schools your character can
-remove. Actionable roots and snares use a distinct Blizzard movement-alert
+current instance's verified catalogue spell IDs matching schools your character
+can remove. Learned-only observations do not trigger sounds.
+Reviewed roots and snares with a matching enabled remedy use a distinct movement-alert
 sound; the Dispels page has separate test buttons for both sounds. Season 1,
 Season 2 and future catalogues can coexist without becoming separate AddOns.
-Run `/salve debug` to see the built-in catalogue, spell ID count and native
-sound registrations.
+Run `/salve debug` to see catalogue/learned counts, sound candidates and native
+registrations. Inferred speed drops may still show
+optional movement text, but cannot play a movement sound or light the gold cell.
 
 Aura learning is always active. Outdoor discoveries are keyed to the current
 map; dungeon and raid discoveries are keyed to their instance. Salve listens
@@ -175,9 +177,10 @@ These are worth stating plainly, because they are not oversights:
   debuffs.** Both would require inspecting aura details that addons are no
   longer permitted to use for this decision. This is a game restriction, not
   an unfinished priority system.
-- **Sound coverage is source-backed but not guaranteed complete.** Encounter
-  Journal data covers boss abilities, not every trash debuff. Aura learning
-  can collect readable omissions; private auras still require curated data.
+- **Sound coverage is catalogue-based, not a live dispellability check.**
+  Spell metadata does not prove that every application is removable. The
+  spell-ID whitelist can miss dispellable auras or sound when the native cell
+  stays dark; it cannot exactly mirror Blizzard's visual dispellability filter.
 - **Normal dispel colours cannot be customised,** for the same reason. The game
   owns them. The independent root/snare alert colour can be changed in the
   Dispels page.

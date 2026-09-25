@@ -17,40 +17,6 @@ local function smallLabel(parent, text, x, y)
     return label
 end
 
-local function toolbarCycle(parent, x, y, width, hintTitle, hint,
-        values, labels, get, set)
-    local button = O.Button(parent, width, 22)
-    button:SetPoint("TOPLEFT", x, y)
-    O.AttachHint(button, hintTitle, hint)
-
-    local function render()
-        local current = get()
-        for index, value in ipairs(values) do
-            if value == current then
-                button:SetText(labels[index])
-                return
-            end
-        end
-        button:SetText(labels[1])
-    end
-
-    button:SetScript("OnClick", function()
-        local current = get()
-        for index, value in ipairs(values) do
-            if value == current then
-                set(values[(index % #values) + 1])
-                render()
-                return
-            end
-        end
-        set(values[1])
-        render()
-    end)
-    parent.salveRefresh[#parent.salveRefresh + 1] = render
-    render()
-    return button
-end
-
 O.NewPage({
     name = "Salve",
     title = "Panel",

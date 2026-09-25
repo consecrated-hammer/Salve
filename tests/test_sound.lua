@@ -107,9 +107,9 @@ ns.Sound:RegisterData("Salve", {
 })
 ns.Sound:ActivateCurrentInstance()
 equal(ns.Sound.activeModule, "Built-in catalogue", "current data is built into Salve")
-local curatedIDs = ns.Sound:ActiveCuratedSpellIDs()
-equal(#curatedIDs, 1, "only verified current-instance spells can drive the cell overlay")
-equal(curatedIDs[1], 1001, "overlay list excludes schools the character cannot cure")
+local curatedRecords = ns.Sound:ActiveCuratedRecords()
+equal(#curatedRecords, 1, "only verified current-instance spells can drive the cell overlay")
+equal(curatedRecords[1].spellID, 1001, "overlay list excludes schools the character cannot cure")
 equal(ns.Sound.registered, 0, "sound disabled registers no alerts")
 equal(ns.Sound:PlayMovementWarning(), false,
     "movement warning respects the shared alert-sound toggle")
@@ -209,9 +209,9 @@ currentInstanceName, currentInstanceID = "World", 0
 ns.Sound:SetLearning(true, true)
 equal(ns.Sound.activeScopeKey, "map:42", "outdoor learning uses map ID")
 equal(ns.Sound.activeModule, "Built-in catalogue", "map-scoped catalogue activates outdoors")
-local mapRecords = ns.Sound:ActiveCuratedSpellIDs()
+local mapRecords = ns.Sound:ActiveCuratedRecords()
 equal(#mapRecords, 1, "outdoor catalogue selects only the active map")
-equal(mapRecords[1], 2002, "outdoor catalogue selects the map spell ID")
+equal(mapRecords[1].spellID, 2002, "outdoor catalogue selects the map spell ID")
 equal(ns.db.learnMode, true, "learning active in original outdoor map")
 local auraReads = 0
 C_UnitAuras.GetAuraDataByIndex = function(_, index)
@@ -255,5 +255,33 @@ for index = 1, 5 do
     equal(createdFrames[index].event, "UNIT_AURA",
         "scope change keeps listener " .. index .. " registered")
 end
+
+-- Restoration regression: learned-only observations must stay silent, while
+-- the actual bundled catalogue must register normal cure-matched sounds.
+ns.learned.auras["map:43"] = { spells = {
+    [900001] = { spellID = 900001, dispelType = "Disease", verified = true },
+} }
+ns.db.dispelSoundEnabled = true
+ns.Sound:RequestRefresh()
+equal(#ns.Sound:ActiveRecords(), 1, "learned observation remains available for review")
+equal(#ns.Sound:ActiveSoundRecords(), 0, "learned-only record is not a sound candidate")
+equal(ns.Sound.registered, 0, "learned-only record creates no native registration")
+
+Salve = ns
+assert(loadfile("Catalog/Curated.lua"))()
+ns.knownDispels = { { cures = { Magic = true, Disease = true, Curse = true, Poison = true } } }
+local bundledRecords = 0
+for scopeKey in pairs(ns.Sound.sources.Salve) do
+    ns.Sound.activeScopeKey = scopeKey
+    local records = ns.Sound:ActiveCuratedRecords()
+    bundledRecords = bundledRecords + #records
+    equal(#ns.Sound:ActiveSoundRecords(), #records, "pre-dev1 catalogue sound candidates restored")
+    ns.Sound:RequestRefresh()
+    equal(ns.Sound.registered, #records * 5, "native sounds registered for all five raid units")
+end
+equal(bundledRecords > 0, true, "actual bundled dispel sounds are not silently disabled")
+ns.knownDispels = {}
+ns.Sound:OnDispelChanged()
+equal(ns.Sound.registered, 0, "no known cure means no automatic dispel sound")
 
 print("sound tests passed")
