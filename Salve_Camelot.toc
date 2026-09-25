@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## Title: Salve (WoW Forever)
 ## Author: consecrated-hammer
-## Version: 1.5.24
+## Version: 1.5.25
 ## X-ReleaseDate: 2026-09-25
 ## Notes: WoW Forever (Camelot) build using Salve's Mainline backend.
 ## AllowLoadGameType: camelot

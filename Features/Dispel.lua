@@ -35,6 +35,10 @@ local SPELLS = {
         { id = 88423,  Magic = true, upgrades = {
             { id = 392378, Poison = true, Curse = true },              -- Improved Nature's Cure
         } },                                                           -- Nature's Cure
+        -- WoW Forever teaches this early as its own spell. Keep it beside the
+        -- modern replacement rather than assuming the Mainline action ID
+        -- exists in the Camelot spellbook.
+        { id = 8946,                 Poison = true },                  -- Cure Poison (Forever)
         { id = 2782,                 Poison = true, Curse = true },    -- Remove Corruption
     },
     SHAMAN = {
@@ -155,7 +159,13 @@ end
 
 local function isAvailable(entry, castable)
     if entry.available then return entry.available() end
-    return (castable and castable[entry.id]) or (not castable and known(entry.id))
+    if not castable then return known(entry.id) end
+    if castable[entry.id] then return true end
+    -- Forever's Mainline-shaped spellbook can enumerate only part of a legacy
+    -- class book. Its Camelot TOC is the explicit client boundary: merge a
+    -- legacy positive only there, while Retail retains its strict active-spec
+    -- spellbook filter and never arms an off-spec secure action.
+    return ns.isCamelot and known(entry.id) or false
 end
 
 -- Returns true when either selection changed, so callers know to rebuild.

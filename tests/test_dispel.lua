@@ -65,7 +65,27 @@ equal(ns.primaryCures.Magic, true, "Nature's Cure covers Magic")
 equal(ns.primaryCures.Curse, true, "Improved Nature's Cure adds Curse")
 equal(ns.primaryCures.Poison, true, "Improved Nature's Cure adds Poison")
 
+-- Forever teaches Cure Poison before its Mainline replacement. It must be
+-- shown even when the Mainline-shaped namespace is only partially populated.
+class, knownSpells = "DRUID", { [8946] = true }
+C_SpellBook = {
+    GetNumSpellBookSkillLines = function() return 1 end,
+    GetSpellBookSkillLineInfo = function() return { itemIndexOffset = 0, numSpellBookItems = 1 } end,
+    GetSpellBookItemInfo = function() return { spellID = 1, itemType = 1 } end,
+}
+Enum = { SpellBookSpellBank = { Player = 1 }, SpellBookItemType = { Spell = 1 } }
+ns.isCamelot = true
+ns.UpdateDispelSpell()
+equal(#ns.knownDispels, 1, "Forever Cure Poison is not hidden by a partial spellbook")
+equal(ns.spellID, 8946, "Cure Poison is the available Forever dispel")
+equal(ns.primaryCures.Poison, true, "Cure Poison covers Poison")
+
+ns.isCamelot = nil
+ns.UpdateDispelSpell()
+equal(#ns.knownDispels, 0, "Retail does not weaken active-spec filtering for partial spellbooks")
+
 class, knownSpells = "SHAMAN", { [77130] = true }
+C_SpellBook, Enum = nil, nil
 ns.UpdateDispelSpell()
 equal(ns.primaryCures.Magic, true, "Purify Spirit covers Magic")
 equal(ns.primaryCures.Curse, nil, "Purify Spirit does not claim Curse without its talent")

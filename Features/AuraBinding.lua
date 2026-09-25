@@ -18,8 +18,8 @@ local addonName, ns = ...
 -- ============================================================
 --   CreateFrame("AuraContainer", nil, parent, "CustomAuraContainerTemplate")
 --     -> SetAllPoints
---     -> SetUnit(unit)
---     -> AddAuraSlot(slotKey, filterString, { initializeFrame = ... })
+--     -> Retail: SetUnit(unit) then AddAuraSlot(slotKey, filterString, options)
+--     -> Camelot: AddAuraSlot(slotKey, filterString, options) then SetUnit(unit)
 --     -> returnedButton:SetAllPoints(box)
 --     -> SetEnabled(true)                                    <-- LAST, always
 --
@@ -706,6 +706,14 @@ function Binding:Attach(box, unit)
     --   aura events, that no later rebuild would ever retry -- one member
     --   permanently unlit, silently, with the fast path above hiding it. That is
     --   the exact shape a changed or partially-supported API would take.
+    -- Retail's template needs the unit before the slot is declared. Camelot
+    -- leaves UNIT_AURA unregistered in that order, so its explicitly selected
+    -- TOC reverses only these two calls. The shared API surface cannot tell us
+    -- which semantics it implements.
+    if not ns.isCamelot and caps.methods.SetUnit and not pcall(c.SetUnit, c, unit) then
+        return restoreFallback("AuraContainer rejected SetUnit")
+    end
+
     box.salveVisualBindFailure = nil
     -- Keep this exactly to Blizzard's by-me filter, the same normal-dispel
     -- path used by Danders. Spell-ID filters are identity-gated and silently
@@ -728,11 +736,9 @@ function Binding:Attach(box, unit)
         return restoreFallback(self.lastFailure)
     end
 
-    -- SetUnit evaluates event registration against the container's declared
-    -- content.  Forever's native AuraContainer leaves UNIT_AURA unregistered
-    -- if it runs before AddAuraSlot, so the unit must be assigned only after
-    -- the slot is fully declared and anchored.
-    if caps.methods.SetUnit and not pcall(c.SetUnit, c, unit) then
+    -- Camelot evaluates event registration against the declared slot content,
+    -- so bind only after the slot is complete. Retail already bound above.
+    if ns.isCamelot and caps.methods.SetUnit and not pcall(c.SetUnit, c, unit) then
         return restoreFallback("AuraContainer rejected SetUnit")
     end
 

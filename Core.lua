@@ -13,6 +13,10 @@ function ns.GetMetadata(key)
 end
 
 ns.VERSION = ns.GetMetadata("Version") or "1.5.22"
+-- Both client TOCs load this backend, but AuraContainer's event-registration
+-- order differs. The Camelot TOC is the explicit compatibility boundary; do
+-- not infer it from an API that both clients partially expose.
+ns.isCamelot = ns.GetMetadata("X-Salve-Target") == "Camelot"
 -- Development revision for distinguishing synced installs that share the same
 -- release version. Surface this in /salve debug before debugging live code.
 ns.REVISION = "1.5.16"

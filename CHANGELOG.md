@@ -7,6 +7,15 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.5.25] - 2026-09-25
+
+### Fixed
+
+- Restore Retail AuraContainer binding by assigning the unit before declaring
+  the aura slot, while retaining Camelot's required slot-before-unit order.
+- Recognise WoW Forever Druid Cure Poison and safely merge legacy spellbook
+  results only for the Camelot build when its modern spellbook is incomplete.
+
 ## [1.5.24] - 2026-09-25
 
 ### Fixed

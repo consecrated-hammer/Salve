@@ -164,7 +164,7 @@ for index, call in ipairs(latestContainerCalls) do
     if call == "slot" then slotIndex = index end
     if call == "unit" then unitIndex = index end
 end
-equal(slotIndex < unitIndex, true, "the aura slot is declared before SetUnit registers UNIT_AURA")
+equal(unitIndex < slotIndex, true, "Retail binds the unit before declaring its aura slot")
 equal(anchoredTo.salveDispel, accepted, "returned dispel slot is anchored over its Salve box")
 equal(capturedSlots.salveDispel.filter, "HARMFUL|RAID_PLAYER_DISPELLABLE",
     "dispel slot requires Blizzard's per-character dispellable classification")
@@ -182,6 +182,19 @@ equal(capturedSlots.salveMovement, nil,
     "movement slot fails dark because spell-ID filtering is identity-gated")
 equal(movementDispelTextureBinds, 0,
     "movement warning uses generic child art, not dispel-type-gated textures")
+
+ns.isCamelot = true
+ns.Binding.caps = nil
+local camelot = box()
+equal(ns.Binding:Attach(camelot, "player"), true,
+    "Camelot dispel carrier attaches")
+slotIndex, unitIndex = nil, nil
+for index, call in ipairs(latestContainerCalls) do
+    if call == "slot" then slotIndex = index end
+    if call == "unit" then unitIndex = index end
+end
+equal(slotIndex < unitIndex, true, "Camelot declares the aura slot before binding its unit")
+ns.isCamelot = nil
 
 UnitIsUnit = function(left, right) return left == "raid2" and right == "player" end
 local raidSelf = box()
