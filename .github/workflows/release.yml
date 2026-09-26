@@ -22,6 +22,16 @@ jobs:
           # The packager builds the changelog from history, so it needs all of it.
           fetch-depth: 0
 
+      - name: Require release commit on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor HEAD refs/remotes/origin/main; then
+            echo "::error::Release tag $GITHUB_REF_NAME is not on main. Merge the release commit into main before tagging."
+            exit 1
+          fi
+
       # The zip is named from the TAG but the version players see in their addon
       # list comes from the TOC. Letting those drift ships an old version inside a file
       # called 0.2.0, which is confusing to diagnose and impossible to fix after
