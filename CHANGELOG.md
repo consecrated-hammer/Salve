@@ -7,6 +7,11 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- A **Classic** settings theme, Blizzard's 2004 look, on the Theme page or
+  with `/salve theme classic` (applies after a reload).
+
 ### Changed
 
 - Salve now uses HammerCore, the settings, command and chat foundation shared

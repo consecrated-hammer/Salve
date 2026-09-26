@@ -64,6 +64,8 @@ function methods:CreateFontString() return wow.CreateRegion(self, "FontString") 
 function methods:CreateTexture() return wow.CreateRegion(self, "Texture") end
 function methods:Raise() self.raised = true end
 function methods:EnableMouse(enabled) self.mouseEnabled = enabled end
+function methods:SetBackdrop(backdrop) self.backdrop = backdrop end
+function methods:SetNormalTexture(texture) self.normalTexture = texture end
 function methods:IsMouseEnabled() return self.mouseEnabled ~= false end
 function methods:SetFrameLevel(level) self.frameLevel = level end
 function methods:GetFrameLevel() return self.frameLevel or 1 end
@@ -138,6 +140,12 @@ function wow.Install(metadata)
         local values = metadata[addon]
         return values and values[key] or nil
     end }
+    -- WoW's global aliases for the string and table libraries.
+    strmatch, strfind, strsub, strlen = string.match, string.find, string.sub, string.len
+    strlower, strupper, strrep, format = string.lower, string.upper, string.rep, string.format
+    gsub, strbyte, strchar = string.gsub, string.byte, string.char
+    tinsert, tremove, tconcat = table.insert, table.remove, table.concat
+    wipe = function(t) for k in pairs(t) do t[k] = nil end return t end
     print = function(...)
         local parts = {}
         for i = 1, select("#", ...) do parts[#parts + 1] = tostring(select(i, ...)) end

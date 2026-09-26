@@ -151,4 +151,19 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     end
 end
 
+-- Every page also builds under HammerCore's Classic theme.
+for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
+    local ns = loadAddon(toc, { hammerCore = { theme = "classic" } })
+    local HC = ns.HammerCore
+    equal(HC.Theme.IsClassic(), true, toc .. ": classic theme is active")
+    HC.Settings:Show()
+    local failures = {}
+    for name, err in pairs(HC.Settings.errors) do failures[#failures + 1] = name .. ": " .. err end
+    equal(table.concat(failures, "; "), "", toc .. ": every settings page builds in classic")
+    for _, spec in ipairs(HC.Settings.order) do
+        HC.Settings:Show(spec.name)
+        equal(HC.Settings.selected, spec.name, toc .. ": " .. spec.name .. " opens in classic")
+    end
+end
+
 io.write("addon tests passed\n")
