@@ -7,33 +7,41 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-09-26
+
 ### Added
+
+- A lore quiz: the quest "!" on the About page, or `/salve quiz`, asks five
+  questions suited to your client, class and race. **Share result** posts
+  the verdict to yourself, Say or Party in one click; it is unavailable in
+  combat and during keys, PvP matches and encounters.
+- New commands: `about`, `startup`, `minimap`, `reset position`,
+  `reset settings` and `toggle`.
 
 ### Changed
 
 - Salve now uses HammerCore, the settings, command and chat foundation shared
-  by every Consecrated Hammer addon. Salve's settings shell became its
-  template, so the window looks the same; what changes is shared behaviour:
-  - Chat messages and the login line use the shared gold name prefix:
-    `Salve v1.5.26 loaded - type /salve for settings, /salve help for
-    commands`.
-  - Visibility keeps Display and Position, then Other with the minimap
-    button and startup message. Handle position is now a dropdown.
-  - Commands, Troubleshooting and About are HammerCore's standard pages.
-    About keeps the practitioner's notes and "Apply Salve", now as a
-    pressable Salve icon; a quest "!" beneath it opens a lore quiz.
-  - New commands: `about`, `startup`, `minimap`,
-    `reset position`, `reset settings`, `toggle` and `quiz`. `debug` opens
-    the copyable report; **Run diagnostics** on Troubleshooting prints the
-    engine and sound report.
-  - Your minimap, startup-message and settings-window choices carry over.
-- Clicking the tick in a multi-select menu now chooses it.
+  by every Consecrated Hammer addon. The login message reads
+  `Salve v1.6.0 loaded - type /salve for settings, /salve help for commands`, chat uses
+  a gold name prefix, and `/salve help` lists every command.
+- Salve's settings window became the shared template, so it looks the same.
+  Visibility keeps Display and Position, then Other with the minimap button
+  and startup message; handle position is now a dropdown.
+- Commands, Troubleshooting and About are the shared pages. About keeps the
+  practitioner's notes and "Apply Salve" as a pressable Salve icon.
+  `/salve debug` opens the copyable report; **Run diagnostics** on
+  Troubleshooting prints the engine and sound report.
+- Your minimap, startup-message and settings-window choices carry over.
 
 ### Removed
 
 - `/salve options`, `config`, `opt`, `probe`, `handle`, `reset`, `spells`,
-  `learn` and `debug copy`; use the bare command, `unlock`,
-  `reset position`, `forever` and `debug`.
+  `learn` and `debug copy`; use the bare command, `unlock`, `reset position`,
+  `forever` and `debug`.
+
+### Fixed
+
+- Clicking the tick in a dropdown menu now chooses it.
 
 ## [1.5.26] - 2026-09-26
 

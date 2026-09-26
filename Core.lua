@@ -19,7 +19,7 @@ ns.VERSION = ns.GetMetadata("Version") or "1.5.22"
 ns.isCamelot = ns.GetMetadata("X-Salve-Target") == "Camelot"
 -- Development revision for distinguishing synced installs that share the same
 -- release version. Surface this in /salve debug before debugging live code.
-ns.REVISION = "1.5.26"
+ns.REVISION = "1.6.0"
 
 -- The four dispel schools, in the order the options UI lists them.
 ns.DISPEL_TYPES = { "Magic", "Curse", "Disease", "Poison" }
