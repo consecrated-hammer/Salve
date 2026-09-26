@@ -70,7 +70,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     local names = {}
     for _, spec in ipairs(HC.Settings.order) do names[#names + 1] = spec.name end
     equal(table.concat(names, ","),
-        "Salve,Tooltips,Actions,Visibility,Alerts,Learned Spells,Theme,Commands,Troubleshooting,About",
+        "Salve,Tooltips,Actions,Visibility,Alerts,Learned Spells,Commands,Troubleshooting,About",
         toc .. ": rail order")
     local failures = {}
     for name, err in pairs(HC.Settings.errors) do failures[#failures + 1] = name .. ": " .. err end
@@ -155,6 +155,8 @@ end
 for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     local ns = loadAddon(toc, { hammerCore = { theme = "classic" } })
     local HC = ns.HammerCore
+    -- Classic is switched off for players until it is reworked; keep it building.
+    HC.Theme.registry.classic.available = true
     equal(HC.Theme.IsClassic(), true, toc .. ": classic theme is active")
     HC.Settings:Show()
     local failures = {}

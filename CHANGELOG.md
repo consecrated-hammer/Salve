@@ -9,9 +9,6 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- A **Classic** settings theme, Blizzard's 2004 look, on the Theme page or
-  with `/salve theme classic` (applies after a reload).
-
 ### Changed
 
 - Salve now uses HammerCore, the settings, command and chat foundation shared
@@ -25,7 +22,7 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Commands, Troubleshooting and About are HammerCore's standard pages.
     About keeps the practitioner's notes and "Apply Salve", now as a
     pressable Salve icon; a quest "!" beneath it opens a lore quiz.
-  - New commands: `about`, `startup`, `minimap`, `theme`,
+  - New commands: `about`, `startup`, `minimap`,
     `reset position`, `reset settings`, `toggle` and `quiz`. `debug` opens
     the copyable report; **Run diagnostics** on Troubleshooting prints the
     engine and sound report.

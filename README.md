@@ -102,7 +102,6 @@ hide the grip once you are happy.
 | `/salve debug` | Open a copyable diagnostic report |
 | `/salve startup [on\|off]` | Show the startup message |
 | `/salve minimap [on\|off]` | Show the minimap button |
-| `/salve theme [modern\|classic]` | Choose the settings theme |
 | `/salve reset position` | Put the panel back in the centre |
 | `/salve reset settings` | Reset every setting after a confirmation |
 | `/salve toggle` | Show or hide the panel |
@@ -115,7 +114,7 @@ hide the grip once you are happy.
 Type `/salve` or use **Game Menu → Options → AddOns → Salve → Open Salve
 settings**. The Blizzard page is a launcher for Salve's movable settings window,
 which remembers where you place it. Its pages are **Panel**, **Tooltips**,
-**Actions**, **Visibility** and **Alerts**, then **Learned Spells**, **Theme**,
+**Actions**, **Visibility** and **Alerts**, then **Learned Spells**,
 **Commands**, **Troubleshooting** and **About**. Settings, commands, the
 minimap button and the reference pages come from
 [HammerCore](https://github.com/consecrated-hammer/HammerCore), shared by
