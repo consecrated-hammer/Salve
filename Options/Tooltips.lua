@@ -1,18 +1,19 @@
 local addonName, ns = ...
-local O = ns.Options
+local HC = ns.HammerCore
+local O, T = ns.Options, HC.Theme
 
 local function section(parent, width)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(width or 264, 1)
-    frame.salveRefresh = parent.salveRefresh
-    frame.salveRefreshAll = parent.salveRefreshAll
+    frame.hcRefresh = parent.hcRefresh
+    frame.hcRefreshAll = parent.hcRefreshAll
     return frame
 end
 
-O.NewPage({
+HC.Settings:NewPage({
     name = "Tooltips",
     title = "Tooltips",
-    group = "CORE",
+    group = "main",
     description = "Choose what a Salve cell says when you hover it.",
 }, function(panel, y)
     local db = ns.db

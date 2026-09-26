@@ -6,6 +6,7 @@ end
 
 local emitted = {}
 local ns = { db = { movementTextNotification = true, movementTextOutput = "CHAT" },
+    HammerCore = { CHAT_COLOUR = "d4af37" },
     Print = function(message) emitted[#emitted + 1] = { message = message } end }
 assert(loadfile("Features/MovementAlert.lua"))("Salve", ns)
 

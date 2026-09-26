@@ -1,10 +1,11 @@
 local addonName, ns = ...
-local O = ns.Options
+local HC = ns.HammerCore
+local O, T = ns.Options, HC.Theme
 
-O.NewPage({
+HC.Settings:NewPage({
     name = "Alerts",
     title = "Alerts",
-    group = "CORE",
+    group = "main",
     description = "Sound and movement alerts.",
 }, function(panel, y)
     _, y = O.Header(panel, "Alerts", y)
@@ -74,7 +75,7 @@ O.NewPage({
     panel:HookScript("OnHide", function()
         if ns.MovementAlert then ns.MovementAlert:StopPreview() end
     end)
-    panel.salveRefresh[#panel.salveRefresh + 1] = function()
+    panel.hcRefresh[#panel.hcRefresh + 1] = function()
         preview:SetText(previewLabel())
     end
     y = y - 32
@@ -86,7 +87,7 @@ O.NewPage({
 
     local function testButton(row, title, hint, play)
         local button = O.Button(row, 42, 20)
-        button:SetPoint("LEFT", row.salveCheckbox.Text, "RIGHT", 8, 0)
+        button:SetPoint("LEFT", row.hcCheckbox.Text, "RIGHT", 8, 0)
         button:SetText("Test")
         O.AttachHint(button, title, hint)
         button:SetScript("OnClick", play)
@@ -100,9 +101,9 @@ O.NewPage({
 
     local soundDetails = CreateFrame("Frame", nil, panel)
     soundDetails:SetSize(560, 1)
-    soundDetails.salveRefresh = panel.salveRefresh
-    soundDetails.salveRefreshAll = panel.salveRefreshAll
-    soundDetails.salveHeaderOwner = panel.salveHeaderOwner or panel
+    soundDetails.hcRefresh = panel.hcRefresh
+    soundDetails.hcRefreshAll = panel.hcRefreshAll
+    soundDetails.hcHeaderOwner = panel.hcHeaderOwner or panel
 
     local soundY = -4
     local channelItems = {
@@ -129,8 +130,8 @@ O.NewPage({
 
     local reset = CreateFrame("Frame", nil, panel)
     reset:SetSize(560, 1)
-    reset.salveRefresh = panel.salveRefresh
-    reset.salveRefreshAll = panel.salveRefreshAll
+    reset.hcRefresh = panel.hcRefresh
+    reset.hcRefreshAll = panel.hcRefreshAll
     local _, resetY = O.PageReset(reset, -4, function()
         ns.Set("soundEnabled", ns.defaults.soundEnabled)
         ns.Set("dispelSoundEnabled", ns.defaults.dispelSoundEnabled)
@@ -152,13 +153,13 @@ O.NewPage({
         testDispel:SetShown(dispelSoundEnabled())
         testMovement:SetShown(movementSoundEnabled())
         local function placeLabel(row)
-            row.salveCheckbox.Text:ClearAllPoints()
-            row.salveCheckbox.Text:SetPoint("LEFT", row.salveCheckbox, "RIGHT", 8, 0)
+            row.hcCheckbox.Text:ClearAllPoints()
+            row.hcCheckbox.Text:SetPoint("LEFT", row.hcCheckbox, "RIGHT", 8, 0)
         end
         placeLabel(dispelRow)
         placeLabel(movementRow)
         local usesChat = (ns.db.movementTextOutput or "SCREEN") ~= "SCREEN"
-        if not usesChat and chatTabRow.salveCloseMenu then chatTabRow.salveCloseMenu() end
+        if not usesChat and chatTabRow.hcCloseMenu then chatTabRow.hcCloseMenu() end
         chatTabRow:SetShown(usesChat)
         local adjustedPreviewY = usesChat and previewY or chatTabY
         preview:ClearAllPoints()
@@ -172,10 +173,10 @@ O.NewPage({
         reset:ClearAllPoints()
         reset:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, y0)
         pageBottom = y0 - resetHeight - 8
-        panel.salveSetBottom(pageBottom)
+        panel.hcSetBottom(pageBottom)
     end
 
-    panel.salveRefresh[#panel.salveRefresh + 1] = reflow
+    panel.hcRefresh[#panel.hcRefresh + 1] = reflow
     reflow()
     return pageBottom
 end)

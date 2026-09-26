@@ -23,7 +23,7 @@ local addonName, ns = ...
 --   the icon position in its own saved variables, so disabling the addon that
 --   happened to supply the library made Salve's icon appear to jump. One addon,
 --   two behaviours, decided by something the user never configured. Salve owns
---   its own minimap button unconditionally (UI/Minimap.lua). Do not "improve"
+--   its own minimap button unconditionally (HammerCore's Minimap.lua). Do not "improve"
 --   this by reintroducing the handoff.
 
 ns.Broker = {}
@@ -50,11 +50,11 @@ function Broker:Create()
         label = "Salve",
 
         OnClick = function(_, button)
-            -- ☠ See UI/Minimap.lua: IsLocked(), not a `locked` key.
+            -- ☠ IsLocked(), not a `locked` key: the handle's visibility is the lock.
             if button == "RightButton" then
                 ns.SetLocked(not ns.IsLocked())
             else
-                ns.OpenOptions()
+                ns.HammerCore.Settings:Toggle()
             end
         end,
 

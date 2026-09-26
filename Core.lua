@@ -29,9 +29,7 @@ ns.DISPEL_TYPES = { "Magic", "Curse", "Disease", "Poison" }
 -- strict movement spell-ID matching is unavailable for friendly unit frames.
 ns.DISPELLABLE_FILTER = "HARMFUL|RAID_PLAYER_DISPELLABLE"
 
-function ns.Print(msg)
-    print("|cff66ddaaSalve:|r " .. tostring(msg or ""))
-end
+-- ns.Print is HammerCore's gold-prefixed chat line; see Setup.lua.
 
 -- Deferred work ------------------------------------------------------------
 -- Secure attributes and frame geometry may only be written outside combat.

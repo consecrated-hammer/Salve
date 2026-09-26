@@ -17,7 +17,9 @@
 # Camelot uses the Mainline API family and Retail-style in-combat addon restrictions.
 # Keep this load order identical to Salve.toc: the native AuraContainer path
 # is the only candidate that respects Retail's private-aura model.
+Libs\HammerCore\HammerCore.xml
 Core.lua
+Setup.lua
 Core\Config.lua
 Core\ClickLog.lua
 Features\Dispel.lua
@@ -35,17 +37,11 @@ UI\Handle.lua
 UI\Panel.lua
 UI\Preview.lua
 UI\Broker.lua
-UI\Minimap.lua
-Options\Shared.lua
-Options\Window.lua
 Options\Salve.lua
 Options\Tooltips.lua
 Options\Dispel.lua
 Options\Visibility.lua
 Options\Alerts.lua
-Options\Commands.lua
 Options\Troubleshooting.lua
 Options\LearnedSpells.lua
-Options\About.lua
 Core\Events.lua
-Core\Slash.lua

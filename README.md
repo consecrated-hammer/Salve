@@ -95,22 +95,31 @@ hide the grip once you are happy.
 
 | Command | Does |
 | :-- | :-- |
-| `/salve` or `/salve options` | Open the options panel |
-| `/salve unlock` | Show the drag handle |
-| `/salve lock` | Hide the drag handle |
-| `/salve reset` | Put the panel back in the centre |
-| `/salve version` | Print the loaded version and revision |
-| `/salve debug` | Print a diagnostic report (`probe` remains an alias) |
-| `/salve debug copy` | Open a selectable diagnostic report for copy/paste |
+| `/salve` | Open settings |
+| `/salve help` | List every command and panel action |
+| `/salve version` | Print the loaded version and client |
+| `/salve about` | Open the About page |
+| `/salve debug` | Open a copyable diagnostic report |
+| `/salve startup [on\|off]` | Show the startup message |
+| `/salve minimap [on\|off]` | Show the minimap button |
+| `/salve theme [modern\|classic]` | Choose the settings theme |
+| `/salve reset position` | Put the panel back in the centre |
+| `/salve reset settings` | Reset every setting after a confirmation |
+| `/salve toggle` | Show or hide the panel |
+| `/salve lock` / `unlock` | Hide or show the drag handle |
+| `/salve forever` | Copy a Forever cure and spellbook report |
 | `/salve snares` | List auto-captured root and snare spell IDs for sharing |
 | `/salve learned` / `learned clear` | Inspect or clear learned spell IDs |
-| `/salve help` | Print the command list in chat |
+| `/salve quiz` | Take a five-question lore quiz |
 
 Type `/salve` or use **Game Menu → Options → AddOns → Salve → Open Salve
 settings**. The Blizzard page is a launcher for Salve's movable settings window,
-which remembers where you place it. Its seven pages are **Appearance** (layout
-and live preview), **Visibility**, **Dispels**, **Troubleshooting**, **Learned
-Spells**, **Commands** and **About**.
+which remembers where you place it. Its pages are **Panel**, **Tooltips**,
+**Actions**, **Visibility** and **Alerts**, then **Learned Spells**, **Theme**,
+**Commands**, **Troubleshooting** and **About**. Settings, commands, the
+minimap button and the reference pages come from
+[HammerCore](https://github.com/consecrated-hammer/HammerCore), shared by
+every Consecrated Hammer addon and vendored under `Libs/HammerCore`.
 
 The Appearance page can show a full-size, non-clickable test panel at the addon's
 actual saved screen position. Its group-size, clear or dispellable state and
@@ -157,7 +166,7 @@ can remove. Learned-only observations do not trigger sounds.
 Reviewed roots and snares with a matching enabled remedy use a distinct movement-alert
 sound; the Dispels page has separate test buttons for both sounds. Season 1,
 Season 2 and future catalogues can coexist without becoming separate AddOns.
-Run `/salve debug` to see catalogue/learned counts, sound candidates and native
+Run **Run diagnostics** on the Troubleshooting page to see catalogue/learned counts, sound candidates and native
 registrations. Inferred speed drops may still show
 optional movement text, but cannot play a movement sound or light the gold cell.
 

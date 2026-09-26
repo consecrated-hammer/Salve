@@ -1,12 +1,13 @@
 local addonName, ns = ...
-local O = ns.Options
+local HC = ns.HammerCore
+local O, T = ns.Options, HC.Theme
 
 local function section(parent)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(560, 1)
-    frame.salveRefresh = parent.salveRefresh
-    frame.salveRefreshAll = parent.salveRefreshAll
-    frame.salveHeaderOwner = parent.salveHeaderOwner or parent
+    frame.hcRefresh = parent.hcRefresh
+    frame.hcRefreshAll = parent.hcRefreshAll
+    frame.hcHeaderOwner = parent.hcHeaderOwner or parent
     return frame
 end
 
@@ -17,10 +18,10 @@ local function smallLabel(parent, text, x, y)
     return label
 end
 
-O.NewPage({
+HC.Settings:NewPage({
     name = "Salve",
     title = "Panel",
-    group = "CORE",
+    group = "main",
 }, function(panel)
     local db = ns.db
     local previewCount = 5
@@ -37,7 +38,7 @@ O.NewPage({
         }
     end
 
-    local preview = panel.salveCreatePinned(290, 720)
+    local preview = panel.hcCreatePinned(290, 720)
     local py = -8
     _, py = O.Header(preview, "Preview", py)
 
@@ -49,15 +50,15 @@ O.NewPage({
         edgeFile = "Interface\\Buttons\\WHITE8X8",
         edgeSize = 1,
     })
-    stage:SetBackdropColor(unpack(O.theme.rail))
-    stage:SetBackdropBorderColor(unpack(O.theme.edge))
-    stage.salveRefresh = preview.salveRefresh
-    stage.salveRefreshAll = preview.salveRefreshAll
+    stage:SetBackdropColor(unpack(T.Colour("rail")))
+    stage:SetBackdropBorderColor(unpack(T.Colour("edge")))
+    stage.hcRefresh = preview.hcRefresh
+    stage.hcRefreshAll = preview.hcRefreshAll
 
     local stageLabel = stage:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     stageLabel:SetPoint("TOPLEFT", 10, -8)
     stageLabel:SetText("LIVE PREVIEW")
-    stageLabel:SetTextColor(unpack(O.theme.muted))
+    stageLabel:SetTextColor(unpack(T.Colour("muted")))
 
     -- The rendered grid owns the wide centre of the stage. This leaves a full
     -- five 95px-name row intact and lets every layout grow around the centre.
@@ -84,7 +85,7 @@ O.NewPage({
     plus:SetText("+")
 
     local simulatedLabel = smallLabel(stage, "PREVIEW OPTIONS", 10, -178)
-    simulatedLabel:SetTextColor(unpack(O.theme.muted))
+    simulatedLabel:SetTextColor(unpack(T.Colour("muted")))
     local stateToggle = O.CheckButton(stage)
     stateToggle:SetPoint("TOPLEFT", 250, -198)
     stateToggle.Text:SetText("Preview dispellable")
@@ -150,7 +151,7 @@ O.NewPage({
         applyPreviewSettings()
     end)
 
-    preview.salveRefresh[#preview.salveRefresh + 1] = refreshPreview
+    preview.hcRefresh[#preview.hcRefresh + 1] = refreshPreview
     O.RefreshPreviewControls = refreshPreview
     refreshPreview()
     local presets = section(panel)
@@ -172,7 +173,7 @@ O.NewPage({
         local note = button:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
         note:SetPoint("TOPLEFT", button.Text, "BOTTOMLEFT", 0, -2)
         note:SetText(spec.note)
-        note:SetTextColor(unpack(O.theme.muted))
+        note:SetTextColor(unpack(T.Colour("muted")))
         O.AttachHint(button, spec.label, "Apply this panel shape.")
         button:SetScript("OnClick", function()
             ns.Set("boxWidth", spec.width)
@@ -184,7 +185,7 @@ O.NewPage({
                 previewCount = spec.previewUnits
                 refreshPreview()
             end
-            if presets.salveRefreshAll then presets.salveRefreshAll() end
+            if presets.hcRefreshAll then presets.hcRefreshAll() end
         end)
     end
     add(presets, -presetY + 58)
@@ -397,10 +398,10 @@ O.NewPage({
             end
         end
         pageBottom = y - 8
-        panel.salveSetBottom(pageBottom)
+        panel.hcSetBottom(pageBottom)
     end
 
-    panel.salveRefresh[#panel.salveRefresh + 1] = reflow
+    panel.hcRefresh[#panel.hcRefresh + 1] = reflow
     reflow()
     return pageBottom
 end)

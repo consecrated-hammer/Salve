@@ -6,9 +6,8 @@ local function equal(actual, expected, label)
 end
 
 local ns = {
-    Options = {
-        NewPage = function() end,
-    },
+    Options = {},
+    HammerCore = { Theme = {}, Settings = { NewPage = function() end } },
 }
 
 assert(loadfile("Options/Dispel.lua"))("Salve", ns)

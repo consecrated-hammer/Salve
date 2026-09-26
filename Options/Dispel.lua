@@ -1,5 +1,6 @@
 local addonName, ns = ...
-local O = ns.Options
+local HC = ns.HammerCore
+local O, T = ns.Options, HC.Theme
 
 -- Retained as a pure helper for callers/tests which used the original inline
 -- layout. The Actions page below uses two independent columns instead.
@@ -115,10 +116,10 @@ local function attachSpellTooltip(row, spell)
     end)
 end
 
-O.NewPage({
+HC.Settings:NewPage({
     name = "Actions",
     title = "Actions",
-    group = "CORE",
+    group = "main",
     description = "What each click casts on a lit cell.",
 }, function(panel, y)
     local boundRows, paletteRows, sweepColourRows, sweepChoiceRows = {}, {}, {}, {}
@@ -132,14 +133,14 @@ O.NewPage({
     right:SetPoint("TOPLEFT", left, "TOPRIGHT", 32, 0)
 
     local divider = panel:CreateTexture(nil, "ARTWORK")
-    divider:SetColorTexture(unpack(O.theme.edge))
+    divider:SetColorTexture(unpack(T.Colour("edge")))
     divider:SetWidth(1)
     divider:SetPoint("TOP", left, "TOPRIGHT", 16, 0)
     divider:SetPoint("BOTTOM", left, "BOTTOMRIGHT", 16, 0)
     local leftHeader = left:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     leftHeader:SetPoint("TOPLEFT", 0, 0)
     leftHeader:SetText("KEY BINDINGS")
-    leftHeader:SetTextColor(unpack(O.theme.accent))
+    leftHeader:SetTextColor(unpack(T.Colour("accent")))
     local leftHint = left:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     leftHint:SetPoint("TOPLEFT", leftHeader, "BOTTOMLEFT", 0, -4)
     leftHint:SetText("Click a row to reassign.")
@@ -162,24 +163,24 @@ O.NewPage({
     local rightHeader = right:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     rightHeader:SetPoint("TOPLEFT", 0, 0)
     rightHeader:SetText("SPELLS")
-    rightHeader:SetTextColor(unpack(O.theme.accent))
+    rightHeader:SetTextColor(unpack(T.Colour("accent")))
     local rightHint = right:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     rightHint:SetPoint("TOPLEFT", rightHeader, "BOTTOMLEFT", 0, -4)
     rightHint:SetText("Click a spell to bind it.")
 
     local sweepColoursHeader = left:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     sweepColoursHeader:SetText("MOVEMENT SWEEP COLOURS")
-    sweepColoursHeader:SetTextColor(unpack(O.theme.section))
+    sweepColoursHeader:SetTextColor(unpack(T.Colour("section")))
     local sweepChoiceHeader = left:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     sweepChoiceHeader:SetText("SHOW SWEEPS")
-    sweepChoiceHeader:SetTextColor(unpack(O.theme.section))
+    sweepChoiceHeader:SetTextColor(unpack(T.Colour("section")))
     local sweepExplain = left:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     sweepExplain:SetWidth(270)
     sweepExplain:SetJustifyH("LEFT")
     sweepExplain:SetText("A sweep is the coloured clock-hand animation that counts down around a Salve cell after you cast the selected spell.")
     local sweepDivider = left:CreateTexture(nil, "ARTWORK")
     sweepDivider:SetHeight(1)
-    sweepDivider:SetColorTexture(unpack(O.theme.edge))
+    sweepDivider:SetColorTexture(unpack(T.Colour("edge")))
 
     local function makeBoundRow(index)
         local row = boundRows[index]
@@ -187,8 +188,8 @@ O.NewPage({
         row = CreateFrame("Button", nil, left, "BackdropTemplate")
         row:SetSize(278, 42)
         row:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-        row:SetBackdropColor(unpack(O.theme.rail))
-        row:SetBackdropBorderColor(unpack(O.theme.edge))
+        row:SetBackdropColor(unpack(T.Colour("rail")))
+        row:SetBackdropBorderColor(unpack(T.Colour("edge")))
         row.icon = row:CreateTexture(nil, "ARTWORK")
         row.icon:SetSize(32, 32)
         row.icon:SetPoint("LEFT", 8, 0)
@@ -198,7 +199,7 @@ O.NewPage({
         row.text:SetJustifyH("LEFT")
         row.key = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
         row.key:SetPoint("RIGHT", -31, 0)
-        row.key:SetTextColor(unpack(O.theme.accent))
+        row.key:SetTextColor(unpack(T.Colour("accent")))
         row.remove = O.Button(row, 20, 20)
         row.remove:SetPoint("RIGHT", -5, 0)
         row.remove:SetText("x")
@@ -212,8 +213,8 @@ O.NewPage({
         row = CreateFrame("Button", nil, right, "BackdropTemplate")
         row:SetSize(246, 42)
         row:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-        row:SetBackdropColor(unpack(O.theme.raised))
-        row:SetBackdropBorderColor(unpack(O.theme.edge))
+        row:SetBackdropColor(unpack(T.Colour("raised")))
+        row:SetBackdropBorderColor(unpack(T.Colour("edge")))
         row.icon = row:CreateTexture(nil, "ARTWORK")
         row.icon:SetSize(32, 32)
         row.icon:SetPoint("LEFT", 8, 0)
@@ -236,8 +237,8 @@ O.NewPage({
         row = CreateFrame("Frame", nil, left, "BackdropTemplate")
         row:SetSize(278, 42)
         row:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-        row:SetBackdropColor(unpack(O.theme.content))
-        row:SetBackdropBorderColor(unpack(O.theme.edge))
+        row:SetBackdropColor(unpack(T.Colour("content")))
+        row:SetBackdropBorderColor(unpack(T.Colour("edge")))
         row.icon = row:CreateTexture(nil, "ARTWORK")
         row.icon:SetSize(32, 32)
         row.icon:SetPoint("LEFT", 6, 0)
@@ -426,13 +427,13 @@ O.NewPage({
             heading:ClearAllPoints()
             heading:SetPoint("TOPLEFT", right, "TOPLEFT", 0, py)
             heading:SetSize(246, 42)
-            heading:SetBackdropColor(unpack(O.theme.content))
-            heading:SetBackdropBorderColor(unpack(O.theme.content))
+            heading:SetBackdropColor(unpack(T.Colour("content")))
+            heading:SetBackdropBorderColor(unpack(T.Colour("content")))
             heading.icon:Hide()
             heading.text:ClearAllPoints()
             heading.text:SetPoint("LEFT", 0, 0)
             heading.text:SetText(label)
-            heading.text:SetTextColor(unpack(O.theme.section))
+            heading.text:SetTextColor(unpack(T.Colour("section")))
             if paletteIndex == 1 then
                 -- Both labels use GameFontHighlightSmall.  Tie their left
                 -- anchors together so their baselines remain aligned if the
@@ -460,11 +461,11 @@ O.NewPage({
                 row.text:ClearAllPoints()
                 row.text:SetPoint("LEFT", 8, 0)
                 row.text:SetText("No spells detected")
-                row.text:SetTextColor(unpack(O.theme.muted))
+                row.text:SetTextColor(unpack(T.Colour("muted")))
                 row.status:SetText("")
                 row.subtext:Hide()
-                row:SetBackdropColor(unpack(O.theme.content))
-                row:SetBackdropBorderColor(unpack(O.theme.edge))
+                row:SetBackdropColor(unpack(T.Colour("content")))
+                row:SetBackdropBorderColor(unpack(T.Colour("edge")))
                 row.salveSpellID = nil
                 row:SetScript("OnEnter", nil)
                 row:SetScript("OnLeave", nil)
@@ -487,11 +488,11 @@ O.NewPage({
                 -- A row may have previously been a section heading while the
                 -- known-spell list was still empty. Reset its surface on every
                 -- draw so all spell choices share the same quiet background.
-                row:SetBackdropColor(unpack(O.theme.content))
+                row:SetBackdropColor(unpack(T.Colour("content")))
                 local keys = ns.Bindings:KeysForSpell(spell.id)
                 local isBound = #keys > 0 and (kind ~= "ESCAPE" or ns.db.escapes[spell.id])
                 row.status:SetText(isBound and "bound" or "")
-                row:SetBackdropBorderColor(unpack(O.theme.edge))
+                row:SetBackdropBorderColor(unpack(T.Colour("edge")))
                 row:SetScript("OnClick", function() beginBinding(spell, kind) end)
                 if kind == "DISPEL" then
                     row:SetSize(246, 58)
@@ -522,11 +523,11 @@ O.NewPage({
         local leftRows = #bound * 46 + (#movementBound > 0 and (100 + #movementBound * 92) or 0)
         local paletteDepth = paletteIndex * 46 + #(ns.knownDispels or {}) * 16
         pageBottom = y - math.max(leftRows, paletteDepth) - 108
-        if panel.salveSetBottom then panel.salveSetBottom(pageBottom) end
+        if panel.hcSetBottom then panel.hcSetBottom(pageBottom) end
     end
 
     redrawAll()
-    panel.salveRefresh[#panel.salveRefresh + 1] = redrawAll
+    panel.hcRefresh[#panel.hcRefresh + 1] = redrawAll
     ns.Options.RefreshDispel = redrawAll
     return pageBottom
 end)

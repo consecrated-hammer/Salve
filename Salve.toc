@@ -30,7 +30,9 @@
 # See Features/AuraBinding.lua for the full argument.
 
 # Namespace and saved variables. Everything else assumes these exist.
+Libs\HammerCore\HammerCore.xml
 Core.lua
+Setup.lua
 Core\Config.lua
 Core\ClickLog.lua
 
@@ -74,23 +76,17 @@ UI\Preview.lua
 # Optional LibDataBroker launcher. Registers nothing when LibStub is absent, and
 # never owns the minimap button -- read the header before changing that.
 UI\Broker.lua
-UI\Minimap.lua
 
 # Options. The first page becomes the root AddOns category; the rest are
 # player-facing tasks rather than internal frame objects.
 # ☠ Shared.lua first: every page below calls its widget helpers at file scope.
-Options\Shared.lua
-Options\Window.lua
 Options\Salve.lua
 Options\Tooltips.lua
 Options\Dispel.lua
 Options\Visibility.lua
 Options\Alerts.lua
-Options\Commands.lua
 Options\Troubleshooting.lua
 Options\LearnedSpells.lua
-Options\About.lua
 
 # Event routing and slash commands. Last, so everything they dispatch to exists.
 Core\Events.lua
-Core\Slash.lua

@@ -114,7 +114,7 @@ function Handle:Create(parent)
     end)
 
     h:RegisterForClicks("RightButtonUp")
-    h:SetScript("OnClick", function() ns.OpenOptions() end)
+    h:SetScript("OnClick", function() ns.HammerCore.Settings:Toggle() end)
 
     self.frame = h
     self:Position()

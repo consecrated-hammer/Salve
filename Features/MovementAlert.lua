@@ -34,7 +34,7 @@ function MovementAlert:PrintChat(message)
     local frame = type(name) == "string" and name ~= "" and _G["ChatFrame" .. id]
     if not frame or frame.isTemporary or not frame.AddMessage then frame = DEFAULT_CHAT_FRAME end
     if frame and frame.AddMessage then
-        frame:AddMessage("|cff66ddaaSalve:|r " .. message)
+        frame:AddMessage("|cff" .. ns.HammerCore.CHAT_COLOUR .. "Salve:|r " .. message)
     else
         ns.Print(message)
     end

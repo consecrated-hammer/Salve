@@ -1,5 +1,6 @@
 local addonName, ns = ...
-local O = ns.Options
+local HC = ns.HammerCore
+local O, T = ns.Options, HC.Theme
 
 local function yesNo(value)
     return value and "yes" or "no"
@@ -29,8 +30,6 @@ local function buildReport()
     local movementSound = ns.db.movementSoundEnabled
     if movementSound == nil then movementSound = ns.db.soundEnabled end
     local lines = {
-        "Salve diagnostics",
-        "Version: " .. tostring(ns.VERSION or "unknown"),
         "Revision: " .. tostring(ns.REVISION or "unknown"),
         "Zone: " .. tostring(ns.Sound.activeScopeName or "World")
             .. " (" .. tostring(ns.Sound.activeScopeKey or "world:0") .. ")",
@@ -105,160 +104,57 @@ end
 
 O.BuildDiagnosticReport = buildReport
 
-local copyFrame
-local function showCopyText(titleText, content)
-    if not copyFrame then
-        local frame = CreateFrame("Frame", "SalveCopyReport", UIParent, "BackdropTemplate")
-        frame:SetSize(640, 360)
-        frame:SetPoint("CENTER")
-        frame:SetFrameStrata("FULLSCREEN_DIALOG")
-        frame:SetBackdrop({
-            bgFile = "Interface\\Buttons\\WHITE8X8",
-            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-            edgeSize = 12,
-        })
-        frame:SetBackdropColor(0.035, 0.035, 0.04, 0.98)
-        frame:SetBackdropBorderColor(0.58, 0.43, 0.22, 1)
-        frame:EnableMouse(true)
-        frame:Hide()
+O.StatusText = statusText
 
-        local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        title:SetPoint("TOPLEFT", 18, -16)
-        frame.title = title
-
-        local help = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
-        help:SetText("Press Ctrl+C, then Escape.")
-
-        local scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-        scroll:SetPoint("TOPLEFT", 18, -66)
-        scroll:SetPoint("BOTTOMRIGHT", -38, 44)
-
-        local edit = CreateFrame("EditBox", nil, scroll)
-        edit:SetMultiLine(true)
-        edit:SetAutoFocus(false)
-        edit:SetFontObject(ChatFontNormal)
-        edit:SetWidth(565)
-        edit:SetHeight(800)
-        edit:SetTextInsets(4, 4, 4, 4)
-        edit:SetScript("OnEscapePressed", function() frame:Hide() end)
-        scroll:SetScrollChild(edit)
-        frame.edit = edit
-
-        local close = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-        close:SetSize(90, 22)
-        close:SetPoint("BOTTOMRIGHT", -18, 14)
-        close:SetText("Close")
-        close:SetScript("OnClick", function() frame:Hide() end)
-
-        frame:SetScript("OnHide", function() edit:ClearFocus() end)
-        copyFrame = frame
-    end
-
-    copyFrame.title:SetText(titleText)
-    copyFrame.edit:SetText(content)
-    copyFrame:Show()
-    copyFrame.edit:SetFocus()
-    copyFrame.edit:HighlightText()
-end
-
-local function showCopyReport()
-    showCopyText("Copy Salve report", buildReport())
-end
-
-local function showCopyForeverSpellReport()
+-- HammerCore owns the copy window, the status card and "Copy report"; Salve
+-- adds its own reports and the click log below them.
+function O.ShowForeverSpellReport()
     local report = ns.BuildForeverDispelReport and ns.BuildForeverDispelReport()
         or "Salve Forever spell report\nSpell-report support is unavailable."
-    showCopyText("Copy Forever spell report", report)
+    HC.Copy:Show("Copy Forever spell report", report)
 end
 
 local function showCopyClickLog()
     local content = ns.ClickLog and ns.ClickLog:Export()
         or "Salve cell-click audit\nno click-log storage is available"
-    showCopyText("Copy Salve click log", content)
+    HC.Copy:Show("Copy Salve click log", content)
 end
 
-O.ShowDiagnosticReport = showCopyReport
-O.ShowForeverSpellReport = showCopyForeverSpellReport
-
-O.NewPage({
-    name = "Troubleshooting",
-    title = "Troubleshooting",
-    group = "REFERENCE",
-    description = "Check Salve status.",
-}, function(panel, y)
-    _, y = O.Header(panel, "Status", y)
-
-    local card = CreateFrame("Frame", nil, panel, "BackdropTemplate")
-    card:SetPoint("TOPLEFT", 16, y)
-    card:SetSize(520, 112)
-    card:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Buttons\\WHITE8X8",
-        edgeSize = 1,
-    })
-    card:SetBackdropColor(unpack(O.theme.rail))
-    card:SetBackdropBorderColor(unpack(O.theme.edge))
-
-    local status = card:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    status:SetPoint("TOPLEFT", 14, -12)
-    status:SetPoint("BOTTOMRIGHT", -14, 12)
-    status:SetJustifyH("LEFT")
-    status:SetJustifyV("TOP")
-
-    local function refreshStatus()
-        status:SetText(statusText())
-    end
-    panel.salveRefresh[#panel.salveRefresh + 1] = refreshStatus
-    O.RefreshTroubleshooting = refreshStatus
-    y = y - 126
-
+function O.TroubleshootingExtras(panel, y)
     local probe = O.Button(panel, 150, 22)
     probe:SetPoint("TOPLEFT", 16, y)
     probe:SetText("Run diagnostics")
     O.AttachHint(probe, "Run diagnostics",
-        "Check the aura engine, clicks, spell data and sound registrations.")
+        "Check the aura engine, clicks, spell data and sound registrations, and print the result.")
     probe:SetScript("OnClick", function()
         ns.Binding:Report()
         ns.Sound:Report()
-        refreshStatus()
+        panel.hcRefreshAll()
     end)
-
-    local copy = O.Button(panel, 120, 22)
-    copy:SetPoint("LEFT", probe, "RIGHT", 8, 0)
-    copy:SetText("Copy report")
-    O.AttachHint(copy, "Copy report", "Open a report you can paste into a bug report.")
-    copy:SetScript("OnClick", showCopyReport)
     local forever = O.Button(panel, 165, 22)
-    forever:SetPoint("LEFT", copy, "RIGHT", 8, 0)
+    forever:SetPoint("LEFT", probe, "RIGHT", 8, 0)
     forever:SetText("Copy Forever spells")
     O.AttachHint(forever, "Copy Forever spells",
         "Copy the detected Forever cure families and observed spellbook IDs for a missing-ability report. This never enables manually entered spells.")
-    forever:SetScript("OnClick", showCopyForeverSpellReport)
-    y = y - 48
+    forever:SetScript("OnClick", O.ShowForeverSpellReport)
+    y = y - 38
 
     _, y = O.Header(panel, "Aura learning", y)
-
-    local note = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-    note:SetPoint("TOPLEFT", 16, y)
-    note:SetWidth(520)
-    note:SetJustifyH("LEFT")
-    note:SetText("Records readable dispellable auras and Blizzard-reported roots or snares. Private auras cannot be recorded.")
-    y = y - 42
+    _, y = O.Text(panel, "Records readable dispellable auras and reported roots or snares; private auras cannot be recorded.", y)
+    y = y - 8
 
     _, y = O.Header(panel, "Debug logging", y)
     _, y = O.Check(panel, "Record armed Salve-cell clicks",
         "Off by default. Saves timestamp, unit token, mouse binding and the selected Salve action to SalveClickLog. It cannot record a private aura's name.",
         y, function() return ns.db.clickAuditEnabled end,
         function(value) ns.Set("clickAuditEnabled", value) end)
-
     local clear = O.Button(panel, 120, 22)
     clear:SetPoint("TOPLEFT", 16, y)
     clear:SetText("Clear click log")
     O.AttachHint(clear, "Clear click log", "Remove saved Salve-cell click history.")
     clear:SetScript("OnClick", function()
         if ns.ClickLog then ns.ClickLog:Clear() end
-        refreshStatus()
+        panel.hcRefreshAll()
     end)
     local copyLog = O.Button(panel, 120, 22)
     copyLog:SetPoint("LEFT", clear, "RIGHT", 8, 0)
@@ -266,6 +162,5 @@ O.NewPage({
     O.AttachHint(copyLog, "Copy click log",
         "Open a timestamped, copy-ready export of recorded Salve-cell clicks.")
     copyLog:SetScript("OnClick", showCopyClickLog)
-    y = y - 38
-    return y
-end)
+    return y - 38
+end

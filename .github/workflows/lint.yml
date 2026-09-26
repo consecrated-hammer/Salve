@@ -25,26 +25,21 @@ jobs:
           find tests -maxdepth 1 -type f -name 'test_*.lua' -print | sort \
             | while IFS= read -r test; do lua "$test"; done
 
-      - name: Check each addon's Lua files against its own TOC
-        run: |
-          check_toc() {
-            dir="$1"
-            toc="$2"
-            awk '!/^[[:space:]]*(#|$)/ { gsub(/\\/, "/"); if ($0 ~ /\.lua$/) print }' \
-              "$toc" | tr -d '\r' | sort > /tmp/in_toc
-            if [ "$dir" = "." ]; then
-              find Core Catalog Features Options UI -name '*.lua' -print \
-                | sort > /tmp/on_disk
-              printf '%s\n' Core.lua >> /tmp/on_disk
-              sort -o /tmp/on_disk /tmp/on_disk
-            else
-              find "$dir" -maxdepth 1 -name '*.lua' -print | sort > /tmp/on_disk
-            fi
-            diff -u /tmp/in_toc /tmp/on_disk
-          }
-
-          check_toc . Salve.toc
-          check_toc . Salve_Camelot.toc
+  hammercore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: addon
+      - uses: actions/checkout@v4
+        with:
+          repository: consecrated-hammer/HammerCore
+          path: hammercore
+          fetch-depth: 0
+      - name: Vendored HammerCore matches its pinned commit
+        run: python3 hammercore/tools/check.py addon
+      - name: Each TOC loads exactly the addon's Lua files
+        run: python3 hammercore/tools/toc_check.py addon
 
   data:
     runs-on: ubuntu-latest

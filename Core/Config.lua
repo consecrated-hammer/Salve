@@ -15,7 +15,6 @@ ns.defaults = {
     boxHeight     = 20,
     spacing       = 1,
     point         = { "CENTER", "CENTER", 0, -140 },
-    settingsPoint = { "CENTER", "CENTER", 0, 0 },
 
     -- Appearance
     showNames     = false,
@@ -47,7 +46,6 @@ ns.defaults = {
     cleanAlpha    = 0.25,
     showHandle    = true,   -- the persistent drag grip, like Decursive's
     handlePosition = "TOPLEFT",
-    showStartupMessage = true,
 
     -- Behaviour
     -- Click bindings. Fresh/restored profiles use automatic defaults (left =
@@ -106,9 +104,6 @@ ns.defaults = {
     -- explicit conversion; ordinary new defaults do not need a bump.
     schemaVersion = 9,
 
-    -- Minimap button
-    showMinimap   = true,
-    minimapAngle  = 225,
 }
 
 local function copyDefaults(dst, src)
@@ -163,9 +158,9 @@ local function normalizePreferences(db)
     end
     for _, key in ipairs({ "showNames", "showTooltip", "tooltipUnitInfo", "tooltipActions",
         "tooltipSpellDescriptions", "showDispelTypeIcon", "showStacks", "useClassColours",
-        "showWhenClean", "showHandle", "showStartupMessage", "bindingsCustom", "clickAuditEnabled",
+        "showWhenClean", "showHandle", "bindingsCustom", "clickAuditEnabled",
         "soundEnabled", "dispelSoundEnabled", "movementSoundEnabled", "movementTextNotification",
-        "selfDispelNotification", "showMinimap" }) do
+        "selfDispelNotification" }) do
         resetIfWrongType(db, key, "boolean")
     end
     for _, key in ipairs({ "scale", "cleanAlpha" }) do numberInRange(db, key, 0, key == "scale" and 3 or 1) end
@@ -176,7 +171,6 @@ local function normalizePreferences(db)
     numberInRange(db, "nameFontSize", 6, 48, true)
     numberInRange(db, "cooldownFontSize", 6, 48, true)
     numberInRange(db, "dispelTypeIconSize", 8, 64, true)
-    numberInRange(db, "minimapAngle", 0, 360)
     numberInRange(db, "movementChatWindow", 0, 20, true)
     enumOrDefault(db, "orientation", { HORIZONTAL = true, VERTICAL = true })
     enumOrDefault(db, "horizontalGrowth", { LEFT = true, RIGHT = true })
@@ -199,7 +193,6 @@ local function normalizePreferences(db)
         db.soundFile = ns.defaults.soundFile
     end
     if not validPoint(db.point) then db.point = { unpack(ns.defaults.point) } end
-    if not validPoint(db.settingsPoint) then db.settingsPoint = { unpack(ns.defaults.settingsPoint) } end
 end
 
 function ns.InitConfig()
@@ -399,8 +392,6 @@ function ns.Set(key, value)
         return
     end
 
-    if key == "showStartupMessage" then return end
-
     if key == "selfDispelNotification" then
         if ns.SelfAlert and ns.SelfAlert.Update then ns.SelfAlert:Update() end
         return
@@ -417,6 +408,5 @@ function ns.Set(key, value)
     if (key == "showHandle" or key == "handlePosition") and ns.Handle then
         ns.Handle:Update()
     end
-    if key == "showMinimap" and ns.Minimap then ns.Minimap:Update() end
     if ns.Preview and ns.Preview.active then ns.Preview:Refresh() end
 end

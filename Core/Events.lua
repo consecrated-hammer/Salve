@@ -44,19 +44,9 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     if event == "ADDON_LOADED" then
         if arg1 ~= addonName then return end
         ns.InitConfig()
-        if ns.db.showStartupMessage then
-            ns.Print("loaded — version " .. tostring(ns.VERSION)
-                .. ". Type |cffffd100/salve|r for settings; |cffffd100/salve help|r for commands.")
-        end
-        -- ☠ Only now is ns.db real. The option pages queued themselves at file
-        --   scope precisely so they could be built here instead of against nil.
-        -- A failed settings build should not prevent the dispel panel loading.
-        -- OpenOptions retries on demand and reports the captured error.
-        local built, err = pcall(ns.Options.BuildAll)
-        if not built then
-            ns.Options.buildError = tostring(err)
-            ns.Print("settings will retry when opened")
-        end
+        -- HammerCore adopts the old startup, minimap and settings-position
+        -- keys, prints the login line and creates the minimap button.
+        ns.HammerCore:Start()
         frame:UnregisterEvent("ADDON_LOADED")
 
     elseif event == "PLAYER_LOGIN" then
@@ -67,8 +57,6 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- Broker first: it is a no-op without LibStub, and it never affects the
         -- minimap button, which Salve always owns. See UI/Broker.lua.
         ns.Broker:Create()
-        ns.Minimap:Create()
-        ns.Minimap:Update()
         ns.RequestRebuild()
 
     elseif event == "PLAYER_LEAVING_WORLD" then

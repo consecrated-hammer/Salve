@@ -1,5 +1,6 @@
 local addonName, ns = ...
-local O = ns.Options
+local HC = ns.HammerCore
+local O, T = ns.Options, HC.Theme
 
 -- This is Salve's learned catalogue, not the character spellbook. Every entry
 -- is a positive observation: readable dispellable auras are scoped to where
@@ -96,62 +97,15 @@ end
 
 local copyFrame
 local function showCopyReport()
-    if not copyFrame then
-        local frame = CreateFrame("Frame", "SalveCopyLearnedSpells", UIParent, "BackdropTemplate")
-        frame:SetSize(620, 460)
-        frame:SetPoint("CENTER")
-        frame:SetFrameStrata("FULLSCREEN_DIALOG")
-        frame:SetBackdrop({
-            bgFile = "Interface\\Buttons\\WHITE8X8",
-            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-            edgeSize = 12,
-        })
-        frame:SetBackdropColor(0.035, 0.035, 0.04, 0.98)
-        frame:SetBackdropBorderColor(0.58, 0.43, 0.22, 1)
-        frame:EnableMouse(true)
-        frame:Hide()
-
-        local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        title:SetPoint("TOPLEFT", 18, -16)
-        title:SetText("Copy Salve-learned spells")
-        local help = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
-        help:SetText("Press Ctrl+C, then Escape.")
-
-        local scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-        scroll:SetPoint("TOPLEFT", 18, -66)
-        scroll:SetPoint("BOTTOMRIGHT", -38, 44)
-        local edit = CreateFrame("EditBox", nil, scroll)
-        edit:SetMultiLine(true)
-        edit:SetAutoFocus(false)
-        edit:SetFontObject(ChatFontNormal)
-        edit:SetWidth(545)
-        edit:SetHeight(2400)
-        edit:SetTextInsets(4, 4, 4, 4)
-        edit:SetScript("OnEscapePressed", function() frame:Hide() end)
-        scroll:SetScrollChild(edit)
-        frame.edit = edit
-
-        local close = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-        close:SetSize(90, 22)
-        close:SetPoint("BOTTOMRIGHT", -18, 14)
-        close:SetText("Close")
-        close:SetScript("OnClick", function() frame:Hide() end)
-        frame:SetScript("OnHide", function() edit:ClearFocus() end)
-        copyFrame = frame
-    end
-    copyFrame.edit:SetText(buildReport())
-    copyFrame:Show()
-    copyFrame.edit:SetFocus()
-    copyFrame.edit:HighlightText()
+    HC.Copy:Show("Copy learned spells", buildReport())
 end
 
 O.ShowLearnedSpellReport = showCopyReport
 
-O.NewPage({
+HC.Settings:NewPage({
     name = "Learned Spells",
     title = "Learned spells",
-    group = "REFERENCE",
+    group = "reference",
     description = "Recorded aura and movement spells.",
 }, function(panel, y)
     _, y = O.Header(panel, "Salve's learned spells", y)
@@ -178,8 +132,8 @@ O.NewPage({
         edgeFile = "Interface\\Buttons\\WHITE8X8",
         edgeSize = 1,
     })
-    listCard:SetBackdropColor(unpack(O.theme.raised))
-    listCard:SetBackdropBorderColor(unpack(O.theme.edge))
+    listCard:SetBackdropColor(unpack(T.Colour("raised")))
+    listCard:SetBackdropBorderColor(unpack(T.Colour("edge")))
     local list = listCard:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     list:SetPoint("TOPLEFT", 12, -10)
     list:SetWidth(516)
@@ -195,9 +149,9 @@ O.NewPage({
         listHeight = math.max(42, lineCount * 15)
         list:SetHeight(listHeight)
         listCard:SetHeight(listHeight + 20)
-        panel.salveSetBottom(listTopY - listHeight - 44)
+        panel.hcSetBottom(listTopY - listHeight - 44)
     end
-    panel.salveRefresh[#panel.salveRefresh + 1] = render
+    panel.hcRefresh[#panel.hcRefresh + 1] = render
     render()
     return listTopY - listHeight - 44
 end)

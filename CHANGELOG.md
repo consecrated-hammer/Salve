@@ -7,6 +7,32 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Salve now uses HammerCore, the settings, command and chat foundation shared
+  by every Consecrated Hammer addon. Salve's settings shell became its
+  template, so the window looks the same; what changes is shared behaviour:
+  - Chat messages and the login line use the shared gold name prefix:
+    `Salve v1.5.26 loaded - type /salve for settings, /salve help for
+    commands`.
+  - Visibility keeps Display and Position, then Other with the minimap
+    button and startup message. Handle position is now a dropdown.
+  - Commands, Troubleshooting and About are HammerCore's standard pages.
+    About keeps the practitioner's notes and "Apply Salve", now as a
+    pressable Salve icon; a quest "!" beneath it opens a lore quiz.
+  - New commands: `about`, `startup`, `minimap`, `theme`,
+    `reset position`, `reset settings`, `toggle` and `quiz`. `debug` opens
+    the copyable report; **Run diagnostics** on Troubleshooting prints the
+    engine and sound report.
+  - Your minimap, startup-message and settings-window choices carry over.
+- Clicking the tick in a multi-select menu now chooses it.
+
+### Removed
+
+- `/salve options`, `config`, `opt`, `probe`, `handle`, `reset`, `spells`,
+  `learn` and `debug copy`; use the bare command, `unlock`,
+  `reset position`, `forever` and `debug`.
+
 ## [1.5.26] - 2026-09-26
 
 ### Added
