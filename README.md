@@ -1,203 +1,104 @@
 # Salve
 
-**A compact clickable dispel panel for World of Warcraft.** Click a lit group
-member to cast the removal spell assigned to that mouse button.
+**Decursive-style dispelling, one click per party member.**
 
-> **Camelot preview (local development only):** the package includes the
-> Retail-style AuraContainer implementation in `Salve_Camelot.toc`. Its
-> `16001` is the provisional Forever beta interface target, corroborated by
-> current Forever packages; it still requires in-client verification and has
-> not been released or tagged
-> on CurseForge.
+_One click to cleanse them all, and in the options bind them._
 
-[![CurseForge](https://img.shields.io/curseforge/v/1653368?style=flat-square&color=4c9a7a&label=curseforge)](https://www.curseforge.com/wow/addons/salve)
-[![Downloads](https://img.shields.io/curseforge/dt/1653368?style=flat-square&color=4c9a7a&label=downloads)](https://www.curseforge.com/wow/addons/salve)
-[![License](https://img.shields.io/badge/license-GPL--3.0-4c9a7a?style=flat-square)](LICENSE.txt)
-[![Client](https://img.shields.io/badge/client-retail-4c9a7a?style=flat-square)](https://worldofwarcraft.blizzard.com/)
+[![Discord](https://img.shields.io/badge/discord-join-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/z3xKxRygDc) [![Retail](https://img.shields.io/badge/retail-supported-4c9a7a?style=flat-square)](https://www.curseforge.com/wow/addons/salve) [![WoW Forever](https://img.shields.io/badge/wow%20forever-supported-4c9a7a?style=flat-square)](https://www.curseforge.com/wow/addons/salve) [![Release](https://img.shields.io/github/v/release/consecrated-hammer/Salve?style=flat-square&color=4c9a7a&label=release)](https://github.com/consecrated-hammer/Salve/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-4c9a7a?style=flat-square)](https://github.com/consecrated-hammer/Salve/blob/main/LICENSE.txt)
+
+Questions, bugs or ideas? Come say hi on the [Consecrated Hammer Discord](https://discord.gg/z3xKxRygDc). Bug reports go in `#bug-reports`, or you can open a [GitHub issue](https://github.com/consecrated-hammer/Salve/issues).
 
 ---
 
-## Why Salve exists
-
-WoW: Midnight made aura details private to addons. Older dispel addons were
-built around reading those details, so they became unreliable or stopped
-working.
-
-Salve is built for the new rules. Blizzard decides which cells light up and
-what dispel colour they use; Salve supplies the clickable panel. It can show
-and remove debuffs your character can dispel, plus roots and snares when you
-enable a movement-removal spell that can answer them. It cannot inspect debuffs
-to rank individual spells, and optional sound alerts can only cover spell IDs
-in the current dungeon or raid catalogue.
+Salve gives you one box per group member. When someone picks up a debuff you can remove, their box lights up with that debuff type's colour and icon, and you click it to cleanse them. As a long-time Decursive user, I wanted to keep that simple rhythm: see the colour, click the box, cleanse the party.
 
 ## What it does
 
-**One box per group member**, in a small grid you can size and place anywhere.
-
-**It lights up instantly.** A box takes the dispel colour of a matching debuff
-the moment that member catches something *you* can remove, and dims when they
-are clean.
-
-**One click to cleanse.** By default, left click uses your primary dispel.
-Where your specialisation has a distinct second dispel covering other schools,
-it goes on right click automatically. Every detected action can be rebound.
-
-**Stack counts**, drawn by the game itself, so they follow its own rules.
-
-**All supported dispelling classes** — Paladin, Priest, Druid, Shaman, Monk,
-Evoker, Mage and Warlock. Available spells are detected automatically when you
-change specialisation or, for Warlocks, when your active demon changes.
-
-**Personal movement notifications.** Enable Blessing of Freedom in Actions for
-notifications when Blizzard reports a root or snare on you. Alerts offers
-on-screen text, local chat messages, or both. **Movement chat tab** selects the
-local chat window; click it to cycle through available tabs. Closed tabs fall
-back to the default window. On-screen text can be previewed
-and dragged to a saved position. Movement notifications do not track party
-members or promise a movement highlight on a cell.
-
-## Screenshots
-
-| Clear cells | Dispellable cells | Unit names |
-| :--: | :--: | :--: |
-| ![Compact clear cells](docs/screenshots/panel-clear-cells.png) | ![Cells lit by dispel type](docs/screenshots/panel-dispellable-cells.png) | ![Wide cells with unit names](docs/screenshots/panel-unit-names.png) |
-
-![Pinned preview and layout options](docs/screenshots/options-preview-and-layout.png)
-
-More settings: [cell appearance](docs/screenshots/options-cell-size-and-alignment.png),
-[visibility](docs/screenshots/options-visibility.png), and
-[dispels and alerts](docs/screenshots/options-dispels-and-alerts.png).
-
-## How it works
-
-Salve never reads aura details to decide which cells light up.
-
-It hands the game a filter — *harmful auras this character can remove* — along
-with the artwork for each box, and the game decides what matches, when the
-dispel fill appears, what colour it is and what the stack count says.
-
-This keeps the visible dispel panel small and quiet: Salve does not read or
-branch on aura data to decide which cells light up. Separate, location-scoped
-learning listeners record only readable aura metadata to improve the bundled
-catalogue; private auras remain inaccessible. Dispel colours come from the
-game's palette, so colourblind settings are respected automatically.
+- **One box per group member**, in a small grid you can size and place anywhere.
+- **It lights up straight away.** A box shows the dispel type's colour and icon (Magic, Curse, Poison or Disease) the moment that member catches something _you_ can remove, and dims when they're clean. Stack counts are drawn by the game itself.
+- **One click to cleanse.** Left click uses your primary dispel. If your spec has a second dispel covering other schools, it goes on right click automatically. Every detected action can be rebound.
+- **Every dispelling class:** Paladin, Priest, Druid, Shaman, Monk, Evoker, Mage and Warlock. Your spells are picked up automatically when you change spec or, for Warlocks, when your demon changes.
+- **Movement removal for you.** Enable a spell like Blessing of Freedom on the Actions page and your own box lights gold when Blizzard reports a root or snare on you, with optional on-screen or chat text.
+- **Optional sound alerts** for known dispellable debuffs in the current dungeon or raid.
 
 ## Getting started
 
-Install, then type **`/salve`**.
+Install, then type `/salve` for settings.
 
-The panel starts in the centre of your screen with a small gold grip above it.
-Drag the grip to place it — not the panel itself, whose boxes are buttons and
-cover every pixel of it. Use `/salve lock` or right-click the minimap button to
-hide the grip once you are happy.
+The panel starts in the centre of your screen with a small gold grip above it. Drag the grip to move it (the boxes themselves are buttons, so the panel can't be dragged directly). Use `/salve lock` or right-click the minimap button to hide the grip once you're happy with it.
 
-### Commands
+## Commands
 
-| Command | Does |
-| :-- | :-- |
+| Command | What it does |
+| --- | --- |
 | `/salve` | Open settings |
-| `/salve help` | List every command and panel action |
-| `/salve version` | Print the loaded version and client |
-| `/salve about` | Open the About page |
-| `/salve debug` | Open a copyable diagnostic report |
-| `/salve startup [on\|off]` | Show the startup message |
-| `/salve minimap [on\|off]` | Show the minimap button |
-| `/salve reset position` | Put the panel back in the centre |
-| `/salve reset settings` | Reset every setting after a confirmation |
 | `/salve toggle` | Show or hide the panel |
-| `/salve lock` / `unlock` | Hide or show the drag handle |
-| `/salve forever` | Copy a Forever cure and spellbook report |
-| `/salve snares` | List auto-captured root and snare spell IDs for sharing |
-| `/salve learned` / `learned clear` | Inspect or clear learned spell IDs |
-| `/salve quiz` | Take a five-question lore quiz |
+| `/salve lock` / `unlock` | Hide or show the drag grip |
+| `/salve reset position` | Put the panel back in the centre |
+| `/salve forever` | Copy a WoW Forever cure and spellbook report, handy for bug reports |
+| `/salve snares` | List the root and snare spell IDs Salve has captured |
+| `/salve learned` / `learned clear` | Show or clear the learned spell catalogue |
 
-Type `/salve` or use **Game Menu → Options → AddOns → Salve → Open Salve
-settings**. The Blizzard page is a launcher for Salve's movable settings window,
-which remembers where you place it. Its pages are **Panel**, **Tooltips**,
-**Actions**, **Visibility** and **Alerts**, then **Learned Spells**,
-**Commands**, **Troubleshooting** and **About**. Settings, commands, the
-minimap button and the reference pages come from
-[HammerCore](https://github.com/consecrated-hammer/HammerCore), shared by
-every Consecrated Hammer addon and vendored under `Libs/HammerCore`.
+Every Consecrated Hammer addon also has `help`, `version`, `about`, `debug`, `startup`, `minimap`, `reset settings` and `quiz`.
 
-The Appearance page can show a full-size, non-clickable test panel at the addon's
-actual saved screen position. Its group-size, clear or dispellable state and
-cooldown controls update that panel immediately, and appearance changes use the
-same box styling and layout code as the live panel. The test panel closes with
-the settings window and automatically disappears when combat starts; navigating
-between settings pages leaves it running.
+## Detected actions
+
+The **Actions** page only lists spells your character knows. Movement actions stay off until you turn them on and bind them. "Area movement" is a ground-placed spell, so drop it where the affected players can reach it.
+
+| Class | Dispels | Frees movement (ally) | Area movement | Self only |
+| --- | --- | --- | --- | --- |
+| Paladin | Cleanse: Magic, Poison, Disease; Cleanse Toxins: Poison, Disease | Blessing of Freedom; Blessing of Protection | None | Divine Shield |
+| Priest | Purify: Magic, plus Disease with Improved Purify; Purify Disease: Disease | None | None | None |
+| Druid | Nature's Cure: Magic, plus Poison/Curse with Improved Nature's Cure; Remove Corruption: Poison, Curse | None | None | Travel Form; Cat Form |
+| Shaman | Purify Spirit: Magic, plus Curse with Improved Purify Spirit; Cleanse Spirit: Curse | None | Wind Rush Totem (Jet Stream only) | Spirit Walk; Ghost Wolf |
+| Monk | Detox (Mistweaver): Magic, plus Poison/Disease with Improved Detox; Detox: Poison, Disease | Tiger's Lust | None | None |
+| Evoker | Naturalize: Magic, Poison; Expunge: Poison; Cauterizing Flame: Poison, Curse, Disease | None | None | Hover |
+| Mage | Remove Curse: Curse | None | None | Blink; Shimmer; Ice Block; barriers with Energized Barriers (snares only) |
+| Hunter | None | Master's Call | None | None |
+| Death Knight | None | None | None | Wraith Walk; Death's Advance |
+| Demon Hunter | None | None | None | Fel Rush; Vengeful Retreat |
+| Rogue | None | None | None | Shadowstep; Sprint |
+| Warrior | None | None | None | Heroic Leap |
+| Warlock | Singe Magic (via your Imp) | None | None | Demonic Circle: Teleport |
+
+Talent-gated actions only show up when you know both the spell and the talent that enables it. Jet Stream and Energized Barriers remove snares, not roots.
+
+On WoW Forever, Salve uses that client's own dispels instead: Paladin Purify and Cleanse, Priest Cure Disease, Abolish Disease and Dispel Magic, Druid Cure Poison, Abolish Poison and Remove Curse, Shaman Cure Poison and Cure Disease, and Mage Remove Curse. If one of yours is missing, `/salve forever` copies a report you can paste into `#bug-reports`.
 
 ## Settings worth knowing
 
-**Show unit names** is off by default. The default 20 × 20 boxes are too small
-for names to fit — turn names on and raise the box width to at least 95 if you
-would rather have them.
+The settings pages are **Panel**, **Tooltips**, **Actions**, **Visibility** and **Alerts**, then **Learned Spells**, **Commands**, **Troubleshooting** and **About**.
 
-**Grid flow** separates wrapping from direction. Rows can grow from the left or
-right edge; columns can grow from the top or bottom edge. The selected edge
-stays anchored as the roster changes, which makes it easier to line Salve up
-with unit frames.
+- **Preview.** The Panel page can show a full-size test panel at the panel's saved position, with controls for group size, clear or dispellable boxes and cooldowns, so you can set it up without waiting for someone to get cursed. It closes with the settings window or when combat starts.
+- **Show unit names** is off by default because names don't fit in the default 20 × 20 boxes. Turn it on and widen the boxes to about 95 if you'd like names.
+- **Grid flow** lets rows grow from the left or right and columns from the top or bottom. The edge you pick stays anchored as the group changes, which makes it easier to line Salve up with your unit frames.
+- **Show units with nothing to dispel** keeps the panel's shape. Turn it off and idle boxes go transparent, but they still take clicks, because the game won't let addons change that on protected frames in combat.
+- **Alert sounds** are off by default. When on, Salve only listens for debuffs from its built-in list for the dungeon or raid you're in, and only ones you can remove. Roots and snares on you use a separate sound. The Alerts page has a test button for each.
+- **Learned spells.** Salve records the readable dispellable debuffs and reported roots and snares it sees, grouped by location, which helps improve the built-in list. **Copy learned spells** on the Learned Spells page gets it ready to paste, and `/salve learned clear` empties it.
 
-The **Dispels** page shows each detected dispel and its mouse binding on one
-line. Movement removals are off by default: enable only the actions you
-consider valid, then bind them on the same row. Party-wide actions such as
-Blessing of Freedom can cast on the clicked member; personal actions such as
-Blink light only your own cell. Roots and snares use a separate configurable
-alert colour, while normal dispel schools retain Blizzard's palette. Casting
-the selected movement removal shows an edge-only cooldown sweep, so its
-cooldown remains visible without obscuring an active dispel. Binding changes
-made during combat are safely applied when combat ends.
+## Limits
 
-The **Learned Spells** page shows the readable dispellable auras and
-Blizzard-reported roots or snares Salve has recorded, grouped by location. Its
-**Copy learned spells** button opens that same catalogue ready for Ctrl+C. Each
-entry is a positive observation; a missing spell remains unknown rather than
-being presented as absent from an encounter.
+These aren't oversights. Midnight made debuff details private to addons, so Salve hands the game a filter for _harmful auras this character can remove_ and the game decides which boxes light up, and with which colour and icon. That keeps Salve working, but it means:
 
-**Show units with nothing to dispel** holds the panel's shape. Turning it off
-makes inactive cells transparent. Their click areas stay in place:
-mouse input cannot be changed on a protected frame during combat.
+- **It can't prioritise or hide individual debuffs.** That needs debuff details that addons can't use for this any more.
+- **Dispel colours and icons can't be changed.** The game owns them, and they follow your colourblind settings. The cooldown sweep colour for each movement action can be set on the Actions page.
+- **Sound alerts only cover Salve's built-in list.** They can miss a debuff the box still lights up for, and they can't play for private auras.
+- **Movement alerts are for you only.** Roots and snares on other players aren't reported.
 
-**Alert sound** is optional and off by default. Salve carries its small,
-built-in seasonal catalogue in the same addon folder, then registers only the
-current instance's verified catalogue spell IDs matching schools your character
-can remove. Learned-only observations do not trigger sounds.
-Reviewed roots and snares with a matching enabled remedy use a distinct movement-alert
-sound; the Dispels page has separate test buttons for both sounds. Season 1,
-Season 2 and future catalogues can coexist without becoming separate AddOns.
-Run **Run diagnostics** on the Troubleshooting page to see catalogue/learned counts, sound candidates and native
-registrations. Inferred speed drops may still show
-optional movement text, but cannot play a movement sound or light the gold cell.
+## Screenshots
 
-Aura learning is always active. Outdoor discoveries are keyed to the current
-map; dungeon and raid discoveries are keyed to their instance. Salve listens
-for group aura changes and stores readable dispellable aura names, IDs and
-schools in the separate `SalveLearnedDB` block in its saved data; private auras
-cannot be learned. It also captures your own Blizzard-reported roots and snares
-through the player loss-of-control feed, so no command is needed during
-a pull. `/salve learned clear` removes the recorded catalogue.
+![All clear](https://media.forgecdn.net/attachments/1889/940/screenshot-2026-08-22-151235-png.png)
 
-## Limitations
+All clear.
 
-These are worth stating plainly, because they are not oversights:
+![Time to click](https://media.forgecdn.net/attachments/1889/941/screenshot-2026-08-22-151216-png.png)
 
-- **The visual dispel panel cannot prioritise or hide individual matching
-  debuffs.** Both would require inspecting aura details that addons are no
-  longer permitted to use for this decision. This is a game restriction, not
-  an unfinished priority system.
-- **Sound coverage is catalogue-based, not a live dispellability check.**
-  Spell metadata does not prove that every application is removable. The
-  spell-ID whitelist can miss dispellable auras or sound when the native cell
-  stays dark; it cannot exactly mirror Blizzard's visual dispellability filter.
-- **Normal dispel colours cannot be customised,** for the same reason. The game
-  owns them. The independent root/snare alert colour can be changed in the
-  Dispels page.
+You really should be clicking that.
 
-## Support
+![On cooldown](https://media.forgecdn.net/attachments/1889/939/screenshot-2026-08-22-151247-png.png)
 
-Bug reports, ideas and questions: the [Consecrated Hammer Discord](https://discord.gg/z3xKxRygDc)
-(`#bug-reports`, `#suggestions`, `#help`).
+Waiting for that cooldown.
 
 ## Licence
 
-Salve is licensed **GPL v3**. See [LICENSE.txt](LICENSE.txt).
+GPL v3, see [LICENSE.txt](https://github.com/consecrated-hammer/Salve/blob/main/LICENSE.txt). The alert sound `Sounds/AfflictionAlert.ogg` comes from Decursive by Archarodim and is used under GPL v3.
