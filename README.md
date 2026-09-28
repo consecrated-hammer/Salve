@@ -193,6 +193,11 @@ These are worth stating plainly, because they are not oversights:
   owns them. The independent root/snare alert colour can be changed in the
   Dispels page.
 
+## Support
+
+Bug reports, ideas and questions: the [Consecrated Hammer Discord](https://discord.gg/z3xKxRygDc)
+(`#bug-reports`, `#suggestions`, `#help`).
+
 ## Licence
 
 Salve is licensed **GPL v3**. See [LICENSE.txt](LICENSE.txt).
