@@ -259,6 +259,10 @@ HC.Settings:NewPage({
     local contents = section(panel)
     local cy = -8
     _, cy = O.Header(contents, "Cell contents", cy)
+    _, cy = O.Check(contents, "Show box borders",
+        "Show an outline around each box. Turn this and inactive units off to hide idle plates and borders.", cy,
+        function() return db.showBorders end,
+        function(value) ns.Set("showBorders", value) end)
     _, cy = O.Check(contents, "Tooltip on hover",
         "Shows who you are pointing at and what each mouse button will cast on them.", cy,
         function() return db.showTooltip end,
@@ -302,7 +306,7 @@ HC.Settings:NewPage({
     local iy = -8
     _, iy = O.Header(inactive, "Inactive units", iy)
     _, iy = O.Check(inactive, "Show units with nothing to dispel",
-        "Off makes inactive cells transparent. Their click areas stay in place during combat.", iy,
+        "Off hides idle backgrounds. Borders and unit names have separate settings; click areas stay in place during combat.", iy,
         function() return db.showWhenClean end,
         function(value) ns.Set("showWhenClean", value) end)
     _, iy = O.Slider(inactive, "Opacity",
@@ -372,7 +376,7 @@ HC.Settings:NewPage({
             "spacing", "scale", "boxWidth", "boxHeight",
             "showTooltip", "showNames", "nameJustifyH", "nameJustifyV", "nameFontSize",
             "cooldownJustifyH", "cooldownJustifyV", "cooldownFontSize", "showStacks",
-            "showWhenClean", "cleanAlpha", "useClassColours",
+            "showWhenClean", "cleanAlpha", "useClassColours", "showBorders",
             "showDispelTypeIcon", "dispelTypeIconSize", "dispelTypeIconPosition",
         }) do
             ns.Set(key, ns.defaults[key])

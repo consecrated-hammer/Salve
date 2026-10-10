@@ -43,6 +43,10 @@ equal(type(ns.db.movementSweepColours), "table", "movement sweep colours default
 -- Startup message, minimap and settings position now live in HammerCore.
 equal(ns.db.showStartupMessage, nil, "startup message is not a Salve default")
 equal(ns.db.useClassColours, false, "class-coloured clear cells default off")
+equal(ns.db.showBorders, true, "box borders default on for existing profiles")
+ns.Set("showBorders", false)
+ns.InitConfig()
+equal(ns.db.showBorders, false, "hidden borders survive config reload")
 equal(ns.db.tooltipUnitInfo, false, "default Blizzard unit tooltip defaults off")
 equal(ns.db.showDispelTypeIcon, true, "native dispel-type icon defaults on")
 equal(ns.db.dispelTypeIconSize, 20, "native dispel-type icon defaults to 20 pixels")
@@ -131,6 +135,7 @@ SalveDB = {
     handlePosition = "MIDDLE",
     soundFile = {},
     tooltipAnchor = "DIAGONAL",
+    showBorders = "broken",
     soundChannel = "Unknown",
 }
 SalveLearnedDB = nil
@@ -144,6 +149,7 @@ equal(ns.db.columns, 1, "columns are clamped to a safe minimum")
 equal(ns.db.point[1], "CENTER", "invalid panel point is repaired")
 equal(ns.db.settingsPoint, "broken", "HammerCore, not Salve, repairs the settings position")
 equal(ns.db.tooltipAnchor, "RIGHT", "invalid tooltip anchor is repaired")
+equal(ns.db.showBorders, true, "invalid border setting is repaired")
 equal(ns.db.soundChannel, "Master", "invalid sound channel is repaired")
 equal(ns.db.handlePosition, "TOPLEFT", "invalid handle position is repaired")
 equal(ns.db.soundFile, nil, "invalid sound file is repaired")

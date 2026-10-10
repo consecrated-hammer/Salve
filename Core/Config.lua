@@ -18,6 +18,7 @@ ns.defaults = {
 
     -- Appearance
     showNames     = false,
+    showBorders   = true,
     -- Who you are pointing at and what each click does. On by default: the
     -- bindings are configurable, so without it there is nothing on screen that
     -- says what a box will cast.
@@ -156,7 +157,7 @@ local function normalizePreferences(db)
         "movementSweepColours" }) do
         resetIfWrongType(db, key, "table")
     end
-    for _, key in ipairs({ "showNames", "showTooltip", "tooltipUnitInfo", "tooltipActions",
+    for _, key in ipairs({ "showNames", "showBorders", "showTooltip", "tooltipUnitInfo", "tooltipActions",
         "tooltipSpellDescriptions", "showDispelTypeIcon", "showStacks", "useClassColours",
         "showWhenClean", "showHandle", "bindingsCustom", "clickAuditEnabled",
         "soundEnabled", "dispelSoundEnabled", "movementSoundEnabled", "movementTextNotification",

@@ -170,6 +170,7 @@ local function CreateVisuals(box, registerCooldown)
     })
     box.border:SetBackdropBorderColor(0.55, 0.55, 0.55, 0.72)
     box.border:EnableMouse(false)
+    box.border:SetAlpha(ns.db.showBorders == false and 0 or 1)
 
     -- Keep the spell cooldown on Salve's own frame tree, outside Blizzard's
     -- sealed aura-button subtree. Every box shows the same primary-dispel
@@ -276,6 +277,7 @@ end
 
 function Box.RestylePreview(box, name, classKey)
     local db = ns.db
+    box.border:SetAlpha(db.showBorders == false and 0 or 1)
 
     box.name:SetJustifyH(db.nameJustifyH or "LEFT")
     box.name:SetJustifyV(db.nameJustifyV or "MIDDLE")
@@ -335,6 +337,7 @@ end
 -- accepts secrets, so this is fine -- as long as we never compare the result.
 function Box.Restyle(box)
     local db = ns.db
+    box.border:SetAlpha(db.showBorders == false and 0 or 1)
 
     box.name:SetJustifyH(db.nameJustifyH or "LEFT")
     box.name:SetJustifyV(db.nameJustifyV or "MIDDLE")

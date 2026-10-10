@@ -100,6 +100,30 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     equal(ns.db.spacing, 0, toc .. ": Raid wall preset removes gaps")
     equal(ns.db.showNames, false, toc .. ": Raid wall preset hides names")
 
+    -- Border controls restyle the live frame and preview without changing
+    -- the secure click target or suppressing movement response cues.
+    ns.Panel:Create()
+    local box = ns.Panel.boxes[1]
+    box.unit = "player"
+    local previewBox = ns.Box.CreatePreview(UIParent)
+    clickText("Show box borders")
+    equal(ns.db.showBorders, false, toc .. ": border checkbox saves false")
+    equal(box.border.alpha, 0, toc .. ": border checkbox hides live border")
+    ns.Box.RestylePreview(previewBox, "Tester", "PALADIN")
+    equal(previewBox.border.alpha, 0, toc .. ": preview hides border too")
+    clickText("Show units with nothing to dispel")
+    equal(box.plate.alpha, 0, toc .. ": idle plate can be hidden with the border")
+    ns.Box.SetMovementPrompt(box, true)
+    equal(box.border.alpha, 0, toc .. ": movement cue leaves border hidden")
+    equal(box.actionPrompt:IsShown(), true, toc .. ": movement cue still draws")
+    ns.Box.SetMovementPrompt(box, false)
+    equal(box.border.alpha, 0, toc .. ": clearing movement cue leaves border hidden")
+    wow.Click(wow.FindButton("Reset Panel"))
+    equal(ns.db.showBorders, true, toc .. ": Panel reset restores borders")
+    equal(box.border.alpha, 1, toc .. ": Panel reset restores live outline")
+    ns.Box.RestylePreview(previewBox, "Tester", "PALADIN")
+    equal(previewBox.border.alpha, 1, toc .. ": preview outline can be restored")
+
     -- The preview survives page changes and stops when settings close.
     HC.Settings:Show("Salve")
     ns.Preview.active = true

@@ -7,6 +7,14 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-10-10
+
+### Added
+
+- **Show box borders** on the Panel page, enabled by default. Turn it off
+  alongside **Show units with nothing to dispel** to hide idle plates and
+  outlines. The preview uses the same setting.
+
 ## [1.6.0] - 2026-09-26
 
 ### Added
