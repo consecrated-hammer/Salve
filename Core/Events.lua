@@ -15,8 +15,20 @@ local addonName, ns = ...
 local frame = CreateFrame("Frame", "SalveEventFrame")
 
 local function alertPlayerMovement(movement, isVerifiedMovement)
-    if movement and movement.kind == "CLEAR" then
+    if movement and movement.kind == "BLOCKED" then
         if ns.Panel then ns.Panel:SetMovementPrompt(nil, false) end
+        if ns.MovementAlert and ns.MovementAlert.Clear then ns.MovementAlert:Clear() end
+        return
+    end
+    local detector = ns.MovementDetection
+    local blocked = detector and detector.ControlBlockReason and detector:ControlBlockReason()
+    if blocked or (movement and movement.kind == "CLEAR") then
+        if ns.Panel then ns.Panel:SetMovementPrompt(nil, false) end
+        if blocked then
+            detector.controlBlocked, detector.alerted = true, false
+            detector.lastStatus = blocked
+            if ns.MovementAlert and ns.MovementAlert.Clear then ns.MovementAlert:Clear() end
+        end
         return
     end
     local spell = ns.Escape:MovementAlertSpell("player", movement)
@@ -31,6 +43,9 @@ local function alertPlayerMovement(movement, isVerifiedMovement)
     if spell and ns.MovementAlert then
         ns.MovementAlert:Notify("player", movement, spell)
     end
+    -- An explicit movement alert already describes the current impairment.
+    -- Do not replace it with the speed heuristic's generic SLOWED message.
+    if spell and detector and movement and movement.locType then detector.alerted = true end
     -- A speed drop is only an inference: terrain, transfers and client-side
     -- movement-state changes can produce one without a removable impairment.
     -- Reserve Salve's high-visibility gold player-cell cue for the explicit
@@ -38,6 +53,45 @@ local function alertPlayerMovement(movement, isVerifiedMovement)
     if actionable and ns.Panel then
         ns.Panel:SetMovementPrompt(spell, true)
     end
+end
+
+local movementRecheckPending = false
+local pendingMovementKeys, recheckAllMovement = {}, false
+local function movementKey(movement)
+    -- Missing IDs cannot identify the same transient effect on a later tick.
+    if type(movement.spellID) ~= "number" then return nil end
+    return tostring(movement.spellID) .. ":" .. tostring(movement.locType)
+end
+local function scheduleMovementRecheck(addedMovement)
+    if addedMovement then
+        local key = movementKey(addedMovement)
+        if not key then return end
+        pendingMovementKeys[key] = true
+    else
+        recheckAllMovement = true
+    end
+    if movementRecheckPending then return end
+    movementRecheckPending = true
+    -- Coalesce synchronous additions so a root and simultaneous fear/stun are
+    -- evaluated together, and discard roots that expired before this tick.
+    C_Timer.After(0, function()
+        movementRecheckPending = false
+        local keys, all = pendingMovementKeys, recheckAllMovement
+        pendingMovementKeys, recheckAllMovement = {}, false
+        local api = C_LossOfControl
+        if not (api and api.GetActiveLossOfControlDataCount) then return end
+        local ok, count = pcall(api.GetActiveLossOfControlDataCount)
+        if not ok or (issecretvalue and issecretvalue(count)) or type(count) ~= "number"
+            or count ~= count or count < 0 or count > 64 then return end
+        local chosen, verified
+        for index = 1, count do
+            local _, isVerified, movement = ns.Escape:CaptureLossOfControl("player", index)
+            if movement and (all or keys[movementKey(movement)]) and (not chosen or isVerified) then
+                chosen, verified = movement, isVerified
+            end
+        end
+        if chosen then alertPlayerMovement(chosen, verified) end
+    end)
 end
 
 frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
@@ -126,8 +180,11 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             effectIndex, unit = unit, "player"
         end
         if unit ~= "player" then return end
-        local _, isVerifiedMovement, movement = ns.Escape:CaptureLossOfControl(unit, effectIndex)
-        alertPlayerMovement(movement, isVerifiedMovement)
+        local _, _, movement = ns.Escape:CaptureLossOfControl(unit, effectIndex)
+        -- Clear stale prompts immediately when control is lost, but wait one
+        -- tick before issuing a new action instruction.
+        alertPlayerMovement(nil, false)
+        if movement then scheduleMovementRecheck(movement) end
 
     elseif event == "PLAYER_REGEN_DISABLED" then
         if ns.MovementAlert and ns.MovementAlert.StopPreview then ns.MovementAlert:StopPreview() end
@@ -160,7 +217,11 @@ end)
 frame:SetScript("OnUpdate", function(_, elapsed)
     local detector = ns.MovementDetection
     local movement = detector and detector:Sample(elapsed)
-    if movement then alertPlayerMovement(movement, false) end
+    if movement and movement.kind == "RECHECK" then
+        scheduleMovementRecheck()
+    elseif movement then
+        alertPlayerMovement(movement, false)
+    end
 end)
 
 for _, e in ipairs({

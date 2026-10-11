@@ -80,13 +80,35 @@ local function renderBoxes(boxes, frame, count, layout, state, cooldownState,
                 CLASSES[((i - 1) % #CLASSES) + 1])
 
             if state == "DISPELLABLE" and Preview:NeedsDispel(i, count) then
-                local colour = dispelColour(types[((i - 1) % #types) + 1])
+                local dispelType = types[((i - 1) % #types) + 1]
+                local colour = dispelColour(dispelType)
                 box.previewFill:SetColorTexture(colour.r, colour.g, colour.b, 1)
                 box.previewFill:Show()
-                box.previewStack:SetText(ns.db.showStacks and i == 4 and "2" or "")
+                box.previewStack:SetText(ns.db.showStacks and "2" or "")
+                if ns.db.showDispelTypeIcon ~= false then
+                    local icon = box.previewDispelIcon
+                    icon:ClearAllPoints()
+                    local point = ns.db.dispelTypeIconPosition or "BOTTOMLEFT"
+                    icon:SetPoint(point, box, point, 0, 0)
+                    local size = math.max(8, math.min(64, tonumber(ns.db.dispelTypeIconSize) or 20))
+                    icon:SetSize(size, size)
+                    -- Static sample art, never a read of live aura data.
+                    local atlas = "RaidFrame-Icon-Debuff" .. dispelType
+                    local available = C_Texture and C_Texture.GetAtlasInfo
+                        and C_Texture.GetAtlasInfo(atlas)
+                    if available then
+                        icon:SetAtlas(atlas)
+                    else
+                        icon:SetTexture(134400)
+                    end
+                    icon:Show()
+                else
+                    box.previewDispelIcon:Hide()
+                end
             else
                 box.previewFill:Hide()
                 box.previewStack:SetText("")
+                box.previewDispelIcon:Hide()
             end
 
             if cooldownState == "COOLDOWN" then
@@ -173,8 +195,8 @@ function Preview:RefreshSettingsPreview()
 
     local count = math.max(1, math.min(MAX_BOXES, tonumber(self.count) or 5))
     local layout = ns.Panel:Layout(count)
-    local fit = math.min(1, preview.width / math.max(1, layout.frameWidth),
-        preview.height / math.max(1, layout.frameHeight))
+    local fit = math.min(1, preview.width / math.max(1, layout.frameWidth * layout.scale),
+        preview.height / math.max(1, layout.frameHeight * layout.scale))
     preview.frame:ClearAllPoints()
     preview.frame:SetPoint("CENTER", preview.viewport, "CENTER")
     preview.frame:SetScale(layout.scale * fit)

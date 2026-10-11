@@ -85,6 +85,12 @@ function MovementAlert:StopPreview()
     end
 end
 
+function MovementAlert:Clear()
+    if self.preview then return end
+    self.remaining = 0
+    if self.frame then self.frame:Hide() end
+end
+
 function MovementAlert:TogglePreview()
     if self.preview then self:StopPreview() return end
     if InCombatLockdown and InCombatLockdown() then return end

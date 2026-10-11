@@ -16,6 +16,24 @@ local function clickText(text)
     wow.Click(region)
 end
 
+local function choose(label, choice)
+    local row = assert(wow.FindText(label), label).parent
+    for _, frame in ipairs(wow.frames) do
+        if frame.parent == row and frame.scripts.OnClick then
+            wow.Click(frame)
+            break
+        end
+    end
+    for _, region in ipairs(wow.regions) do
+        if region.text == choice and wow.Visible(region) and region.parent.value ~= nil
+            and region.parent.scripts.OnClick then
+            wow.Click(region.parent)
+            return
+        end
+    end
+    error("no visible menu choice " .. choice)
+end
+
 -- Load Salve exactly as a TOC lists it, then fire ADDON_LOADED.
 local function loadAddon(tocName, saved)
     local camelot = tocName:find("Camelot") and "Camelot" or nil
@@ -111,18 +129,85 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     equal(box.border.alpha, 0, toc .. ": border checkbox hides live border")
     ns.Box.RestylePreview(previewBox, "Tester", "PALADIN")
     equal(previewBox.border.alpha, 0, toc .. ": preview hides border too")
-    clickText("Show units with nothing to dispel")
+    clickText("Show idle backgrounds")
     equal(box.plate.alpha, 0, toc .. ": idle plate can be hidden with the border")
     ns.Box.SetMovementPrompt(box, true)
     equal(box.border.alpha, 0, toc .. ": movement cue leaves border hidden")
     equal(box.actionPrompt:IsShown(), true, toc .. ": movement cue still draws")
     ns.Box.SetMovementPrompt(box, false)
     equal(box.border.alpha, 0, toc .. ": clearing movement cue leaves border hidden")
+    ns.Set("showTooltip", false)
+    clickText("Preview movement sweep")
     wow.Click(wow.FindButton("Reset Panel"))
+    equal(ns.db.showTooltip, false, toc .. ": Panel reset leaves tooltip preference alone")
+    equal(ns.Preview.movementSweepState, false, toc .. ": Panel reset clears movement preview")
     equal(ns.db.showBorders, true, toc .. ": Panel reset restores borders")
     equal(box.border.alpha, 1, toc .. ": Panel reset restores live outline")
     ns.Box.RestylePreview(previewBox, "Tester", "PALADIN")
     equal(previewBox.border.alpha, 1, toc .. ": preview outline can be restored")
+
+    -- Combined controls keep the old saved keys, including the inactive axis.
+    HC.Settings:Show("Salve")
+    ns.Set("horizontalGrowth", "LEFT")
+    choose("Grid direction", "Columns from bottom")
+    equal(ns.db.orientation, "VERTICAL", toc .. ": direction sets fill")
+    equal(ns.db.verticalGrowth, "UP", toc .. ": direction sets growth")
+    equal(ns.db.horizontalGrowth, "LEFT", toc .. ": direction preserves other axis")
+    clickText("Show unit names")
+    local positions = {
+        { "Top left", "LEFT", "TOP" }, { "Top centre", "CENTER", "TOP" }, { "Top right", "RIGHT", "TOP" },
+        { "Middle left", "LEFT", "MIDDLE" }, { "Centre", "CENTER", "MIDDLE" }, { "Middle right", "RIGHT", "MIDDLE" },
+        { "Bottom left", "LEFT", "BOTTOM" }, { "Bottom centre", "CENTER", "BOTTOM" }, { "Bottom right", "RIGHT", "BOTTOM" },
+    }
+    for _, position in ipairs(positions) do
+        for _, spec in ipairs({ { "Name position", "name" }, { "Number position", "cooldown" } }) do
+            choose(spec[1], position[1])
+            equal(ns.db[spec[2] .. "JustifyH"], position[2], toc .. ": horizontal " .. spec[1])
+            equal(ns.db[spec[2] .. "JustifyV"], position[3], toc .. ": vertical " .. spec[1])
+        end
+    end
+    clickText("Show unit names")
+    equal(wow.Visible(wow.FindText("Name position")), false, toc .. ": name details collapse")
+    equal(wow.Visible(wow.FindText("Show unit names")), true, toc .. ": name enable remains visible")
+    clickText("Show idle backgrounds")
+    equal(wow.Visible(wow.FindText("Idle opacity")), false, toc .. ": idle details collapse")
+    equal(ns.db.cleanAlpha, 0.25, toc .. ": hiding backgrounds remembers opacity")
+
+    -- Both hosts show every aura indicator even with a single preview unit.
+    ns.Preview.count = 1
+    ns.Preview.cellState = "DISPELLABLE"
+    local previousTextureAPI = C_Texture
+    C_Texture = { GetAtlasInfo = function() return nil end }
+    ns.Set("dispelTypeIconSize", 37)
+    ns.Set("dispelTypeIconPosition", "TOPRIGHT")
+    ns.Preview:Start()
+    ns.Preview:RefreshSettingsPreview()
+    for _, sample in ipairs({ ns.Preview.boxes[1], ns.Preview.settingsPreview.boxes[1] }) do
+        equal(sample.previewDispelIcon:IsShown(), true, toc .. ": preview displays icon")
+        equal(sample.previewDispelIcon.width, 37, toc .. ": preview uses icon size")
+        equal(sample.previewDispelIcon:GetPoint(), "TOPRIGHT", toc .. ": preview uses icon position")
+        equal(sample.previewDispelIcon.texture, 134400, toc .. ": missing atlas uses visible fallback")
+        equal(sample.previewStack.text, "2", toc .. ": solo preview displays stacks")
+    end
+    C_Texture = { GetAtlasInfo = function() return {} end }
+    for _, sample in ipairs({ ns.Preview.boxes[1], ns.Preview.settingsPreview.boxes[1] }) do
+        sample.previewDispelIcon.SetAtlas = function(self, atlas) self.testAtlas = atlas end
+    end
+    ns.Preview:Refresh()
+    ns.Preview:RefreshSettingsPreview()
+    for _, sample in ipairs({ ns.Preview.boxes[1], ns.Preview.settingsPreview.boxes[1] }) do
+        equal(sample.previewDispelIcon.testAtlas, "RaidFrame-Icon-DebuffMagic", toc .. ": available atlas is used")
+    end
+    C_Texture = previousTextureAPI
+    clickText("Show dispel-type icon")
+    equal(wow.Visible(wow.FindText("Icon size")), false, toc .. ": icon details collapse")
+    ns.Set("showStacks", false)
+    ns.Preview:RefreshSettingsPreview()
+    for _, sample in ipairs({ ns.Preview.boxes[1], ns.Preview.settingsPreview.boxes[1] }) do
+        equal(sample.previewDispelIcon:IsShown(), false, toc .. ": preview hides disabled icon")
+        equal(sample.previewStack.text, "", toc .. ": preview hides disabled stacks")
+    end
+    ns.Preview:Stop()
 
     -- The preview survives page changes and stops when settings close.
     HC.Settings:Show("Salve")

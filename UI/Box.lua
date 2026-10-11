@@ -268,6 +268,15 @@ function Box.CreatePreview(parent)
     box.previewFill:SetAllPoints(box)
     box.previewFill:SetColorTexture(1, 1, 1, 1)
 
+    -- Synthetic aura artwork belongs only to non-secure preview boxes. Live
+    -- icons remain owned by Blizzard's native aura binding.
+    box.previewAuraLayer = CreateFrame("Frame", nil, box)
+    box.previewAuraLayer:SetAllPoints(box)
+    box.previewAuraLayer:SetFrameLevel(box:GetFrameLevel() + 1)
+    box.previewAuraLayer:EnableMouse(false)
+    box.previewDispelIcon = box.previewAuraLayer:CreateTexture(nil, "OVERLAY")
+    box.previewDispelIcon:Hide()
+
     box.previewStack = box.textLayer:CreateFontString(nil, "OVERLAY",
         "NumberFontNormalSmall")
     box.previewStack:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", -1, 0)

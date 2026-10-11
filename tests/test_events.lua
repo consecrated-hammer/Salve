@@ -21,6 +21,8 @@ local movementPrompts = 0
 local movementPromptClears = 0
 local selfAlertUpdates = 0
 local speedObservation
+local activeControlIndex = 4
+C_LossOfControl = { GetActiveLossOfControlDataCount = function() return 1 end }
 
 CreateFrame = function()
     return {
@@ -48,9 +50,10 @@ local ns = {
     Escape = {
         Update = function() return true end,
         CaptureLossOfControl = function(_, unit, index)
+            if index == 1 then index = activeControlIndex end
             if index == 5 then return false, false, nil end
             return false, unit == "player" and index == 4,
-                { locType = "ROOT" }
+                { locType = "ROOT", spellID = index == 4 and 1234 or 2345 }
         end,
         MovementAlertSpell = function(_, unit, movement)
             if movement and (movement.locType == "ROOT" or movement.locType == "SLOW")
@@ -183,6 +186,7 @@ handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "party1", "cast-guid", 4987)
 equal(#timers, 3, "another unit's dispel does not schedule a sweep")
 
 handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
+timers[#timers].callback()
 equal(movementWarnings, 1, "player movement impairment plays one warning")
 equal(movementTextAlerts, 1, "player movement impairment receives Freedom text")
 equal(movementPrompts, 1, "player root receives the movement action prompt")
@@ -200,16 +204,91 @@ equal(movementTextAlerts, 2, "speed observation uses the player text path")
 equal(movementPrompts, 1, "speed observation does not light the player-cell response cue")
 
 handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 3)
+activeControlIndex = 3
+timers[#timers].callback()
 equal(movementWarnings, 1, "unreviewed loss-of-control effect stays silent despite a matching ability")
 equal(movementPrompts, 1, "unreviewed loss-of-control effect stays unlit")
 handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 5)
 equal(movementWarnings, 1, "missing loss-of-control data stays silent")
 ns.Escape.MovementAlertSpell = function() return nil end
 handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
+activeControlIndex = 4
+timers[#timers].callback()
 equal(movementWarnings, 1, "verified effect without a matching enabled remedy stays silent")
 equal(movementPrompts, 1, "no remedy means no gold cue either")
 speedObservation = { kind = "CLEAR" }
 onUpdate(nil, 0.15)
 equal(movementWarnings, 1, "clearing movement state is silent")
+
+local blocked = "player is not in control"
+local clearedText = 0
+ns.MovementDetection.ControlBlockReason = function() return blocked end
+ns.MovementAlert.Clear = function() clearedText = clearedText + 1 end
+ns.Escape.MovementAlertSpell = function(_, _, movement)
+    if movement then return { id = 1044, name = "Blessing of Freedom" } end
+end
+local beforeText, beforeSound, beforePrompt = movementTextAlerts, movementWarnings, movementPrompts
+speedObservation = { kind = "SLOW", locType = "SLOW" }
+onUpdate(nil, 0.15)
+handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
+timers[#timers].callback()
+equal(movementTextAlerts, beforeText, "incapacitation suppresses inferred and explicit movement text")
+equal(movementWarnings, beforeSound, "incapacitation suppresses movement sound")
+equal(movementPrompts, beforePrompt, "incapacitation suppresses the gold movement cue")
+equal(clearedText >= 2, true, "incapacitation dismisses existing on-screen prompts")
+blocked = nil
+speedObservation = { kind = "RECHECK" }
+onUpdate(nil, 0.15)
+timers[#timers].callback()
+equal(movementTextAlerts, beforeText + 1, "control recovery restores explicit root alerts")
+equal(movementWarnings, beforeSound + 1, "a root outlasting fear regains its verified sound")
+equal(movementPrompts, beforePrompt + 1, "a root outlasting fear regains its gold cue")
+
+handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
+blocked = "simultaneous fear"
+timers[#timers].callback()
+equal(movementWarnings, beforeSound + 1, "deferred root alert observes simultaneous fear before playing sound")
+
+blocked = nil
+local beforeExpired = movementTextAlerts
+handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
+activeControlIndex = 3
+timers[#timers].callback()
+equal(movementTextAlerts, beforeExpired, "an expired new root does not re-alert an older unrelated root")
+
+-- Unidentified effects must not collide with another anonymous root.
+local originalCapture = ns.Escape.CaptureLossOfControl
+ns.Escape.CaptureLossOfControl = function()
+    return false, false, { locType = "ROOT" }
+end
+local beforeAnonymous, timersBeforeAnonymous = movementTextAlerts, #timers
+handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
+equal(#timers, timersBeforeAnonymous, "anonymous root does not schedule an ambiguous effect recheck")
+equal(movementTextAlerts, beforeAnonymous, "anonymous root cannot re-alert a different anonymous effect")
+ns.Escape.CaptureLossOfControl = originalCapture
+
+-- Exercise the actual detector/event handoff, not just a fabricated RECHECK.
+assert(loadfile("Features/MovementDetection.lua"))("Salve", ns)
+local actualDetector = ns.MovementDetection
+actualDetector:Reset()
+actualDetector.baseline = 8.33
+local fullControl = false
+HasFullControl = function() return fullControl end
+GetUnitSpeed = function() return 0, 0 end
+C_LossOfControl.GetActiveLossOfControlData = function() return { locType = "ROOT" } end
+activeControlIndex = 4
+handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
+timers[#timers].callback()
+equal(actualDetector.controlBlocked, true, "event marks the actual detector blocked")
+onUpdate(nil, 0.15)
+fullControl = true
+local beforeRecovery = movementTextAlerts
+onUpdate(nil, 0.15)
+timers[#timers].callback()
+equal(movementTextAlerts, beforeRecovery + 1, "actual detector recovery rechecks the surviving root")
+onUpdate(nil, 0.15)
+onUpdate(nil, 0.15)
+onUpdate(nil, 0.15)
+equal(movementTextAlerts, beforeRecovery + 1, "explicit recovered root is not overwritten by a duplicate SLOWED alert")
 
 print("event routing tests passed")

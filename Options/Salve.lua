@@ -18,6 +18,28 @@ local function smallLabel(parent, text, x, y)
     return label
 end
 
+local TEXT_POSITIONS = {
+    "LEFT:TOP", "CENTER:TOP", "RIGHT:TOP",
+    "LEFT:MIDDLE", "CENTER:MIDDLE", "RIGHT:MIDDLE",
+    "LEFT:BOTTOM", "CENTER:BOTTOM", "RIGHT:BOTTOM",
+}
+local TEXT_POSITION_LABELS = {
+    "Top left", "Top centre", "Top right",
+    "Middle left", "Centre", "Middle right",
+    "Bottom left", "Bottom centre", "Bottom right",
+}
+
+-- Keep the existing two saved keys so older builds can read these choices.
+local function textPosition(parent, label, hint, y, prefix)
+    return O.Dropdown(parent, label, hint, y, TEXT_POSITIONS, TEXT_POSITION_LABELS,
+        function() return ns.db[prefix .. "JustifyH"] .. ":" .. ns.db[prefix .. "JustifyV"] end,
+        function(value)
+            local horizontal, vertical = value:match("^([^:]+):([^:]+)$")
+            ns.Set(prefix .. "JustifyH", horizontal)
+            ns.Set(prefix .. "JustifyV", vertical)
+        end, 560, 150, 180)
+end
+
 HC.Settings:NewPage({
     name = "Salve",
     title = "Panel",
@@ -156,14 +178,14 @@ HC.Settings:NewPage({
     refreshPreview()
     local presets = section(panel)
     local presetY = -8
-    _, presetY = O.Header(presets, "Presets", presetY)
+    _, presetY = O.Header(presets, "Layout presets", presetY)
     local presetSpecs = {
         { label = "Compact", note = "20px cells, no names", width = 20, height = 20, columns = 5, spacing = 1, names = false, previewUnits = 5 },
         { label = "Named", note = "95px cells, names on", width = 95, height = 20, columns = 5, spacing = 1, names = true, previewUnits = 5 },
         { label = "Raid wall", note = "Tight 10-cell wall, no names", width = 20, height = 20, columns = 10, spacing = 0, names = false, previewUnits = 40 },
     }
     for index, spec in ipairs(presetSpecs) do
-        local button = O.SelectButton(presets, 168, 46)
+        local button = O.Button(presets, 168, 46)
         button:SetPoint("TOPLEFT", 16 + (index - 1) * 176, presetY - 4)
         button:SetText(spec.label)
         button.Text:ClearAllPoints()
@@ -174,7 +196,7 @@ HC.Settings:NewPage({
         note:SetPoint("TOPLEFT", button.Text, "BOTTOMLEFT", 0, -2)
         note:SetText(spec.note)
         note:SetTextColor(unpack(T.Colour("muted")))
-        O.AttachHint(button, spec.label, "Apply this panel shape.")
+        O.AttachHint(button, spec.label, "Sets cell width, height, wrapping, spacing and names. Keeps grid direction and panel scale.")
         button:SetScript("OnClick", function()
             ns.Set("boxWidth", spec.width)
             ns.Set("boxHeight", spec.height)
@@ -193,36 +215,19 @@ HC.Settings:NewPage({
     local grid = section(panel)
     local gy = -8
     _, gy = O.Header(grid, "Grid", gy)
-    _, _, gy = O.DropdownPair(grid, "Grid flow", gy,
-        {
-            label = "Fill",
-            hint = "Rows fill across before wrapping. Columns fill down before wrapping.",
-            values = { "HORIZONTAL", "VERTICAL" },
-            labels = { "Rows", "Columns" },
-            get = function() return db.orientation end,
-            set = function(value) ns.Set("orientation", value) end,
-        },
-        {
-            label = "Frames grow from",
-            hint = "The selected edge stays fixed as group members are added.",
-            values = function()
-                return db.orientation == "VERTICAL"
-                    and { "DOWN", "UP" } or { "RIGHT", "LEFT" }
-            end,
-            labels = function()
-                return db.orientation == "VERTICAL"
-                    and { "Top", "Bottom" }
-                    or { "Left", "Right" }
-            end,
-            get = function()
-                return db.orientation == "VERTICAL"
-                    and db.verticalGrowth or db.horizontalGrowth
-            end,
-            set = function(value)
-                ns.Set(db.orientation == "VERTICAL"
-                    and "verticalGrowth" or "horizontalGrowth", value)
-            end,
-        })
+    _, gy = O.Dropdown(grid, "Grid direction",
+        "Rows fill across then down. Columns fill down or up then right. The starting edge stays fixed as the group grows.", gy,
+        { "HORIZONTAL:RIGHT", "HORIZONTAL:LEFT", "VERTICAL:DOWN", "VERTICAL:UP" },
+        { "Rows from left", "Rows from right", "Columns from top", "Columns from bottom" },
+        function()
+            return db.orientation .. ":" .. (db.orientation == "VERTICAL"
+                and db.verticalGrowth or db.horizontalGrowth)
+        end,
+        function(value)
+            local orientation, growth = value:match("^([^:]+):([^:]+)$")
+            ns.Set("orientation", orientation)
+            ns.Set(orientation == "VERTICAL" and "verticalGrowth" or "horizontalGrowth", growth)
+        end, 560, 150, 200)
     _, gy = O.Slider(grid,
         function() return db.orientation == "VERTICAL"
             and "Cells per column" or "Cells per row" end,
@@ -241,14 +246,14 @@ HC.Settings:NewPage({
     _, sy = O.Header(size, "Cell size", sy)
     _, sy = O.Slider(size, "Width",
         "Use 95 or more to show the twelve-character preview names.", sy,
-        10, 300, 1,
+        10, 200, 1,
         function() return db.boxWidth end,
         function(value) ns.Set("boxWidth", value) end)
     _, sy = O.Slider(size, "Height", nil, sy,
         10, 150, 1,
         function() return db.boxHeight end,
         function(value) ns.Set("boxHeight", value) end)
-    _, sy = O.Slider(size, "UI scale",
+    _, sy = O.Slider(size, "Panel scale",
         "Scales the entire Salve frame, including text and borders.", sy,
         0.5, 2, 0.05,
         function() return db.scale end,
@@ -260,25 +265,13 @@ HC.Settings:NewPage({
     local cy = -8
     _, cy = O.Header(contents, "Cell contents", cy)
     _, cy = O.Check(contents, "Show box borders",
-        "Show an outline around each box. Turn this and inactive units off to hide idle plates and borders.", cy,
+        "Show an outline around every cell, independently of idle backgrounds and names.", cy,
         function() return db.showBorders end,
         function(value) ns.Set("showBorders", value) end)
-    _, cy = O.Check(contents, "Tooltip on hover",
-        "Shows who you are pointing at and what each mouse button will cast on them.", cy,
-        function() return db.showTooltip end,
-        function(value) ns.Set("showTooltip", value) end)
-    _, cy = O.Check(contents, "Unit names",
-        "Use cells at least 95 pixels wide for the twelve-character preview names.", cy,
-        function() return db.showNames end,
-        function(value) ns.Set("showNames", value) end)
     _, cy = O.Check(contents, "Show stack counts",
-        "The game hides the number when there is only one stack.", cy,
+        "The game hides the number at one stack. Dispelling previews simulate two stacks.", cy,
         function() return db.showStacks end,
         function(value) ns.Set("showStacks", value) end)
-    _, cy = O.Check(contents, "Use class colours",
-        "Dispellable debuffs still use Blizzard's dispel colours.", cy,
-        function() return db.useClassColours end,
-        function(value) ns.Set("useClassColours", value) end)
     add(contents, -cy + 4)
 
     local dispelIcon = section(panel)
@@ -288,81 +281,66 @@ HC.Settings:NewPage({
         "Show Blizzard's Magic, Curse, Disease or Poison icon on a dispellable cell.", diy,
         function() return db.showDispelTypeIcon end,
         function(value) ns.Set("showDispelTypeIcon", value) end)
-    _, diy = O.Slider(dispelIcon, "Icon size",
+    add(dispelIcon, -diy + 4)
+    local iconDetails = section(panel)
+    diy = -4
+    _, diy = O.Slider(iconDetails, "Icon size",
         "Size in pixels before UI scale. Large icons can cover names or cooldown numbers.", diy,
         8, 64, 1,
         function() return db.dispelTypeIconSize end,
         function(value) ns.Set("dispelTypeIconSize", value) end)
-    _, diy = O.Dropdown(dispelIcon, "Position",
+    _, diy = O.Dropdown(iconDetails, "Icon position",
         "Choose which part of the cell holds the Blizzard dispel-type icon.", diy,
         { "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT", "CENTER" },
         { "Top left", "Top right", "Bottom left", "Bottom right", "Centre" },
         function() return db.dispelTypeIconPosition end,
         function(value) ns.Set("dispelTypeIconPosition", value) end,
-        560, 78)
-    add(dispelIcon, -diy + 4)
+        560, 150, 180)
+    add(iconDetails, -diy + 4, function() return db.showDispelTypeIcon end)
 
     local inactive = section(panel)
     local iy = -8
-    _, iy = O.Header(inactive, "Inactive units", iy)
-    _, iy = O.Check(inactive, "Show units with nothing to dispel",
+    _, iy = O.Header(inactive, "Idle backgrounds", iy)
+    _, iy = O.Check(inactive, "Show idle backgrounds",
         "Off hides idle backgrounds. Borders and unit names have separate settings; click areas stay in place during combat.", iy,
         function() return db.showWhenClean end,
         function(value) ns.Set("showWhenClean", value) end)
-    _, iy = O.Slider(inactive, "Opacity",
+    add(inactive, -iy + 4)
+    local idleDetails = section(panel)
+    iy = -4
+    _, iy = O.Check(idleDetails, "Class-coloured backgrounds",
+        "Colour idle backgrounds by class. Names always use class colours; debuff colours are chosen by the game.", iy,
+        function() return db.useClassColours end,
+        function(value) ns.Set("useClassColours", value) end)
+    _, iy = O.Slider(idleDetails, "Idle opacity",
         "How visible inactive cells are when shown.", iy,
         0, 1, 0.05,
         function() return db.cleanAlpha end,
         function(value) ns.Set("cleanAlpha", value) end,
         function(value) return string.format("%d%%", math.floor(value * 100 + 0.5)) end)
-    add(inactive, -iy + 4)
+    add(idleDetails, -iy + 4, function() return db.showWhenClean end)
 
     local names = section(panel)
     local ny = -8
     _, ny = O.Header(names, "Unit names", ny)
-    _, _, ny = O.DropdownPair(names, "Alignment", ny,
-        {
-            label = "Horizontal",
-            hint = "Place names against the left edge, centre or right edge.",
-            values = { "LEFT", "CENTER", "RIGHT" },
-            labels = { "Left", "Centre", "Right" },
-            get = function() return db.nameJustifyH end,
-            set = function(value) ns.Set("nameJustifyH", value) end,
-        },
-        {
-            label = "Vertical",
-            hint = "Place names at the top, middle or bottom of each cell.",
-            values = { "TOP", "MIDDLE", "BOTTOM" },
-            labels = { "Top", "Middle", "Bottom" },
-            get = function() return db.nameJustifyV end,
-            set = function(value) ns.Set("nameJustifyV", value) end,
-        })
-    _, ny = O.Slider(names, "Text size", "Size before UI scale is applied.", ny,
+    _, ny = O.Check(names, "Show unit names",
+        "Use cells at least 95 pixels wide for the twelve-character preview names.", ny,
+        function() return db.showNames end,
+        function(value) ns.Set("showNames", value) end)
+    add(names, -ny + 4)
+    local nameDetails = section(panel)
+    ny = -4
+    _, ny = textPosition(nameDetails, "Name position", "Place names within each cell.", ny, "name")
+    _, ny = O.Slider(nameDetails, "Text size", "Size before UI scale is applied.", ny,
         6, 32, 1,
         function() return db.nameFontSize end,
         function(value) ns.Set("nameFontSize", value) end)
-    add(names, -ny + 4, function() return db.showNames end)
+    add(nameDetails, -ny + 4, function() return db.showNames end)
 
     local cooldown = section(panel)
     local dy = -8
-    _, dy = O.Header(cooldown, "Cooldown", dy)
-    _, _, dy = O.DropdownPair(cooldown, "Alignment", dy,
-        {
-            label = "Horizontal",
-            hint = "Place the cooldown number on the left, centre or right.",
-            values = { "LEFT", "CENTER", "RIGHT" },
-            labels = { "Left", "Centre", "Right" },
-            get = function() return db.cooldownJustifyH end,
-            set = function(value) ns.Set("cooldownJustifyH", value) end,
-        },
-        {
-            label = "Vertical",
-            hint = "Place the cooldown number at the top, middle or bottom.",
-            values = { "TOP", "MIDDLE", "BOTTOM" },
-            labels = { "Top", "Middle", "Bottom" },
-            get = function() return db.cooldownJustifyV end,
-            set = function(value) ns.Set("cooldownJustifyV", value) end,
-        })
+    _, dy = O.Header(cooldown, "Cooldown numbers", dy)
+    _, dy = textPosition(cooldown, "Number position", "Place cooldown numbers within each cell.", dy, "cooldown")
     _, dy = O.Slider(cooldown, "Text size", "Size before UI scale is applied.", dy,
         6, 40, 1,
         function() return db.cooldownFontSize end,
@@ -374,7 +352,7 @@ HC.Settings:NewPage({
         for _, key in ipairs({
             "orientation", "horizontalGrowth", "verticalGrowth", "columns",
             "spacing", "scale", "boxWidth", "boxHeight",
-            "showTooltip", "showNames", "nameJustifyH", "nameJustifyV", "nameFontSize",
+            "showNames", "nameJustifyH", "nameJustifyV", "nameFontSize",
             "cooldownJustifyH", "cooldownJustifyV", "cooldownFontSize", "showStacks",
             "showWhenClean", "cleanAlpha", "useClassColours", "showBorders",
             "showDispelTypeIcon", "dispelTypeIconSize", "dispelTypeIconPosition",
@@ -384,7 +362,8 @@ HC.Settings:NewPage({
         previewCount = 5
         previewCellState = "DISPELLABLE"
         previewCooldownState = "COOLDOWN"
-        applyPreviewSettings()
+        previewMovementSweep = false
+        refreshPreview()
     end, "Reset Panel")
     add(reset, -ry)
 

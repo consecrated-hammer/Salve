@@ -58,3 +58,54 @@ current, runSpeed = 8.33, 8.33
 for _ = 1, 66 do detector:Sample(0.15) end
 equal(detector.lastStatus, "normal run speed 8.33", "settled zone speed becomes the normal reference")
 print("movement detection tests passed")
+
+-- Fear/stun can lower maximum speed too. They must not be interpreted as a
+-- Freedom-removable slow, or become the normal baseline during zone settling.
+local control = false
+HasFullControl = function() return control end
+current, runSpeed = 0, 0
+equal(detector:Sample(0.15).kind, "BLOCKED", "loss of control clears an existing movement prompt")
+equal(detector.alerted, false, "blocked samples do not consume the next actionable slow")
+equal(detector:Sample(0.15), nil, "ongoing control loss does not repeatedly clear UI")
+control = true
+current, runSpeed = 0, 0
+equal(detector:Sample(0.15).kind, "RECHECK", "recovery requests an explicit root/snare recheck")
+equal(detector:Sample(0.15), nil, "transient post-control zero speed is not a slow")
+equal(detector:Sample(0.15), nil, "speed recovery has a short settling window")
+current, runSpeed = 4.16, 4.16
+equal(detector:Sample(0.15).kind, "SLOW", "a continuing slow can alert after control returns")
+local effects = {}
+C_LossOfControl = {
+    GetActiveLossOfControlDataCount = function() return #effects end,
+    GetActiveLossOfControlData = function(index) return effects[index] end,
+    GetActiveLossOfControlDataByUnit = function() error("must use player-only APIs") end,
+}
+for _, kind in ipairs({ "FEAR", "FEAR_MECHANIC", "HORROR", "STUN", "STUN_MECHANIC", "CONFUSE", "POSSESS", "SILENCE", "PACIFYSILENCE" }) do
+    effects = { { locType = "ROOT" }, { locType = kind } }
+    detector.controlBlocked = false
+    equal(detector:Sample(0.15).kind, "BLOCKED", "root plus " .. kind .. " is not actionable")
+end
+effects = { { locType = "ROOT" }, { locType = "SNARE" }, { locType = "DISARM" } }
+equal(detector:ControlBlockReason(), nil, "roots, snares and disarm do not block movement spells")
+equal(detector:Sample(0.15).kind, "RECHECK", "movement-only control data restores root rechecks")
+detector:Sample(0.15)
+detector:Sample(0.15)
+equal(detector:Sample(0.15).kind, "SLOW", "movement-only control data retains slow alerts")
+local secret = {}
+issecretvalue = function(value) return value == secret end
+control = secret
+equal(detector:Sample(0.15).kind, "BLOCKED", "secret control state fails closed")
+control = true
+effects = { { locType = secret } }
+detector.controlBlocked = false
+equal(detector:Sample(0.15).kind, "BLOCKED", "secret loss-of-control classification fails closed")
+C_LossOfControl.GetActiveLossOfControlDataCount = function() error("API failure") end
+detector.controlBlocked = false
+equal(detector:Sample(0.15).kind, "BLOCKED", "unavailable control data fails closed")
+C_LossOfControl = nil
+HasFullControl = function() return false end
+detector:Reset()
+current, runSpeed = 1, 1
+for _ = 1, 80 do detector:Sample(0.15) end
+equal(detector.baseline, nil, "incapacitated speed cannot establish the baseline")
+print("movement control suppression tests passed")

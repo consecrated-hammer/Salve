@@ -7,6 +7,29 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.6.2] - 2026-10-11
+
+### Changed
+
+- Group Panel settings by purpose, with one grid-direction selector and one
+  position selector each for names and cooldown numbers. Keep existing saved
+  preferences, including idle opacity when backgrounds are switched off.
+- Move cell tooltip control and reset ownership to the Tooltips page.
+- Collapse name, icon and idle-background details when their feature is off;
+  clarify layout presets, panel scale and background class colours.
+
+### Fixed
+
+- Suppress movement-removal prompts, sounds and gold cues while the player is
+  feared, stunned, silenced or otherwise unable to control their character.
+  Clear an existing on-screen prompt and allow a continuing slow to alert once
+  control returns. Incapacitated speed no longer establishes the normal baseline.
+- Preview dispel-type icons, including size and position, in both preview
+  panels. Preview stack counts also work with one unit.
+- Limit the Width slider to the supported 200 pixels so reload keeps its value.
+- Reset the movement-sweep preview with Reset Panel, and fit the settings
+  preview using the selected panel scale.
+
 ## [1.6.1] - 2026-10-10
 
 ### Added
