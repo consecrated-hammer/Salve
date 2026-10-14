@@ -7,6 +7,12 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.6.3] - 2026-10-14
+
+### Changed
+
+- Support Retail 12.1.5 (interface `120105`).
+
 ## [1.6.2] - 2026-10-11
 
 ### Changed
