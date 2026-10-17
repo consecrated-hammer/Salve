@@ -165,12 +165,14 @@ function Panel:Rebuild()
 
     self:NormalizeGrowthAnchor(self.frame)
     local failures = 0
-    local units    = ns.CanDispel() and unitList() or {}
+    local units    = ns.CanDispel() and unitList()
+        or (ns.PersonalDispel and ns.PersonalDispel:Enabled() and { "player" }) or {}
     local layout = self:Layout(#units)
 
     for i = 1, MAX_BOXES do
         local box  = self.boxes[i]
         local unit = units[i]
+        if unit and ns.PersonalDispel then unit = ns.PersonalDispel:CellUnit(unit) end
 
         if unit then
             ns.Box.Bind(box, unit)
@@ -182,14 +184,18 @@ function Panel:Rebuild()
             -- Hand the box to the engine. After this it runs without us.
             -- A failure means that member's box will render and click but never
             -- light up, so record it rather than letting it pass unnoticed.
-            if not ns.Binding:Attach(box, unit) then
-                failures = failures + 1
+            if ns.CanDispel() then
+                if not ns.Binding:Attach(box, unit) then failures = failures + 1 end
+            else
+                ns.Binding:Park(box)
             end
+            if ns.PersonalDispel then ns.PersonalDispel:Attach(box, unit) end
         else
             -- Park, don't detach: the container is expensive and unreclaimable,
             -- and a shrinking group is a routine event, not a teardown.
             ns.Binding:Park(box)
             box.unit = nil
+            if box.personalDispelHolder then box.personalDispelHolder:SetAlpha(0) end
             box:Hide()
         end
     end

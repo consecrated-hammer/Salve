@@ -66,6 +66,15 @@ local function buildReport()
     end
 
     lines[#lines + 1] = "Buttons initialised: " .. tostring(ns.Binding.boundCount or 0)
+    if ns.PersonalDispel and ns.PersonalDispel.spells[1] then
+        lines[#lines + 1] = "Personal dispel: " .. ns.PersonalDispel.spells[1].name
+            .. " (" .. ns.PersonalDispel.spells[1].id .. "), "
+            .. tostring(ns.PersonalDispel.status or "unknown")
+        lines[#lines + 1] = "Personal cue: native Curse filter, player only, no sound; Bane classification unverified"
+        if ns.PersonalDispel.failure then
+            lines[#lines + 1] = "Personal cue failure: " .. ns.PersonalDispel.failure
+        end
+    end
     lines[#lines + 1] = "Containers built: " .. tostring(ns.Binding.containersBuilt or 0)
     if ns.Binding.CooldownDiagnosticLines then
         for _, line in ipairs(ns.Binding:CooldownDiagnosticLines()) do

@@ -90,6 +90,9 @@ ns.defaults = {
     -- core feature now and is normalized on at every load rather than exposed
     -- as a preference.
     learnMode     = true,
+    -- Automatic chat notices are preferences; recording stays always on.
+    learningScopeMessages = true,
+    learningDiscoveryMessages = true,
 
     -- Movement-impairment category. `escapes` is the set of your own spells
     -- you have opted in to. Learned discoveries deliberately live in the
@@ -386,6 +389,7 @@ local GEOMETRY = {
 function ns.Set(key, value)
     if ns.db[key] == value then return end
     ns.db[key] = value
+    if key == "learningScopeMessages" or key == "learningDiscoveryMessages" then return end
 
     if key == "soundEnabled" or key == "dispelSoundEnabled"
         or key == "movementSoundEnabled" or key == "soundChannel" or key == "soundFile" then

@@ -20,7 +20,8 @@ local ns = {
         { cures = { Magic = true } },
     },
 }
-function ns.Print() end
+local messages = {}
+function ns.Print(text) messages[#messages + 1] = text end
 function ns.CuresText() return "test" end
 
 issecretvalue = function() return false end
@@ -283,5 +284,36 @@ equal(bundledRecords > 0, true, "actual bundled dispel sounds are not silently d
 ns.knownDispels = {}
 ns.Sound:OnDispelChanged()
 equal(ns.Sound.registered, 0, "no known cure means no automatic dispel sound")
+
+
+ns.db.learningScopeMessages = false
+ns.db.learningDiscoveryMessages = true
+messages = {}
+currentMapID, currentMapName = 44, "Silent zone"
+ns.Sound:ActivateCurrentInstance()
+equal(#messages, 0, "muted scope changes do not print")
+equal(ns.Sound.learningScopeKey, "map:44", "muted scope changes still update learning")
+ns.db.learningScopeMessages = true
+ns.db.learningDiscoveryMessages = false
+currentMapID, currentMapName = 45, "Next zone"
+ns.Sound:ActivateCurrentInstance()
+equal(#messages, 1, "scope messages can be enabled independently")
+ns.knownDispels = { { cures = { Disease = true } } }
+local nextID = 765432
+C_UnitAuras.GetAuraDataByIndex = function(_, index)
+    if index == 1 then return { spellId = nextID, name = "Quiet aura", dispelName = "Disease" } end
+end
+local count = #messages
+ns.Sound:Learn("raid1")
+equal(#messages, count, "muted aura discovery does not print")
+equal(ns.learned.auras["map:45"].spells[nextID].name, "Quiet aura", "muted aura is still recorded")
+ns.db.learningDiscoveryMessages = true
+nextID = nextID + 1
+ns.Sound:Learn("raid1")
+equal(#messages, count + 1, "re-enabled aura discovery prints")
+messages = {}
+ns.db.learningDiscoveryMessages = false
+ns.Sound:DumpLearned()
+equal(#messages > 0, true, "muting automatic notices leaves manual catalogue output available")
 
 print("sound tests passed")

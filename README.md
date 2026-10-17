@@ -65,6 +65,13 @@ Talent-gated actions only show up when you know both the spell and the talent th
 
 On WoW Forever, Salve uses that client's own dispels instead: Paladin Purify and Cleanse, Priest Cure Disease, Abolish Disease and Dispel Magic, Druid Cure Poison, Abolish Poison and Remove Curse, Shaman Cure Poison and Cure Disease, and Mage Remove Curse. If one of yours is missing, `/salve forever` copies a report you can paste into `#bug-reports`.
 
+Orcs on the updated Forever beta can also bind **Shatter Curse** under
+**Personal dispels**. It starts unbound and works only on your own cell.
+A small **R** cue marks a Curse while the racial is ready; it stays hidden
+when readiness is unavailable. Ordinary class dispels keep their bindings.
+This action adds no sound alerts. Its Forever cue and Bane coverage still need
+an in-game check; see the [personal-dispel checks](https://github.com/consecrated-hammer/Salve/blob/main/docs/forever-personal-dispels.md).
+
 ## Settings worth knowing
 
 The settings pages are **Panel**, **Tooltips**, **Actions**, **Visibility** and **Alerts**, then **Learned Spells**, **Commands**, **Troubleshooting** and **About**.
@@ -75,7 +82,7 @@ The settings pages are **Panel**, **Tooltips**, **Actions**, **Visibility** and 
 - **Show unit names** is off by default because names don't fit in the default 20 × 20 boxes. Turn it on and widen the boxes to about 95 if you'd like names.
 - **Grid direction** lets rows grow from the left or right and columns from the top or bottom. The edge you pick stays anchored as the group changes, which makes it easier to line Salve up with your unit frames.
 - **Show box borders** controls the outlines around all boxes, including the preview. For a quieter panel, turn it off along with **Show idle backgrounds**, keep unit names off and use `/salve lock` to hide the grip. Dispel alerts and cooldowns still draw, and invisible boxes still take clicks because the game won't let addons change that on protected frames in combat.
-- **Alert sounds** are off by default. When on, Salve only listens for debuffs from its built-in list for the dungeon or raid you're in, and only ones you can remove. Roots and snares on you use a separate sound. The Alerts page has a test button for each.
+- **Alert sounds** are off by default. When on, Salve only listens for debuffs from its built-in list for the dungeon or raid you're in, and only ones you can remove. Roots and snares on you use a separate sound. The Alerts page has a test button for each. Under **Learning messages**, switch off scope-change or newly learned-spell chat messages separately; Salve keeps recording spells.
 - **Learned spells.** Salve records the readable dispellable debuffs and reported roots and snares it sees, grouped by location, which helps improve the built-in list. **Copy learned spells** on the Learned Spells page gets it ready to paste, and `/salve learned clear` empties it.
 
 ## Limits

@@ -6,7 +6,7 @@ HC.Settings:NewPage({
     name = "Alerts",
     title = "Alerts",
     group = "main",
-    description = "Sound and movement alerts.",
+    description = "Sounds, movement alerts and learning messages.",
 }, function(panel, y)
     _, y = O.Header(panel, "Alerts", y)
 
@@ -128,6 +128,23 @@ HC.Settings:NewPage({
 
     local soundDetailsHeight = -soundY + 4
 
+    local learningMessages = CreateFrame("Frame", nil, panel)
+    learningMessages:SetSize(560, 1)
+    learningMessages.hcRefresh = panel.hcRefresh
+    learningMessages.hcRefreshAll = panel.hcRefreshAll
+    learningMessages.hcHeaderOwner = panel.hcHeaderOwner or panel
+    local messageY = -4
+    _, messageY = O.Header(learningMessages, "Learning messages", messageY)
+    _, messageY = O.Check(learningMessages, "Show learning scope changes",
+        "Print a chat message when learning moves to another zone or instance. Turning this off keeps learning active.", messageY,
+        function() return ns.db.learningScopeMessages end,
+        function(value) ns.Set("learningScopeMessages", value) end)
+    _, messageY = O.Check(learningMessages, "Show newly learned spells",
+        "Print a chat message when Salve records a new dispellable aura, root or snare. Turning this off still records the spell.", messageY,
+        function() return ns.db.learningDiscoveryMessages end,
+        function(value) ns.Set("learningDiscoveryMessages", value) end)
+    local learningMessagesHeight = -messageY + 8
+
     local reset = CreateFrame("Frame", nil, panel)
     reset:SetSize(560, 1)
     reset.hcRefresh = panel.hcRefresh
@@ -142,6 +159,8 @@ HC.Settings:NewPage({
         ns.db.movementTextX, ns.db.movementTextY = 0, 160
         if ns.MovementAlert then ns.MovementAlert:Position() end
         ns.Set("selfDispelNotification", ns.defaults.selfDispelNotification)
+        ns.Set("learningScopeMessages", ns.defaults.learningScopeMessages)
+        ns.Set("learningDiscoveryMessages", ns.defaults.learningDiscoveryMessages)
         ns.Set("soundChannel", ns.defaults.soundChannel)
         ns.Set("soundFile", ns.defaults.soundFile)
     end, "Reset Alerts")
@@ -170,6 +189,9 @@ HC.Settings:NewPage({
         soundDetails:ClearAllPoints()
         soundDetails:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, y0)
         if anySoundEnabled then y0 = y0 - soundDetailsHeight end
+        learningMessages:ClearAllPoints()
+        learningMessages:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, y0)
+        y0 = y0 - learningMessagesHeight
         reset:ClearAllPoints()
         reset:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, y0)
         pageBottom = y0 - resetHeight - 8

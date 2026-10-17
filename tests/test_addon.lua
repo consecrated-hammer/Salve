@@ -223,8 +223,17 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
 
     -- Alerts reset.
     HC.Settings:Show("Alerts")
+    equal(ns.db.learningScopeMessages, true, toc .. ": scope messages start enabled")
+    equal(ns.db.learningDiscoveryMessages, true, toc .. ": discovery messages start enabled")
+    clickText("Show learning scope changes")
+    clickText("Show newly learned spells")
+    equal(ns.db.learningScopeMessages, false, toc .. ": scope message checkbox saves false")
+    equal(ns.db.learningDiscoveryMessages, false, toc .. ": discovery message checkbox saves false")
+    equal(ns.db.learnMode, true, toc .. ": muting messages keeps learning enabled")
     ns.db.soundChannel, ns.db.selfDispelNotification = "SFX", false
     wow.Click(wow.FindButton("Reset Alerts"))
+    equal(ns.db.learningScopeMessages, true, toc .. ": Reset Alerts restores scope messages")
+    equal(ns.db.learningDiscoveryMessages, true, toc .. ": Reset Alerts restores discovery messages")
     equal(ns.db.soundChannel, "Master", toc .. ": Reset Alerts restores the sound channel")
     equal(ns.db.selfDispelNotification, true, toc .. ": Reset Alerts restores the self-dispel text")
 

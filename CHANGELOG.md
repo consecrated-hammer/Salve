@@ -7,6 +7,21 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.6.4] - 2026-10-18
+
+### Added
+
+- Separate Alerts options for learning scope-change and newly learned-spell chat
+  messages, including captured roots and snares. Muting messages keeps learning
+  active. Existing message behaviour is retained until the options are changed.
+
+- Orc Shatter Curse as an optional personal dispel on WoW Forever build 70425
+  or later. Bind it on Actions to arm only your own cell, leaving ordinary
+  class dispels unchanged. A small R cue uses the native Curse filter and
+  disappears while its cooldown is active or unreadable. It adds no sound
+  alerts. Actual Forever cue behaviour and Bane classification still need a
+  client check.
+
 ## [1.6.3] - 2026-10-14
 
 ### Changed

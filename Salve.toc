@@ -1,8 +1,8 @@
 ## Interface: 120105
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 1.6.3
-## X-ReleaseDate: 2026-10-14
+## Version: 1.6.4
+## X-ReleaseDate: 2026-10-18
 ## Notes: Compact clickable group-dispel panel built for Midnight's private aura rules.
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
 ## LoadSavedVariablesFirst: 1
@@ -48,6 +48,7 @@ Features\Visibility.lua
 
 # Which mouse button casts what.
 Features\Bindings.lua
+Features\PersonalDispel.lua
 
 # Movement-impairing effects and the class spells that remove them.
 Features\Escape.lua

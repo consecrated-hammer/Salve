@@ -195,7 +195,7 @@ function Sound:ActivateCurrentInstance()
     if self.learningScopeKey ~= self.activeScopeKey then
         local oldScope = self.learningScopeKey
         self.learningScopeKey = self.activeScopeKey
-        if oldScope and self.activeScopeName then
+        if oldScope and self.activeScopeName and ns.db.learningScopeMessages ~= false then
             ns.Print("learning now scoped to " .. self.activeScopeName)
         end
     end
@@ -570,8 +570,10 @@ function Sound:Learn(unit)
                     name = type(name) == "string" and name or "?",
                     provenance = "in-game learn",
                 }
-                ns.Print(("learned |cffffd100%d|r  %s (%s) in %s"):format(
-                    spellID, tostring(name or "?"), dispelType, self.activeScopeName))
+                if ns.db.learningDiscoveryMessages ~= false then
+                    ns.Print(("learned |cffffd100%d|r  %s (%s) in %s"):format(
+                        spellID, tostring(name or "?"), dispelType, self.activeScopeName))
+                end
                 if dispelSoundEnabled() then self:ScheduleRefresh() end
             end
         end

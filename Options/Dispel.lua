@@ -85,6 +85,9 @@ local function spellIcon(spellID)
 end
 
 local function findSpell(spellID)
+    for _, spell in ipairs(ns.PersonalDispel and ns.PersonalDispel.spells or {}) do
+        if spell.id == spellID then return spell, "PERSONAL" end
+    end
     for _, spell in ipairs(ns.knownDispels or {}) do
         if spell.id == spellID then return spell, "DISPEL" end
     end
@@ -102,7 +105,9 @@ local function attachSpellTooltip(row, spell)
         else
             GameTooltip:SetText(spell.name)
         end
-        if spell.scope == ns.ESCAPE_SELF then
+        if spell.selfOnly then
+            GameTooltip:AddLine("Self only dispel. The R cue marks a Curse while this action is ready.", 0.55, 0.58, 0.64, true)
+        elseif spell.scope == ns.ESCAPE_SELF then
             GameTooltip:AddLine("Self only movement removal.", 0.55, 0.58, 0.64, true)
         elseif spell.scope == ns.ESCAPE_ALLY then
             GameTooltip:AddLine("Can remove movement impairment from a group member.", 0.55, 0.58, 0.64, true)
@@ -517,6 +522,8 @@ HC.Settings:NewPage({
             destination[#destination + 1] = spell
         end
         section("Dispels", ns.knownDispels or {}, "DISPEL")
+        local personal = ns.PersonalDispel and ns.PersonalDispel.spells or {}
+        if #personal > 0 then section("Personal dispels", personal, "PERSONAL") end
         section("Frees movement", allyEscapes, "ESCAPE")
         section("Area movement", areaEscapes, "ESCAPE")
         section("Self only", selfEscapes, "ESCAPE")

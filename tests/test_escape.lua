@@ -132,4 +132,16 @@ issecretvalue = function(value) return value == "SECRET" end
 record = { locType = "SECRET" }
 assert(not ns.Escape:CaptureLossOfControl("player", 2))
 assert(ns.Escape.lastCaptureStatus == "movement classification unavailable or secret")
+
+ns.db.learningDiscoveryMessages = false
+local before, beforeRebuild = #prints, rebuilds
+record = { locType = "ROOT", spellID = 765432, displayText = "Quiet root" }
+assert(ns.Escape:CaptureLossOfControl("player", 2))
+equal(#prints, before, "muted movement capture does not print")
+equal(ns.learned.movement[765432], "Quiet root", "muted movement capture still records the spell")
+equal(rebuilds, beforeRebuild + 1, "muted movement capture still refreshes the panel")
+ns.db.learningDiscoveryMessages = true
+record = { locType = "SNARE", spellID = 765433, displayText = "Loud snare" }
+assert(ns.Escape:CaptureLossOfControl("player", 2))
+equal(#prints, before + 1, "re-enabled movement discovery prints")
 print("escape tests passed")

@@ -385,6 +385,11 @@ function Binding:Report()
     ns.Print("  usable: " .. (caps.usable and "|cff44ff44yes|r"
         or "|cffff4444NO — a required method is missing|r"))
     ns.Print("  buttons initialised: " .. tostring(self.boundCount or 0))
+    if ns.PersonalDispel and ns.PersonalDispel.spells[1] then
+        ns.Print("  personal dispel: " .. ns.PersonalDispel.spells[1].name .. " — "
+            .. tostring(ns.PersonalDispel.status or "unknown"))
+        if ns.PersonalDispel.failure then ns.Print("  personal cue failure: " .. ns.PersonalDispel.failure) end
+    end
     -- Containers are never reclaimed by the client, so this only ever grows.
     -- It should track the number of boxes, not the number of roster changes;
     -- if it climbs during normal play, the retarget fast path has broken.

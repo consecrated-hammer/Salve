@@ -105,6 +105,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
 
     elseif event == "PLAYER_LOGIN" then
         ns.UpdateDispelSpell()
+        if ns.PersonalDispel then ns.PersonalDispel:Update() end
         ns.Escape:Update()
         if ns.Options.RefreshDispel then ns.Options.RefreshDispel() end
         ns.Panel:Create()
@@ -137,8 +138,9 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         or event == "SPELLS_CHANGED"
         or (event == "UNIT_PET" and arg1 == "player") then
         local dispelChanged = ns.UpdateDispelSpell()
+        local personalChanged = ns.PersonalDispel and ns.PersonalDispel:Update()
         local escapeChanged = ns.Escape:Update()
-        if dispelChanged or escapeChanged then
+        if dispelChanged or escapeChanged or personalChanged then
             if ns.Options.RefreshDispel then ns.Options.RefreshDispel() end
             if dispelChanged then
                 ns.Sound:OnDispelChanged()

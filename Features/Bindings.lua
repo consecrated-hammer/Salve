@@ -114,6 +114,9 @@ end
 -- ── Resolution ─────────────────────────────────────────────────────────────
 
 local function knownSpell(spellID)
+    for _, s in ipairs(ns.PersonalDispel and ns.PersonalDispel.spells or {}) do
+        if s.id == spellID then return s, "PERSONAL" end
+    end
     for _, s in ipairs(ns.knownDispels or {}) do
         if s.id == spellID then return s, "DISPEL" end
         for _, alias in ipairs(s.aliases or {}) do
@@ -315,9 +318,10 @@ function Bindings:Apply(box)
                 set(spellAttr, nil)
             else
                 local spell, spellID, kind = spellFor(entry)
-                if spell then
+                if spell and (kind ~= "PERSONAL" or box.unit == "player") then
                     set(typeAttr, "spell")
                     set(spellAttr, spell)
+                    if kind == "PERSONAL" then set(prefix .. "unit" .. button, "player") end
                     box.clickAuditActions[entry.key] = {
                         kind = kind,
                         spellID = spellID,
@@ -330,11 +334,12 @@ function Bindings:Apply(box)
 end
 
 -- What a binding currently casts, for the options list.
-function Bindings:Describe(entry)
+function Bindings:Describe(entry, unit)
     if entry.action == "TARGET" then return "Target the unit", nil end
     if entry.action == "NONE"   then return "Do nothing", nil end
 
-    local name, spellID = spellFor(entry)
+    local name, spellID, kind = spellFor(entry)
+    if kind == "PERSONAL" and unit and not ns.PersonalDispel:IsPlayer(unit) then return nil end
     if not name then return "no dispel known", nil end
 
     local icon = spellID and C_Spell and C_Spell.GetSpellTexture
@@ -342,6 +347,7 @@ function Bindings:Describe(entry)
 
     local suffix = entry.role == ns.ROLE_PRIMARY and " (automatic)"
         or entry.role == ns.ROLE_SECONDARY and " (automatic)" or ""
+    if kind == "PERSONAL" then suffix = " (self only)" end
     return name .. suffix, icon
 end
 

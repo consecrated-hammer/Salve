@@ -270,7 +270,9 @@ end
 local function capture(id, name)
     if type(id) ~= "number" or ns.learned.movement[id] then return false end
     ns.learned.movement[id] = type(name) == "string" and name or true
-    ns.Print(("captured |cffffd100%d|r  %s"):format(id, tostring(name or "?")))
+    if ns.db.learningDiscoveryMessages ~= false then
+        ns.Print(("captured |cffffd100%d|r  %s"):format(id, tostring(name or "?")))
+    end
     if ns.RequestRebuildSoon then ns.RequestRebuildSoon(0.05) end
     return true
 end

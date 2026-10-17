@@ -157,4 +157,11 @@ ns.db.bindings.injected = true
 ns.InitConfig()
 equal(ns.defaults.bindings.injected, nil, "repaired table defaults are not shared")
 
+
+SalveDB.learningScopeMessages, SalveDB.learningDiscoveryMessages = false, false
+ns.InitConfig()
+equal(ns.db.learningScopeMessages, false, "muted scope notices survive reload")
+equal(ns.db.learningDiscoveryMessages, false, "muted discovery notices survive reload")
+equal(ns.db.learnMode, true, "muted notices never disable learning")
+
 print("config tests passed")

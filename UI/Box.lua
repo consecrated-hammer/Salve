@@ -114,7 +114,7 @@ local function ShowBoxTooltip(box)
         GameTooltip:AddLine(" ")
         GameTooltip:AddLine("Salve actions", 0.45, 0.82, 0.68)
         for _, entry in ipairs(bindings) do
-            local what = ns.Bindings:Describe(entry)
+            local what = ns.Bindings:Describe(entry, box.unit)
             if what then
                 local spellID = ns.Bindings.SpellID and ns.Bindings:SpellID(entry)
                 local action = (what:gsub(" %(automatic%)$", ""))
