@@ -313,6 +313,16 @@ Salve.Sound:RegisterData("Salve", {
         coverage = "Encounter Journal baseline; trash may be absent",
         debuffs = {
             {
+                spellID = 373693,
+                dispelType = "Magic",
+                name = "Living Bomb",
+                verified = true,
+                provenance = {
+                    source = "Blizzard 12.1.5 tuning; LittleWigs v12.1.22 LittleWigs_Dragonflight/RubyLifePools/Trash.lua",
+                    build = "12.1.5 live",
+                },
+            },
+            {
                 spellID = 373972,
                 dispelType = "Magic",
                 name = "Blaze of Glory",
@@ -371,6 +381,16 @@ Salve.Sound:RegisterData("Salve", {
         coverage = "Encounter Journal baseline; trash may be absent",
         debuffs = {
             {
+                spellID = 374350,
+                dispelType = "Magic",
+                name = "Energy Bomb",
+                verified = true,
+                provenance = {
+                    source = "LittleWigs v12.1.22 LittleWigs_Dragonflight/AlgetharAcademy/EchoOfDoragosa.lua",
+                    build = "12.1.5 live",
+                },
+            },
+            {
                 spellID = 389033,
                 dispelType = "Poison",
                 name = "Lasher Toxin",
@@ -425,6 +445,26 @@ Salve.Sound:RegisterData("Salve", {
         seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
         coverage = "Encounter Journal baseline; trash may be absent",
         debuffs = {
+            {
+                spellID = 1215803,
+                dispelType = "Curse",
+                name = "Curse of Darkness",
+                verified = true,
+                provenance = {
+                    source = "LittleWigs v12.1.22 LittleWigs/Midnight/WindrunnerSpire/DerelictDuo.lua",
+                    build = "12.1.5 live",
+                },
+            },
+            {
+                spellID = 1253834,
+                dispelType = "Curse",
+                name = "Curse of Darkness",
+                verified = true,
+                provenance = {
+                    source = "LittleWigs v12.1.22 LittleWigs/Midnight/WindrunnerSpire/DerelictDuo.lua",
+                    build = "12.1.5 live",
+                },
+            },
         },
     },
     ["instance:2811"] = {
@@ -1031,6 +1071,34 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
+    ["instance:2966"] = {
+        name = "Torment's Rise",
+        season = "Midnight Season 1",
+        seasonSource = "https://worldofwarcraft.blizzard.com/en-us/news/24244646",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1256358,
+                dispelType = "Magic",
+                name = "Devouring Essence",
+                verified = true,
+                provenance = {
+                    source = "LittleWigs v12.1.22 LittleWigs/Midnight/Delves/TormentsRise/Nullaeus.lua",
+                    build = "12.1.5 live",
+                },
+            },
+            {
+                spellID = 1256526,
+                dispelType = "Curse",
+                name = "Curse of Hesitation",
+                verified = true,
+                provenance = {
+                    source = "LittleWigs v12.1.22 LittleWigs/Midnight/Delves/TormentsRise/Nullaeus.lua",
+                    build = "12.1.5 live",
+                },
+            },
+        },
+    },
     ["instance:2987"] = {
         name = "The Tidebound Grotto",
         season = "Midnight Season 2",
@@ -1144,6 +1212,16 @@ Salve.Sound:RegisterData("Salve", {
                 },
             },
             {
+                spellID = 1286922,
+                dispelType = "Magic",
+                name = "Icebound Flames",
+                verified = true,
+                provenance = {
+                    source = "BigWigs v427.8 BigWigs_TheVenomousAbyss/Explorers.lua",
+                    build = "12.1.5 live",
+                },
+            },
+            {
                 spellID = 1287036,
                 dispelType = "Poison",
                 name = "Poisonous Bite",
@@ -1151,6 +1229,26 @@ Salve.Sound:RegisterData("Salve", {
                 provenance = {
                     source = "wago.tools DB2 JournalEncounterSection+SpellCategories",
                     build = "12.1.0.69299",
+                },
+            },
+            {
+                spellID = 1287083,
+                dispelType = "Poison",
+                name = "Tempest",
+                verified = true,
+                provenance = {
+                    source = "BigWigs v427.8 BigWigs_TheVenomousAbyss/Sszorak.lua",
+                    build = "12.1.5 live",
+                },
+            },
+            {
+                spellID = 1287434,
+                dispelType = "Magic",
+                name = "Essence Rend",
+                verified = true,
+                provenance = {
+                    source = "BigWigs v427.8 BigWigs_TheVenomousAbyss/Nekzali.lua",
+                    build = "12.1.5 live",
                 },
             },
             {
@@ -1203,6 +1301,26 @@ Salve.Sound:RegisterData("Salve", {
                     build = "12.1.0.69299",
                 },
             },
+            {
+                spellID = 1305833,
+                dispelType = "Magic",
+                name = "Congealing Bolt",
+                verified = true,
+                provenance = {
+                    source = "BigWigs v427.8 BigWigs_TheVenomousAbyss/Vashnik.lua",
+                    build = "12.1.5 live",
+                },
+            },
+            {
+                spellID = 1306906,
+                dispelType = "Poison",
+                name = "Venomfang",
+                verified = true,
+                provenance = {
+                    source = "BigWigs v427.8 BigWigs_TheVenomousAbyss/CoiledAltar.lua",
+                    build = "12.1.5 live",
+                },
+            },
         },
     },
     ["instance:3038"] = {
@@ -1219,6 +1337,24 @@ Salve.Sound:RegisterData("Salve", {
                 provenance = {
                     source = "in-game learning",
                     build = "12.1.0 live",
+                },
+            },
+        },
+    },
+    ["instance:3079"] = {
+        name = "Venomfall Deeps",
+        season = "Midnight Season 2",
+        seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1293824,
+                dispelType = "Magic",
+                name = "Void Toxin",
+                verified = true,
+                provenance = {
+                    source = "LittleWigs v12.1.22 LittleWigs/Midnight/Delves/VenomfallDeeps/Aztarec.lua",
+                    build = "12.1.5 live",
                 },
             },
         },

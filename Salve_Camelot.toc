@@ -1,8 +1,8 @@
 ## Interface: 16001
 ## Title: Salve (WoW Forever)
 ## Author: consecrated-hammer
-## Version: 1.6.4
-## X-ReleaseDate: 2026-10-18
+## Version: 1.6.5
+## X-ReleaseDate: 2026-10-27
 ## Notes: WoW Forever (Camelot) build using Salve's Mainline backend.
 ## AllowLoadGameType: camelot
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
@@ -43,6 +43,7 @@ Options\Tooltips.lua
 Options\Dispel.lua
 Options\Visibility.lua
 Options\Alerts.lua
+Options\Movement.lua
 Options\Troubleshooting.lua
 Options\LearnedSpells.lua
 Core\Events.lua

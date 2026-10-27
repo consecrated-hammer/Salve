@@ -78,6 +78,10 @@ function Detector:AcknowledgeRemoval()
 end
 
 function Detector:Sample(elapsed)
+    if ns.db and ns.db.movementAlertsEnabled == false then
+        self.lastStatus = "movement alerts disabled"
+        return nil
+    end
     if not self.active then return nil end
     self.elapsed = (self.elapsed or 0) + (tonumber(elapsed) or 0)
     if self.elapsed < SAMPLE_PERIOD then return nil end

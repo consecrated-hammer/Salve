@@ -13,6 +13,11 @@ end
 local ns = {}
 assert(loadfile("Features/MovementDetection.lua"))("Salve", ns)
 local detector = ns.MovementDetection
+ns.db = { movementAlertsEnabled = false }
+detector:Reset()
+equal(detector:Sample(10), nil, "master switch suppresses speed detection")
+equal(detector.baseline, nil, "disabled detector does not collect a baseline")
+ns.db.movementAlertsEnabled = true
 detector:Reset()
 equal(detector:AcknowledgeRemoval().kind, "CLEAR",
     "using a movement action clears a cue even before speed detection alerted")

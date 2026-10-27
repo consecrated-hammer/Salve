@@ -88,7 +88,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     local names = {}
     for _, spec in ipairs(HC.Settings.order) do names[#names + 1] = spec.name end
     equal(table.concat(names, ","),
-        "Salve,Tooltips,Actions,Visibility,Alerts,Learned Spells,Commands,Troubleshooting,About",
+        "Salve,Tooltips,Actions,Visibility,Alerts,Movement,Learned Spells,Commands,Troubleshooting,About",
         toc .. ": rail order")
     local failures = {}
     for name, err in pairs(HC.Settings.errors) do failures[#failures + 1] = name .. ": " .. err end
@@ -221,8 +221,38 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     equal(stops, 1, toc .. ": closing settings stops the preview")
     ns.Preview.Stop = stop
 
+    -- Movement page owns every automatic movement control.
+    HC.Settings:Show("Movement")
+    equal(ns.db.movementAlertsEnabled, true, toc .. ": movement alerts preserve previous default")
+    equal(ns.db.inferredSlowAlertsEnabled, false, toc .. ": inferred slows start opted out")
+    clickText("Enable movement alerts (beta)")
+    equal(ns.db.movementAlertsEnabled, false, toc .. ": movement master switch saves false")
+    local savedEscapes = ns.db.escapes
+    clickText("Enable movement alerts (beta)")
+    equal(ns.db.movementAlertsEnabled, true, toc .. ": movement master switch can re-enable")
+    equal(ns.db.escapes, savedEscapes, toc .. ": movement master switch preserves spell choices")
+    equal(wow.LastPrint():find("in beta and may not work correctly", 1, true) ~= nil, true,
+        toc .. ": enabling movement alerts warns about beta")
+    clickText("Include inferred slows (beta)")
+    equal(ns.db.inferredSlowAlertsEnabled, true, toc .. ": inferred slow opt-in saves true")
+    equal(wow.LastPrint():find("Inferred slows are in beta", 1, true) ~= nil, true,
+        toc .. ": enabling inferred slows warns about beta")
+    clickText("Enable movement alerts (beta)")
+    ns.db.movementTextOutput, ns.db.movementSoundEnabled = "CHAT", true
+    wow.Click(wow.FindButton("Reset Movement"))
+    equal(ns.db.movementAlertsEnabled, true, toc .. ": Reset Movement restores the master switch")
+    equal(ns.db.inferredSlowAlertsEnabled, false, toc .. ": Reset Movement opts out of inferred slows")
+    equal(ns.db.movementSoundEnabled, false, toc .. ": Reset Movement restores the movement sound")
+    equal(ns.db.movementTextOutput, "SCREEN", toc .. ": Reset Movement restores the text destination")
+    clickText("Open Actions")
+    equal(HC.Settings.selected, "Actions", toc .. ": Movement links to Actions for bindings")
+
     -- Alerts reset.
     HC.Settings:Show("Alerts")
+    for _, text in ipairs({ "Enable movement alerts (beta)", "Include inferred slows (beta)",
+        "Play snare-removal alert sound", "Show personal Freedom movement text" }) do
+        equal(wow.Visible(wow.FindText(text)), false, toc .. ": Alerts no longer shows '" .. text .. "'")
+    end
     equal(ns.db.learningScopeMessages, true, toc .. ": scope messages start enabled")
     equal(ns.db.learningDiscoveryMessages, true, toc .. ": discovery messages start enabled")
     clickText("Show learning scope changes")

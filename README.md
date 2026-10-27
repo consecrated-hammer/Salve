@@ -18,7 +18,7 @@ Salve gives you one box per group member. When someone picks up a debuff you can
 - **It lights up straight away.** A box shows the dispel type's colour and icon (Magic, Curse, Poison or Disease) the moment that member catches something _you_ can remove, and dims when they're clean. Stack counts are drawn by the game itself.
 - **One click to cleanse.** Left click uses your primary dispel. If your spec has a second dispel covering other schools, it goes on right click automatically. Every detected action can be rebound.
 - **Every dispelling class:** Paladin, Priest, Druid, Shaman, Monk, Evoker, Mage and Warlock. Your spells are picked up automatically when you change spec or, for Warlocks, when your demon changes.
-- **Movement removal for you.** Enable a spell like Blessing of Freedom on the Actions page and your own box lights gold when Blizzard reports a root or snare on you, with optional on-screen or chat text.
+- **Movement removal for you.** Enable a spell like Blessing of Freedom on the Actions page and your own box lights orange when Blizzard reports a root or snare on you, with optional on-screen or chat text. These movement alerts are in beta and live on the **Movement (beta)** page.
 - **Optional sound alerts** for known dispellable debuffs in the current dungeon or raid.
 
 ## Getting started
@@ -74,7 +74,7 @@ an in-game check; see the [personal-dispel checks](https://github.com/consecrate
 
 ## Settings worth knowing
 
-The settings pages are **Panel**, **Tooltips**, **Actions**, **Visibility** and **Alerts**, then **Learned Spells**, **Commands**, **Troubleshooting** and **About**.
+The settings pages are **Panel**, **Tooltips**, **Actions**, **Visibility**, **Alerts** and **Movement (beta)**, then **Learned Spells**, **Commands**, **Troubleshooting** and **About**.
 
 - **Preview.** The Panel page can show a full-size test panel at the panel's saved position, with controls for group size, clear or dispellable boxes and cooldowns, so you can set it up without waiting for someone to get cursed. It closes with the settings window or when combat starts.
 - **Panel controls.** Grid direction combines row/column flow and its starting edge. Names and cooldown numbers each have one position selector. Name, icon and idle-background details appear when enabled; switching backgrounds off remembers their opacity. Tooltips have their own page and reset.
@@ -82,7 +82,8 @@ The settings pages are **Panel**, **Tooltips**, **Actions**, **Visibility** and 
 - **Show unit names** is off by default because names don't fit in the default 20 × 20 boxes. Turn it on and widen the boxes to about 95 if you'd like names.
 - **Grid direction** lets rows grow from the left or right and columns from the top or bottom. The edge you pick stays anchored as the group changes, which makes it easier to line Salve up with your unit frames.
 - **Show box borders** controls the outlines around all boxes, including the preview. For a quieter panel, turn it off along with **Show idle backgrounds**, keep unit names off and use `/salve lock` to hide the grip. Dispel alerts and cooldowns still draw, and invisible boxes still take clicks because the game won't let addons change that on protected frames in combat.
-- **Alert sounds** are off by default. When on, Salve only listens for debuffs from its built-in list for the dungeon or raid you're in, and only ones you can remove. Roots and snares on you use a separate sound. The Alerts page has a test button for each. Under **Learning messages**, switch off scope-change or newly learned-spell chat messages separately; Salve keeps recording spells.
+- **Alert sounds** are off by default. When on, Salve only listens for debuffs from its built-in list for the dungeon or raid you're in, and only ones you can remove. Roots and snares on you use a separate sound, switched on the Movement page. Both pages have a test button. Under **Learning messages**, switch off scope-change or newly learned-spell chat messages separately; Salve keeps recording spells.
+- **Movement (beta)** holds the automatic root and snare alerts. Turn off **Enable movement alerts (beta)** to stop all movement text, sounds and the orange cue while keeping your movement-spell bindings and dispel alerts. **Include inferred slows (beta)** is off by default. When it's on, a sharp drop in your run speed also shows movement text and lights your box orange, pointing at the mouse button you bound for Freedom or similar. Salve can't tell whether an inferred slow is removable, so it may not work correctly, and it never plays a sound. Bindings stay on the Actions page.
 - **Learned spells.** Salve records the readable dispellable debuffs and reported roots and snares it sees, grouped by location, which helps improve the built-in list. **Copy learned spells** on the Learned Spells page gets it ready to paste, and `/salve learned clear` empties it.
 
 ## Limits

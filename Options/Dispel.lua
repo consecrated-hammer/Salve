@@ -294,6 +294,9 @@ HC.Settings:NewPage({
             if kind == "ESCAPE" then ns.db.escapes[spell.id] = true end
             local ok, message = ns.Bindings:SetSpellBinding(spell.id, key)
             if not ok then ns.Print(message) return end
+            if kind == "ESCAPE" and ns.db.movementAlertsEnabled ~= false then
+                ns.Print("Movement alerts are in beta and may not work correctly. Disable them on Movement if needed.")
+            end
             ns.RequestRebuildSoon(0.05)
             redrawAll()
         end, function()

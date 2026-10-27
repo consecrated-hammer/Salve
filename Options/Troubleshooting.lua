@@ -38,6 +38,8 @@ local function buildReport()
         "Data: " .. moduleStatus(),
         "Dispel sound: " .. yesNo(dispelSound),
         "Snare-removal sound: " .. yesNo(movementSound),
+        "Movement alerts (beta): " .. yesNo(ns.db.movementAlertsEnabled ~= false),
+        "Inferred slows (beta): " .. yesNo(ns.db.inferredSlowAlertsEnabled == true),
         "Player movement detection: " .. tostring(ns.Escape and ns.Escape.lastCaptureStatus or "no player events observed"),
         "Player speed detection: " .. tostring(ns.MovementDetection and ns.MovementDetection.lastStatus
             or "waiting for player movement"),

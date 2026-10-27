@@ -178,7 +178,7 @@ local clearsBeforeMovementCast = movementPromptClears
 handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast-guid", 1044)
 equal(#timers, 3, "movement removal schedules one deferred border-sweep refresh")
 equal(movementPromptClears, clearsBeforeMovementCast + 1,
-    "using a movement action clears its gold cue even without an active speed alert")
+    "using a movement action clears its orange cue even without an active speed alert")
 timers[3].callback()
 equal(movementRefreshes, 1, "movement removal refreshes border-sweep widgets")
 
@@ -200,14 +200,20 @@ equal(movementTextAlerts, 1, "non-movement loss of control emits no Freedom text
 speedObservation = { kind = "SLOW", locType = "SLOW" }
 onUpdate(nil, 0.15)
 equal(movementWarnings, 1, "inferred speed observation never plays a movement warning")
-equal(movementTextAlerts, 2, "speed observation uses the player text path")
-equal(movementPrompts, 1, "speed observation does not light the player-cell response cue")
+equal(movementTextAlerts, 1, "inferred slows produce no text until opted in")
+equal(movementPrompts, 1, "inferred slows leave the player cell unlit until opted in")
+ns.db = { inferredSlowAlertsEnabled = true }
+onUpdate(nil, 0.15)
+equal(movementWarnings, 1, "opted-in inferred slow stays silent")
+equal(movementTextAlerts, 2, "opted-in inferred slow uses the player text path")
+equal(movementPrompts, 2, "opted-in inferred slow lights the player-cell cue")
+ns.db = nil
 
 handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 3)
 activeControlIndex = 3
 timers[#timers].callback()
 equal(movementWarnings, 1, "unreviewed loss-of-control effect stays silent despite a matching ability")
-equal(movementPrompts, 1, "unreviewed loss-of-control effect stays unlit")
+equal(movementPrompts, 2, "unreviewed loss-of-control effect stays unlit")
 handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 5)
 equal(movementWarnings, 1, "missing loss-of-control data stays silent")
 ns.Escape.MovementAlertSpell = function() return nil end
@@ -215,7 +221,7 @@ handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
 activeControlIndex = 4
 timers[#timers].callback()
 equal(movementWarnings, 1, "verified effect without a matching enabled remedy stays silent")
-equal(movementPrompts, 1, "no remedy means no gold cue either")
+equal(movementPrompts, 2, "no remedy means no orange cue either")
 speedObservation = { kind = "CLEAR" }
 onUpdate(nil, 0.15)
 equal(movementWarnings, 1, "clearing movement state is silent")
@@ -234,7 +240,7 @@ handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
 timers[#timers].callback()
 equal(movementTextAlerts, beforeText, "incapacitation suppresses inferred and explicit movement text")
 equal(movementWarnings, beforeSound, "incapacitation suppresses movement sound")
-equal(movementPrompts, beforePrompt, "incapacitation suppresses the gold movement cue")
+equal(movementPrompts, beforePrompt, "incapacitation suppresses the orange movement cue")
 equal(clearedText >= 2, true, "incapacitation dismisses existing on-screen prompts")
 blocked = nil
 speedObservation = { kind = "RECHECK" }
@@ -242,7 +248,7 @@ onUpdate(nil, 0.15)
 timers[#timers].callback()
 equal(movementTextAlerts, beforeText + 1, "control recovery restores explicit root alerts")
 equal(movementWarnings, beforeSound + 1, "a root outlasting fear regains its verified sound")
-equal(movementPrompts, beforePrompt + 1, "a root outlasting fear regains its gold cue")
+equal(movementPrompts, beforePrompt + 1, "a root outlasting fear regains its orange cue")
 
 handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
 blocked = "simultaneous fear"
@@ -290,5 +296,32 @@ onUpdate(nil, 0.15)
 onUpdate(nil, 0.15)
 onUpdate(nil, 0.15)
 equal(movementTextAlerts, beforeRecovery + 1, "explicit recovered root is not overwritten by a duplicate SLOWED alert")
+
+ns.db = { movementAlertsEnabled = true, inferredSlowAlertsEnabled = true }
+ns.Escape.MovementAlertSpell = function() return nil end
+local unboundPrompts, unboundText = movementPrompts, movementTextAlerts
+speedObservation = { kind = "CLEAR" }
+onUpdate(nil, 0.15)
+speedObservation = { kind = "SLOW", locType = "SLOW" }
+onUpdate(nil, 0.15)
+equal(movementPrompts, unboundPrompts, "opted-in inferred slow needs an enabled movement spell for its cue")
+equal(movementTextAlerts, unboundText, "opted-in inferred slow needs an enabled movement spell for text")
+
+ns.db = { movementAlertsEnabled = false, inferredSlowAlertsEnabled = true }
+ns.Escape.MovementAlertSpell = function(_, _, movement)
+    if movement then return { id = 1044, name = "Blessing of Freedom" } end
+end
+local soundsBefore, textBefore, promptsBefore = movementWarnings, movementTextAlerts, movementPrompts
+local timersBefore = #timers
+handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
+onUpdate(nil, 1)
+equal(#timers, timersBefore, "disabled movement alerts do not queue a new root recheck")
+equal(movementWarnings, soundsBefore, "master switch suppresses event-driven movement sound")
+equal(movementTextAlerts, textBefore, "master switch suppresses event-driven movement text")
+equal(movementPrompts, promptsBefore, "master switch suppresses event-driven movement cue")
+speedObservation = { kind = "SLOW", locType = "SLOW" }
+onUpdate(nil, 0.15)
+equal(movementTextAlerts, textBefore, "master switch overrides the inferred-slow opt-in for text")
+equal(movementPrompts, promptsBefore, "master switch overrides the inferred-slow opt-in for the cue")
 
 print("event routing tests passed")

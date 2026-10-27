@@ -164,4 +164,40 @@ equal(ns.db.learningScopeMessages, false, "muted scope notices survive reload")
 equal(ns.db.learningDiscoveryMessages, false, "muted discovery notices survive reload")
 equal(ns.db.learnMode, true, "muted notices never disable learning")
 
+ns.Set("movementAlertsEnabled", false)
+ns.InitConfig()
+equal(ns.db.movementAlertsEnabled, false, "disabled movement alerts survive reload")
+local cleared, resets, warnings = 0, 0, 0
+ns.MovementDetection = { Reset = function() resets = resets + 1 end }
+ns.Panel = { SetMovementPrompt = function(_, spell, active)
+    equal(spell, nil, "master switch clears the selected prompt")
+    equal(active, false, "master switch clears the active prompt")
+    cleared = cleared + 1
+end }
+ns.MovementAlert = { Clear = function() cleared = cleared + 1 end }
+ns.Print = function(message)
+    equal(message, "Movement alerts are in beta and may not work correctly.", "enabling explains beta status")
+    warnings = warnings + 1
+end
+ns.Set("movementAlertsEnabled", true)
+equal(warnings, 1, "enabling warns once")
+ns.Set("movementAlertsEnabled", false)
+equal(warnings, 1, "disabling does not print a beta warning")
+equal(resets, 2, "each toggle resets stale speed state")
+equal(cleared, 4, "each toggle clears prompts and text")
+equal(ns.db.inferredSlowAlertsEnabled, false, "inferred slows default to opted out")
+ns.Print = function(message)
+    equal(message, "Inferred slows are in beta and may not work correctly.", "inferred opt-in explains beta status")
+    warnings = warnings + 1
+end
+ns.Set("inferredSlowAlertsEnabled", true)
+equal(warnings, 2, "opting into inferred slows warns once")
+equal(resets, 3, "inferred opt-in resets stale speed state")
+equal(cleared, 6, "inferred opt-in clears prompts and text")
+ns.InitConfig()
+equal(ns.db.inferredSlowAlertsEnabled, true, "inferred opt-in survives reload")
+ns.db.inferredSlowAlertsEnabled = "yes"
+ns.InitConfig()
+equal(ns.db.inferredSlowAlertsEnabled, false, "malformed inferred opt-in resets to its default")
+
 print("config tests passed")

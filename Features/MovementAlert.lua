@@ -124,6 +124,7 @@ end
 
 function MovementAlert:Notify(unit, movement, spell)
     if unit ~= "player" then return false end
+    if ns.db and ns.db.movementAlertsEnabled == false then return false end
     if not (ns.db and ns.db.movementTextNotification and spell) then return false end
     local kind = movement and (movement.kind or movement.locType)
     if kind ~= "ROOT" and kind ~= "SNARE" and kind ~= "SLOW" then return false end

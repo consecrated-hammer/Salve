@@ -15,6 +15,7 @@ local addonName, ns = ...
 local frame = CreateFrame("Frame", "SalveEventFrame")
 
 local function alertPlayerMovement(movement, isVerifiedMovement)
+    if ns.db and ns.db.movementAlertsEnabled == false then return end
     if movement and movement.kind == "BLOCKED" then
         if ns.Panel then ns.Panel:SetMovementPrompt(nil, false) end
         if ns.MovementAlert and ns.MovementAlert.Clear then ns.MovementAlert:Clear() end
@@ -31,12 +32,15 @@ local function alertPlayerMovement(movement, isVerifiedMovement)
         end
         return
     end
+    -- Only the speed detector emits kind SLOW. A matching movement ability
+    -- does not prove an inferred speed drop is curable, so it is opt-in.
+    local inferred = movement and movement.kind == "SLOW" and not isVerifiedMovement
+    if inferred and not (ns.db and ns.db.inferredSlowAlertsEnabled) then return end
     local spell = ns.Escape:MovementAlertSpell("player", movement)
-    -- Audio and the gold cue share the same conservative gate. A matching
-    -- movement ability alone does not prove an inferred speed drop is curable.
     local actionable = isVerifiedMovement and spell and movement
         and (movement.kind == "SLOW" or movement.locType == "ROOT"
             or movement.locType == "SNARE")
+    -- Inferred slows stay silent even when the player opts into their cue.
     if actionable then
         ns.Sound:PlayMovementWarning()
     end
@@ -48,9 +52,10 @@ local function alertPlayerMovement(movement, isVerifiedMovement)
     if spell and detector and movement and movement.locType then detector.alerted = true end
     -- A speed drop is only an inference: terrain, transfers and client-side
     -- movement-state changes can produce one without a removable impairment.
-    -- Reserve Salve's high-visibility gold player-cell cue for the explicit
-    -- loss-of-control signal, which supplies a real ROOT/SNARE classification.
-    if actionable and ns.Panel then
+    -- The orange player-cell cue needs the explicit loss-of-control signal or
+    -- the player's Include inferred slows opt-in. The cue only points at the
+    -- existing secure mouse binding; it never rewrites a click.
+    if (actionable or (inferred and spell)) and ns.Panel then
         ns.Panel:SetMovementPrompt(spell, true)
     end
 end
@@ -63,6 +68,7 @@ local function movementKey(movement)
     return tostring(movement.spellID) .. ":" .. tostring(movement.locType)
 end
 local function scheduleMovementRecheck(addedMovement)
+    if ns.db and ns.db.movementAlertsEnabled == false then return end
     if addedMovement then
         local key = movementKey(addedMovement)
         if not key then return end
@@ -78,6 +84,7 @@ local function scheduleMovementRecheck(addedMovement)
         movementRecheckPending = false
         local keys, all = pendingMovementKeys, recheckAllMovement
         pendingMovementKeys, recheckAllMovement = {}, false
+        if ns.db and ns.db.movementAlertsEnabled == false then return end
         local api = C_LossOfControl
         if not (api and api.GetActiveLossOfControlDataCount) then return end
         local ok, count = pcall(api.GetActiveLossOfControlDataCount)

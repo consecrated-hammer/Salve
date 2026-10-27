@@ -453,6 +453,7 @@ end
 -- the authoritative event. A reviewed effect, or one covered by an enabled
 -- universal answer such as Blessing of Freedom, can use this alert path.
 function Sound:PlayMovementWarning()
+    if ns.db and ns.db.movementAlertsEnabled == false then return false end
     if not movementSoundEnabled() then return false end
     local channel = ns.db.soundChannel or "Master"
     local ok, willPlay, handle = pcall(PlaySoundFile, MOVEMENT_WARNING_SOUND, channel)

@@ -1,6 +1,6 @@
 {
   "interface": 120105,
-  "version": "1.6.4",
+  "version": "1.6.5",
   "modules": [
     {
       "folder": "Salve_Data_Midnight_S1",
@@ -19,7 +19,8 @@
         { "id": 2912, "name": "The Voidspire" },
         { "id": 2913, "name": "March on Quel'Danas" },
         { "id": 2915, "name": "Nexus-Point Xenas" },
-        { "id": 2939, "name": "The Dreamrift" }
+        { "id": 2939, "name": "The Dreamrift" },
+        { "id": 2966, "name": "Torment's Rise" }
       ]
     },
     {
@@ -43,7 +44,8 @@
         { "id": 2952, "name": "The Shadow Enclave" },
         { "id": 2963, "name": "The Grudge Pit" },
         { "id": 3004, "name": "The Venomous Abyss" },
-        { "id": 3038, "name": "Gnarldor Isle" }
+        { "id": 3038, "name": "Gnarldor Isle" },
+        { "id": 3079, "name": "Venomfall Deeps" }
       ],
       "maps": [
         { "id": 2395, "name": "Eversong Woods" },

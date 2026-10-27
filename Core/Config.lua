@@ -79,6 +79,8 @@ ns.defaults = {
     soundEnabled  = false,
     dispelSoundEnabled = false,
     movementSoundEnabled = false,
+    movementAlertsEnabled = true,
+    inferredSlowAlertsEnabled = false,
     movementTextNotification = true,
     movementTextOutput = "SCREEN",
     movementChatWindow = 0,
@@ -164,6 +166,7 @@ local function normalizePreferences(db)
         "tooltipSpellDescriptions", "showDispelTypeIcon", "showStacks", "useClassColours",
         "showWhenClean", "showHandle", "bindingsCustom", "clickAuditEnabled",
         "soundEnabled", "dispelSoundEnabled", "movementSoundEnabled", "movementTextNotification",
+        "movementAlertsEnabled", "inferredSlowAlertsEnabled",
         "selfDispelNotification" }) do
         resetIfWrongType(db, key, "boolean")
     end
@@ -390,6 +393,18 @@ function ns.Set(key, value)
     if ns.db[key] == value then return end
     ns.db[key] = value
     if key == "learningScopeMessages" or key == "learningDiscoveryMessages" then return end
+
+    if key == "movementAlertsEnabled" or key == "inferredSlowAlertsEnabled" then
+        if ns.MovementDetection then ns.MovementDetection:Reset() end
+        if ns.Panel then ns.Panel:SetMovementPrompt(nil, false) end
+        if ns.MovementAlert then ns.MovementAlert:Clear() end
+        if value and ns.Print then
+            ns.Print(key == "inferredSlowAlertsEnabled"
+                and "Inferred slows are in beta and may not work correctly."
+                or "Movement alerts are in beta and may not work correctly.")
+        end
+        return
+    end
 
     if key == "soundEnabled" or key == "dispelSoundEnabled"
         or key == "movementSoundEnabled" or key == "soundChannel" or key == "soundFile" then

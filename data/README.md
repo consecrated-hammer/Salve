@@ -18,6 +18,14 @@ enemy spells omitted by the Encounter Journal. Those IDs were checked against
 the 12.1.0 DB2 spell categories where available; live `/salve learn` captures
 remain the preferred confirmation for the exact aura IDs that reach players.
 
+The 2026-10-27 refresh adds 12 entries from BigWigs v427.8 and LittleWigs
+v12.1.22 metadata reviewed against Retail 12.1.5. Living Bomb also has Blizzard
+tuning confirmation and successful local combat-log dispels. The delve scopes
+2966 (Torment's Rise) and 3079 (Venomfall Deeps) match BigWigs loader data and
+DBM 12.1.17 zone declarations. See
+[the review](../docs/catalogue-review-2026-10-27.md) for record provenance,
+removal caveats and the remaining client checks.
+
 To regenerate after editing either source file:
 
 ```sh

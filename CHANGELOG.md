@@ -7,6 +7,39 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.6.5] - 2026-10-27
+
+### Added
+
+- A **Movement (beta)** settings page for root, snare and slow alerts. The
+  movement sound, movement text, destination and preview controls moved there
+  from Alerts, with a link to Actions for binding movement spells.
+- **Enable movement alerts (beta)** turns off all automatic movement text,
+  sounds and the orange player-cell cue. Movement-spell bindings and dispel
+  alerts keep working. It stays on by default, so existing behaviour doesn't
+  change until you switch it off.
+- **Include inferred slows (beta)**, off by default. When on, a sharp drop in
+  your run speed shows movement text and lights your box orange, pointing at
+  your existing movement-spell mouse binding. Inferred slows stay silent.
+  Enabling either beta option prints a warning that it may not work correctly.
+- Dispel sound coverage for Living Bomb in Ruby Life Pools and Venomfang,
+  Icebound Flames, Essence Rend, Tempest and Congealing Bolt in The Venomous
+  Abyss.
+- Coverage for both Curse of Darkness effects in Windrunner Spire and Energy
+  Bomb in Algeth'ar Academy.
+- Instance-scoped sound data for Devouring Essence and Curse of Hesitation in
+  Torment's Rise, and Void Toxin in Venomfall Deeps.
+
+These 12 entries use reviewed current boss-addon dispel metadata. Sounds still
+require the matching cure school and the relevant instance, with dispel sound
+alerts enabled. Actual playback of the added entries remains to be checked in
+game.
+
+### Changed
+
+- Inferred speed drops no longer show movement text unless **Include inferred
+  slows (beta)** is on. Reported roots and snares are unaffected.
+
 ## [1.6.4] - 2026-10-18
 
 ### Added

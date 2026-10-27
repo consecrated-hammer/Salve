@@ -281,6 +281,53 @@ for scopeKey in pairs(ns.Sound.sources.Salve) do
     equal(ns.Sound.registered, #records * 5, "native sounds registered for all five raid units")
 end
 equal(bundledRecords > 0, true, "actual bundled dispel sounds are not silently disabled")
+
+-- Current-catalogue additions must reach native registration only in their
+-- own instance and for a matching cure school, including the two new delves.
+local additions = {
+    { scope = "instance:2521", spellID = 373693, school = "Magic" },
+    { scope = "instance:3004", spellID = 1306906, school = "Poison" },
+    { scope = "instance:3004", spellID = 1286922, school = "Magic" },
+    { scope = "instance:3004", spellID = 1287434, school = "Magic" },
+    { scope = "instance:3004", spellID = 1287083, school = "Poison" },
+    { scope = "instance:3004", spellID = 1305833, school = "Magic" },
+    { scope = "instance:2805", spellID = 1253834, school = "Curse" },
+    { scope = "instance:2805", spellID = 1215803, school = "Curse" },
+    { scope = "instance:2526", spellID = 374350, school = "Magic" },
+    { scope = "instance:2966", spellID = 1256358, school = "Magic" },
+    { scope = "instance:2966", spellID = 1256526, school = "Curse" },
+    { scope = "instance:3079", spellID = 1293824, school = "Magic" },
+}
+for _, addition in ipairs(additions) do
+    ns.Sound.activeScopeKey = addition.scope
+    ns.knownDispels = { { cures = { [addition.school] = true } } }
+    local firstAdded = #added + 1
+    ns.Sound:RequestRefresh()
+    local registrations = 0
+    for index = firstAdded, #added do
+        if added[index].spellID == addition.spellID then
+            registrations = registrations + 1
+        end
+    end
+    equal(registrations, 5, "added aura registered on all five raid units: " .. addition.spellID)
+
+    -- None of these additions is a Disease effect.
+    ns.knownDispels = { { cures = { Disease = true } } }
+    local firstExcluded = #added + 1
+    ns.Sound:RequestRefresh()
+    local excludedRegistrations = 0
+    for index = firstExcluded, #added do
+        if added[index].spellID == addition.spellID then
+            excludedRegistrations = excludedRegistrations + 1
+        end
+    end
+    equal(excludedRegistrations, 0,
+        "added aura has no native registration without matching cure: " .. addition.spellID)
+    ns.knownDispels = { { cures = { [addition.school] = true } } }
+    ns.Sound.activeScopeKey = "instance:999999"
+    ns.Sound:RequestRefresh()
+    equal(ns.Sound.registered, 0, "added aura does not leak into another instance")
+end
 ns.knownDispels = {}
 ns.Sound:OnDispelChanged()
 equal(ns.Sound.registered, 0, "no known cure means no automatic dispel sound")
@@ -315,5 +362,15 @@ messages = {}
 ns.db.learningDiscoveryMessages = false
 ns.Sound:DumpLearned()
 equal(#messages > 0, true, "muting automatic notices leaves manual catalogue output available")
+
+ns.db.movementSoundEnabled = true
+ns.db.movementAlertsEnabled = false
+local soundCount = #playedSound
+equal(ns.Sound:PlayMovementWarning(), false, "master switch suppresses movement sound independently of its sound toggle")
+equal(#playedSound, soundCount, "disabled movement warning never calls playback")
+ns.Sound.activeScopeKey = "instance:2521"
+ns.knownDispels = { { cures = { Magic = true } } }
+ns.Sound:RequestRefresh()
+equal(ns.Sound.registered > 0, true, "movement master switch leaves ordinary dispel registration active")
 
 print("sound tests passed")
