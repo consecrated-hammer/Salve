@@ -339,6 +339,14 @@ function Box.SetMovementPrompt(box, active)
     end
 end
 
+-- A class token that is safe to use as a table key. Restyle also runs in
+-- combat, where restricted content could make the token secret.
+function Box.ClassToken(unit)
+    local _, class = UnitClass(unit)
+    if class == nil or (issecretvalue and issecretvalue(class)) then return nil end
+    return class
+end
+
 -- Name text and the clean-state dimming. Both are ours, both are safe in
 -- combat, and neither reads an aura.
 --
@@ -354,7 +362,7 @@ function Box.Restyle(box)
 
     if db.showNames and box.unit then
         box.name:SetText(UnitName(box.unit))
-        local _, class = UnitClass(box.unit)
+        local class = Box.ClassToken(box.unit)
         local c = class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
         if c then
             box.name:SetTextColor(c.r, c.g, c.b)
@@ -367,7 +375,7 @@ function Box.Restyle(box)
 
     local plateColour
     if db.useClassColours and box.unit then
-        local _, class = UnitClass(box.unit)
+        local class = Box.ClassToken(box.unit)
         plateColour = class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
     end
     if plateColour then

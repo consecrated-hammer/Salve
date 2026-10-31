@@ -3,6 +3,13 @@ local addonName, ns = ...
 -- Every visual and behavioural choice lives here. Nothing in Salve is baked in;
 -- if you find yourself wanting to ask the user a question, add a key instead.
 
+-- Every permutation of the three roles, for the Role order setting.
+ns.SORT_ROLE_ORDERS = {
+    "TANK,HEALER,DAMAGER", "TANK,DAMAGER,HEALER",
+    "HEALER,TANK,DAMAGER", "HEALER,DAMAGER,TANK",
+    "DAMAGER,TANK,HEALER", "DAMAGER,HEALER,TANK",
+}
+
 ns.defaults = {
     -- Position & size. 20x20 is Decursive's MUF size, straight from its
     -- Dcr_DebuffsFrame.xml -- deliberately tiny, and names cannot fit at that
@@ -65,6 +72,24 @@ ns.defaults = {
     orientation   = "HORIZONTAL",
     horizontalGrowth = "RIGHT",
     verticalGrowth   = "DOWN",
+
+    -- Which member gets which cell. GROUP keeps the game's party or raid
+    -- order. Sorting is applied only when the panel rebuilds out of combat.
+    sortMode      = "GROUP",   -- GROUP | ROLE | NAME
+    sortRoleOrder = "TANK,HEALER,DAMAGER",
+    sortReverse   = false,
+    sortSelf      = "SORTED",  -- SORTED | FIRST | LAST
+
+    -- Attach the panel to another addon's group frames. LEFT and RIGHT line
+    -- each cell up with its member's frame; TOP and BOTTOM keep Salve's grid
+    -- together. The saved `point` is untouched while attached.
+    attachTo      = "NONE",    -- NONE | DANDERS | ELLESMERE
+    attachSide    = "RIGHT",   -- LEFT | RIGHT | TOP | BOTTOM
+    attachGap     = 2,
+    -- LEFT and RIGHT only: which edge of each member's frame a cell lines up
+    -- with, then a nudge up (positive) or down (negative) in pixels.
+    attachAlign   = "CENTER",  -- TOP | CENTER | BOTTOM
+    attachOffsetY = 0,
 
     -- ALWAYS | NEVER, combined with the conditions below. See
     -- Features/Visibility.lua for why this is a state driver and not Show/Hide.
@@ -167,7 +192,7 @@ local function normalizePreferences(db)
         "showWhenClean", "showHandle", "bindingsCustom", "clickAuditEnabled",
         "soundEnabled", "dispelSoundEnabled", "movementSoundEnabled", "movementTextNotification",
         "movementAlertsEnabled", "inferredSlowAlertsEnabled",
-        "selfDispelNotification" }) do
+        "selfDispelNotification", "sortReverse" }) do
         resetIfWrongType(db, key, "boolean")
     end
     for _, key in ipairs({ "scale", "cleanAlpha" }) do numberInRange(db, key, 0, key == "scale" and 3 or 1) end
@@ -179,9 +204,19 @@ local function normalizePreferences(db)
     numberInRange(db, "cooldownFontSize", 6, 48, true)
     numberInRange(db, "dispelTypeIconSize", 8, 64, true)
     numberInRange(db, "movementChatWindow", 0, 20, true)
+    numberInRange(db, "attachGap", 0, 100, true)
+    numberInRange(db, "attachOffsetY", -100, 100, true)
+    enumOrDefault(db, "attachAlign", { TOP = true, CENTER = true, BOTTOM = true })
+    enumOrDefault(db, "attachTo", { NONE = true, DANDERS = true, ELLESMERE = true })
+    enumOrDefault(db, "attachSide", { LEFT = true, RIGHT = true, TOP = true, BOTTOM = true })
     enumOrDefault(db, "orientation", { HORIZONTAL = true, VERTICAL = true })
     enumOrDefault(db, "horizontalGrowth", { LEFT = true, RIGHT = true })
     enumOrDefault(db, "verticalGrowth", { UP = true, DOWN = true })
+    enumOrDefault(db, "sortMode", { GROUP = true, ROLE = true, NAME = true })
+    enumOrDefault(db, "sortSelf", { SORTED = true, FIRST = true, LAST = true })
+    local roleOrders = {}
+    for _, order in ipairs(ns.SORT_ROLE_ORDERS) do roleOrders[order] = true end
+    enumOrDefault(db, "sortRoleOrder", roleOrders)
     enumOrDefault(db, "visibilityMode", { ALWAYS = true, NEVER = true })
     enumOrDefault(db, "tooltipAnchor", { LEFT = true, RIGHT = true, TOP = true, BOTTOM = true, CURSOR = true })
     enumOrDefault(db, "nameJustifyH", { LEFT = true, CENTER = true, RIGHT = true })
@@ -379,6 +414,9 @@ local GEOMETRY = {
     columns = true, boxWidth = true, boxHeight = true, spacing = true,
     scale = true, showNames = true, showStacks = true, orientation = true,
     horizontalGrowth = true, verticalGrowth = true,
+    sortMode = true, sortRoleOrder = true, sortReverse = true, sortSelf = true,
+    attachTo = true, attachSide = true, attachGap = true,
+    attachAlign = true, attachOffsetY = true,
     bindings = true, escapes = true,
     showDispelTypeIcon = true,
     dispelTypeIconSize = true, dispelTypeIconPosition = true,

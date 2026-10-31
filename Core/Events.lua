@@ -135,11 +135,24 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         if ns.SelfAlert and ns.SelfAlert.Update then ns.SelfAlert:Update() end
         if ns.Options.RefreshTroubleshooting then ns.Options.RefreshTroubleshooting() end
         ns.RequestRebuild()
+        if ns.Attach then ns.Attach:RosterChanged() end
 
     elseif event == "GROUP_ROSTER_UPDATE" then
         ns.Sound:OnRosterChanged()
         if ns.Options.RefreshTroubleshooting then ns.Options.RefreshTroubleshooting() end
         ns.RequestRebuild()
+        -- A deferred rebuild leaves each box on its old token, but tokens shift
+        -- when someone leaves. Names are safe to refresh in combat, so at least
+        -- show who each box now targets.
+        if ns.StructuralChangesUnsafe and ns.StructuralChangesUnsafe() and ns.Panel then
+            ns.Panel:Restyle()
+        end
+        if ns.Attach then ns.Attach:RosterChanged() end
+
+    elseif event == "PLAYER_ROLES_ASSIGNED" then
+        -- Salve's role sort depends on roles, and so may the host's order.
+        if ns.db and ns.db.sortMode == "ROLE" then ns.RequestRebuild() end
+        if ns.Attach then ns.Attach:HostChanged() end
 
     elseif event == "PLAYER_SPECIALIZATION_CHANGED"
         or event == "SPELLS_CHANGED"
@@ -208,6 +221,8 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         C_Timer.After(0, function()
             ns.Sound:FlushPending()
             ns.FlushPending()
+            -- Hosts re-lay out after combat too; measure again once they have.
+            if ns.Attach then ns.Attach:HostChanged() end
         end)
 
     elseif event == "PLAYER_REGEN_ENABLED" then
@@ -220,6 +235,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         ns.FlushPending()
         -- A reset requested mid-fight was deferred rather than erroring.
         if ns.deferredPosition then ns.Panel:ApplyPosition() end
+        if ns.Attach then ns.Attach:HostChanged() end
     end
 end)
 
@@ -251,6 +267,9 @@ for _, e in ipairs({
 }) do
     frame:RegisterEvent(e)
 end
+-- Not every client is guaranteed to know this event; registering an unknown
+-- one is an error. Without it, roles still apply on the next roster change.
+pcall(frame.RegisterEvent, frame, "PLAYER_ROLES_ASSIGNED")
 
 -- Filter at registration so group members' casts never enter Lua. The handler
 -- then narrows this further to Salve's known dispel spell IDs.

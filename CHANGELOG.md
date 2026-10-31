@@ -7,6 +7,31 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-10-31
+
+### Added
+
+- A **Sorting** settings page. **Sort by** keeps the game's group order
+  (the default), or sorts by role or by name. **Role order** picks any order of
+  tank, healer and DPS, with members who have no role last. **Your cell** pins
+  your own box first or last, and **Reverse order** flips the rest. The preview
+  follows the same settings.
+- Boxes re-sort when roles change, while in Role mode.
+- An **Attach** settings page. **Attach to** DandersFrames or EllesmereUI group
+  frames, whichever are loaded. **Left** and **Right** line each cell up with
+  its member's frame at the host's spacing, in the host's order, with raid
+  groups kept in their own columns or rows. **Top** and **Bottom** keep Salve's
+  grid together above or below the host. **Gap** sets the distance, and for
+  Left and Right, **Align** (top, centre or bottom of each frame) and
+  **Up / down** fine-tune where the cells sit. Salve moves when the host's
+  frames move, and uses its saved position whenever the host's frames aren't
+  on screen.
+
+### Fixed
+
+- When someone joins or leaves mid-fight, box names now update straight away.
+  The boxes themselves still wait until combat ends to rebuild.
+
 ## [1.6.5] - 2026-10-27
 
 ### Added

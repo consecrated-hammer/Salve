@@ -101,6 +101,13 @@ function Panel:PlaceBox(box, index, layout)
         -row * (layout.height + layout.spacing))
 end
 
+-- An attachment's cell position, already relative to the frame's top left.
+function Panel:PlaceBoxAt(box, cell, layout)
+    box:SetSize(layout.width, layout.height)
+    box:ClearAllPoints()
+    box:SetPoint("TOPLEFT", box:GetParent(), "TOPLEFT", cell.x, cell.y)
+end
+
 -- ── Roster ─────────────────────────────────────────────────────────────────
 
 local function unitList()
@@ -125,6 +132,113 @@ local function unitList()
     end
 
     return units
+end
+
+-- ── Sort order ─────────────────────────────────────────────────────────────
+-- Sorting only permutes which box gets which unit token, and it runs inside
+-- Rebuild, so out of combat and outside encounters only. A roster change in
+-- combat still waits for the next rebuild, sorted or not.
+
+local function readable(value)
+    return value ~= nil and not (issecretvalue and issecretvalue(value))
+end
+
+-- Retail 12 moved the spec lookups into C_SpecializationInfo; the globals
+-- are only a fallback for clients that still have them.
+local function playerSpecRole()
+    local api = C_SpecializationInfo
+    local getSpec = api and api.GetSpecialization or GetSpecialization
+    local getRole = api and api.GetSpecializationRole or GetSpecializationRole
+    if not (getSpec and getRole) then return nil end
+    local ok, spec = pcall(getSpec)
+    if not ok or not readable(spec) or type(spec) ~= "number" then return nil end
+    local okRole, role = pcall(getRole, spec)
+    return okRole and readable(role) and role or nil
+end
+
+-- ☠ Compare nothing that might be secret. UnitName can be secret in
+--   restricted content and comparing one is a hard error, so an unreadable
+--   name or role becomes nil and that member falls back to group order.
+local function unitEntry(unit, index)
+    local isPlayer = unit == "player"
+        or (ns.Escape and ns.Escape.IsPlayerUnit and ns.Escape:IsPlayerUnit(unit)) or false
+    local role = UnitGroupRolesAssigned and UnitGroupRolesAssigned(unit)
+    if not readable(role) or (role ~= "TANK" and role ~= "HEALER" and role ~= "DAMAGER") then
+        role = isPlayer and playerSpecRole() or nil
+    end
+    local name = UnitName and UnitName(unit)
+    if not readable(name) or type(name) ~= "string" or name == ""
+        or name == UNKNOWNOBJECT then
+        name = nil
+    end
+    return { unit = unit, index = index, role = role, name = name, isPlayer = isPlayer }
+end
+
+-- Shared by the live panel and the test panel. Each entry carries `index`
+-- (its group order), `isPlayer`, and optional readable `role` and `name`.
+function Panel:SortEntries(entries)
+    local db = ns.db
+    local mode, selfPosition = db.sortMode or "GROUP", db.sortSelf or "SORTED"
+
+    local rank = {}
+    if mode == "ROLE" then
+        local position = 0
+        for role in string.gmatch(db.sortRoleOrder or "TANK,HEALER,DAMAGER", "[^,]+") do
+            position = position + 1
+            rank[role] = position
+        end
+    end
+
+    -- A total order: every tie falls through to group order, so table.sort's
+    -- instability can never shuffle equal members between rebuilds.
+    local function before(a, b)
+        if mode == "ROLE" then
+            local ra, rb = rank[a.role] or 4, rank[b.role] or 4
+            if ra ~= rb then return ra < rb end
+        elseif mode == "NAME" then
+            local na, nb = a.name and a.name:lower(), b.name and b.name:lower()
+            if na and nb then
+                if na ~= nb then return na < nb end
+            elseif na or nb then
+                return na ~= nil
+            end
+        end
+        return a.index < b.index
+    end
+
+    local player, rest = nil, {}
+    for _, entry in ipairs(entries) do
+        if selfPosition ~= "SORTED" and entry.isPlayer and not player then
+            player = entry
+        else
+            rest[#rest + 1] = entry
+        end
+    end
+    table.sort(rest, before)
+
+    local sorted = {}
+    if db.sortReverse then
+        for i = #rest, 1, -1 do sorted[#sorted + 1] = rest[i] end
+    else
+        sorted = rest
+    end
+    if player then
+        table.insert(sorted, selfPosition == "FIRST" and 1 or #sorted + 1, player)
+    end
+    return sorted
+end
+
+function Panel:SortUnits(units)
+    local db = ns.db
+    if (db.sortMode or "GROUP") == "GROUP" and not db.sortReverse
+        and (db.sortSelf or "SORTED") == "SORTED" then
+        return units
+    end
+    local entries = {}
+    for index, unit in ipairs(units) do entries[index] = unitEntry(unit, index) end
+    local sorted = {}
+    for index, entry in ipairs(self:SortEntries(entries)) do sorted[index] = entry.unit end
+    return sorted
 end
 
 -- ── Creation ───────────────────────────────────────────────────────────────
@@ -163,11 +277,34 @@ function Panel:Rebuild()
         return
     end
 
-    self:NormalizeGrowthAnchor(self.frame)
     local failures = 0
     local units    = ns.CanDispel() and unitList()
         or (ns.PersonalDispel and ns.PersonalDispel:Enabled() and { "player" }) or {}
     local layout = self:Layout(#units)
+    -- Scale first: attaching measures in screen pixels, which depends on it.
+    self.frame:SetScale(layout.scale)
+
+    -- Attached beside a host, the host's order wins and cells follow its
+    -- frames by unit. Otherwise Salve's own sort and grid apply.
+    local plan = ns.Attach and ns.Attach:Plan(units, layout, self.frame:GetEffectiveScale())
+    if not (plan and plan.cells) and ns.CanDispel() then units = self:SortUnits(units) end
+    if plan then
+        self.frame:ClearAllPoints()
+        self.frame:SetPoint(plan.point, plan.anchor, plan.anchorPoint, plan.x, plan.y)
+    else
+        -- Coming back from an attachment: return to the saved position, which
+        -- attaching never overwrites.
+        if self.attached then
+            local p = ns.db.point
+            self.frame:ClearAllPoints()
+            self.frame:SetPoint(p[1], UIParent, p[2], p[3], p[4])
+        end
+        -- ☠ Size before normalising. The frame may still carry the attached
+        --   plan's size, and normalising re-saves the point from its edges.
+        if #units > 0 then self.frame:SetSize(layout.frameWidth, layout.frameHeight) end
+        self:NormalizeGrowthAnchor(self.frame)
+    end
+    self.attached = plan ~= nil
 
     for i = 1, MAX_BOXES do
         local box  = self.boxes[i]
@@ -178,7 +315,11 @@ function Panel:Rebuild()
             ns.Box.Bind(box, unit)
             ns.Box.Restyle(box)
 
-            self:PlaceBox(box, i, layout)
+            if plan and plan.cells then
+                self:PlaceBoxAt(box, plan.cells[i], layout)
+            else
+                self:PlaceBox(box, i, layout)
+            end
             box:Show()
 
             -- Hand the box to the engine. After this it runs without us.
@@ -201,10 +342,9 @@ function Panel:Rebuild()
     end
 
     local n = #units
-    self.frame:SetScale(layout.scale)
-
     if n > 0 then
-        self.frame:SetSize(layout.frameWidth, layout.frameHeight)
+        self.frame:SetSize(plan and plan.width or layout.frameWidth,
+            plan and plan.height or layout.frameHeight)
     end
 
     -- ☠ Visibility is a STATE DRIVER, not Show()/Hide(). The panel is protected,
@@ -214,7 +354,7 @@ function Panel:Rebuild()
     ns.Visibility:Apply(self.frame, n > 0)
 
     ns.Handle:Update()
-
+    if ns.Options and ns.Options.RefreshAttachStatus then ns.Options.RefreshAttachStatus() end
 
     -- Warn ONCE per session. Silent binding failure is the worst outcome here:
     -- the panel looks perfectly healthy and simply never lights up, which reads
@@ -255,6 +395,11 @@ function Panel:ApplyPosition()
     end
 
     ns.deferredPosition = false
+    -- Attached, the host decides where Salve goes. Re-measure instead.
+    if self.attached then
+        ns.RequestRebuild()
+        return
+    end
     local p = ns.db.point
     self.frame:ClearAllPoints()
     self.frame:SetPoint(p[1], UIParent, p[2], p[3], p[4])

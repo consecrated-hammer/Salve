@@ -49,4 +49,12 @@ equal(preview:Start(), false, "preview refuses combat")
 equal(preview.active, false, "combat start leaves preview inactive")
 equal(alpha, 0.65, "combat refusal leaves live panel visible")
 
+-- The test panel sorts its sample roster through the live panel's sorter.
+ns.db = { sortMode = "ROLE", sortRoleOrder = "TANK,HEALER,DAMAGER", sortSelf = "SORTED" }
+assert(loadfile("UI/Panel.lua"))("Salve", ns)
+local roster = preview:Roster(5)
+equal(roster[1].role, "TANK", "preview puts the sample tank first")
+equal(roster[2].role, "HEALER", "preview puts the sample healer second")
+equal(#roster, 5, "preview keeps every sample cell")
+
 print("preview lifecycle tests passed")

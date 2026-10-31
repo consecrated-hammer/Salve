@@ -324,4 +324,24 @@ onUpdate(nil, 0.15)
 equal(movementTextAlerts, textBefore, "master switch overrides the inferred-slow opt-in for text")
 equal(movementPrompts, promptsBefore, "master switch overrides the inferred-slow opt-in for the cue")
 
+-- Sorting: role changes re-sort only in Role mode, and a roster change that
+-- has to wait for combat to end still refreshes the visible names.
+equal(registered.PLAYER_ROLES_ASSIGNED, true, "role changes are registered for re-sorting")
+local restyles, locked = 0, false
+ns.Panel.Restyle = function() restyles = restyles + 1 end
+ns.StructuralChangesUnsafe = function() return locked end
+ns.Sound.OnRosterChanged = function() end
+ns.db = { sortMode = "GROUP" }
+local before = rebuilds
+handler(nil, "PLAYER_ROLES_ASSIGNED")
+equal(rebuilds, before, "role change does not rebuild in group order")
+ns.db.sortMode = "ROLE"
+handler(nil, "PLAYER_ROLES_ASSIGNED")
+equal(rebuilds, before + 1, "role change re-sorts in role order")
+handler(nil, "GROUP_ROSTER_UPDATE")
+equal(restyles, 0, "an immediate rebuild already restyles")
+locked = true
+handler(nil, "GROUP_ROSTER_UPDATE")
+equal(restyles, 1, "a deferred roster rebuild refreshes names in combat")
+
 print("event routing tests passed")

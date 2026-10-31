@@ -16,6 +16,9 @@ local NAMES = {
     "Ravenstriker", "Nyxmoonblade", "Thornwhisper", "Shadowmender", "Stormwardenx",
 }
 local CLASSES = { "PALADIN", "HUNTER", "SHAMAN", "ROGUE", "PRIEST" }
+-- Sample roles so the sort settings visibly reorder the test panel. The first
+-- cell stands in for the player.
+local ROLES = { "TANK", "DAMAGER", "DAMAGER", "DAMAGER", "HEALER" }
 local FALLBACK_DISPEL_COLOURS = {
     Magic = { r = 0.20, g = 0.60, b = 1.00 },
     Curse = { r = 0.72, g = 0.28, b = 1.00 },
@@ -66,18 +69,34 @@ function Preview:NeedsDispel(index, count)
     return index == 2 or index == math.min(count, 4)
 end
 
+function Preview:Roster(count)
+    local entries = {}
+    for i = 1, count do
+        local sample = ((i - 1) % #NAMES) + 1
+        entries[i] = {
+            index = i, isPlayer = i == 1, name = NAMES[sample],
+            class = CLASSES[sample], role = ROLES[sample],
+        }
+    end
+    if ns.Panel and ns.Panel.SortEntries then return ns.Panel:SortEntries(entries) end
+    return entries
+end
+
 -- Both preview hosts use the same non-secure boxes, layout calculation and
 -- restyling as Salve's live panel. The Settings host is clipped and scales down
 -- only when the configured grid cannot fit its preview stage.
 local function renderBoxes(boxes, frame, count, layout, state, cooldownState,
-        cooldownStart, movementSweepState, movementSweepStart)
+        cooldownStart, movementSweepState, movementSweepStart, cells)
     local types = knownDispelTypes()
+    local roster = Preview:Roster(count)
     for i, box in ipairs(boxes) do
         if i <= count then
-            ns.Panel:PlaceBox(box, i, layout)
-            ns.Box.RestylePreview(box,
-                NAMES[((i - 1) % #NAMES) + 1],
-                CLASSES[((i - 1) % #CLASSES) + 1])
+            if cells then
+                ns.Panel:PlaceBoxAt(box, cells[i], layout)
+            else
+                ns.Panel:PlaceBox(box, i, layout)
+            end
+            ns.Box.RestylePreview(box, roster[i].name, roster[i].class)
 
             if state == "DISPELLABLE" and Preview:NeedsDispel(i, count) then
                 local dispelType = types[((i - 1) % #types) + 1]
@@ -295,15 +314,23 @@ function Preview:Refresh()
     self:Create()
 
     local frame = self.frame
-    local point = ns.db.point
-    frame:ClearAllPoints()
-    frame:SetPoint(point[1], UIParent, point[2], point[3], point[4])
-    if ns.Panel.NormalizeGrowthAnchor then ns.Panel:NormalizeGrowthAnchor(frame) end
-
     local count = math.max(1, math.min(MAX_BOXES, tonumber(self.count) or 5))
     local layout = ns.Panel:Layout(count)
     frame:SetScale(layout.scale)
-    frame:SetSize(layout.frameWidth, layout.frameHeight)
+
+    -- With real host frames on screen, the test cells take their places in
+    -- the host's reading order. Otherwise the saved position, as live.
+    local plan = ns.Attach and ns.Attach:Plan(count, layout, frame:GetEffectiveScale(), true)
+    frame:ClearAllPoints()
+    if plan then
+        frame:SetPoint(plan.point, plan.anchor, plan.anchorPoint, plan.x, plan.y)
+        frame:SetSize(plan.width, plan.height)
+    else
+        local point = ns.db.point
+        frame:SetPoint(point[1], UIParent, point[2], point[3], point[4])
+        if ns.Panel.NormalizeGrowthAnchor then ns.Panel:NormalizeGrowthAnchor(frame) end
+        frame:SetSize(layout.frameWidth, layout.frameHeight)
+    end
 
     local now = GetTime()
     if self.cooldownState == "COOLDOWN"
@@ -316,9 +343,10 @@ function Preview:Refresh()
     end
 
     renderBoxes(self.boxes, frame, count, layout, self.cellState,
-        self.cooldownState, self.cooldownStart, self.movementSweepState, self.movementSweepStart)
+        self.cooldownState, self.cooldownStart, self.movementSweepState, self.movementSweepStart,
+        plan and plan.cells)
 
-    self.handle:SetShown(ns.db.showHandle and true or false)
+    self.handle:SetShown(ns.db.showHandle and not plan and true or false)
     ns.Handle:PositionFrame(self.handle, frame)
     if ns.Panel and ns.Panel.frame then
         self.blocker:ClearAllPoints()

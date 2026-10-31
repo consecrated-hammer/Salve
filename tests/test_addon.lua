@@ -88,7 +88,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     local names = {}
     for _, spec in ipairs(HC.Settings.order) do names[#names + 1] = spec.name end
     equal(table.concat(names, ","),
-        "Salve,Tooltips,Actions,Visibility,Alerts,Movement,Learned Spells,Commands,Troubleshooting,About",
+        "Salve,Sorting,Attach,Tooltips,Actions,Visibility,Alerts,Movement,Learned Spells,Commands,Troubleshooting,About",
         toc .. ": rail order")
     local failures = {}
     for name, err in pairs(HC.Settings.errors) do failures[#failures + 1] = name .. ": " .. err end

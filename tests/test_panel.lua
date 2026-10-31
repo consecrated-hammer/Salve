@@ -111,4 +111,65 @@ ns.Panel:SetMovementPrompt({ id = 1044 }, true)
 equal(ns.Panel.boxes[1].prompt, true, "raid-token player receives movement prompt")
 equal(ns.Panel.boxes[2].prompt, nil, "other party member does not receive player prompt")
 
+-- ── Sort order ──
+local function entries()
+    return {
+        { index = 1, unit = "player", isPlayer = true, role = "DAMAGER", name = "Mira" },
+        { index = 2, unit = "party1", role = "HEALER", name = "zed" },
+        { index = 3, unit = "party2", role = "TANK", name = "Anya" },
+        { index = 4, unit = "party3", role = nil, name = nil },
+        { index = 5, unit = "party4", role = "DAMAGER", name = "bram" },
+    }
+end
+local function order(list)
+    local units = {}
+    for i, entry in ipairs(list) do units[i] = entry.unit end
+    return table.concat(units, " ")
+end
+local function sortWith(mode, roleOrder, reverse, selfPosition)
+    ns.db.sortMode, ns.db.sortRoleOrder = mode, roleOrder
+    ns.db.sortReverse, ns.db.sortSelf = reverse, selfPosition
+    return order(ns.Panel:SortEntries(entries()))
+end
+
+equal(sortWith("GROUP", nil, false, "SORTED"), "player party1 party2 party3 party4",
+    "group order is unchanged")
+equal(sortWith("GROUP", nil, true, "SORTED"), "party4 party3 party2 party1 player",
+    "reverse group order")
+equal(sortWith("ROLE", "TANK,HEALER,DAMAGER", false, "SORTED"),
+    "party2 party1 player party4 party3", "role order with ties in group order, no role last")
+equal(sortWith("ROLE", "DAMAGER,HEALER,TANK", false, "SORTED"),
+    "player party4 party1 party2 party3", "custom role order")
+equal(sortWith("ROLE", "TANK,HEALER,DAMAGER", false, "FIRST"),
+    "player party2 party1 party4 party3", "own cell pinned first")
+equal(sortWith("ROLE", "TANK,HEALER,DAMAGER", true, "LAST"),
+    "party3 party4 party1 party2 player", "reverse keeps own pinned cell last")
+equal(sortWith("NAME", nil, false, "SORTED"), "party2 party4 player party1 party3",
+    "names sort case-insensitively, unreadable names last")
+
+-- The live path must not compare a secret name or role.
+local secret = {}
+function issecretvalue(value) return value == secret end
+function UnitGroupRolesAssigned(unit)
+    return ({ player = "NONE", party1 = secret, party2 = "TANK", party3 = "DAMAGER" })[unit]
+end
+function UnitName(unit)
+    return ({ player = "Mira", party1 = secret, party2 = "Anya", party3 = "Cole" })[unit]
+end
+-- Retail 12 has only the namespaced spec lookup.
+GetSpecialization = nil
+C_SpecializationInfo = { GetSpecialization = function() return 2 end }
+function GetSpecializationRole(spec) return spec == 2 and "HEALER" or "DAMAGER" end
+ns.Escape.IsPlayerUnit = function(_, unit) return unit == "player" end
+ns.db.sortMode, ns.db.sortRoleOrder, ns.db.sortReverse, ns.db.sortSelf =
+    "ROLE", "TANK,HEALER,DAMAGER", false, "SORTED"
+equal(table.concat(ns.Panel:SortUnits({ "player", "party1", "party2", "party3" }), " "),
+    "party2 player party3 party1", "player falls back to spec role; secret role goes last")
+ns.db.sortMode = "NAME"
+equal(table.concat(ns.Panel:SortUnits({ "player", "party1", "party2", "party3" }), " "),
+    "party2 party3 player party1", "secret name falls back to group order")
+ns.db.sortMode = "GROUP"
+local untouched = { "player", "party1" }
+equal(ns.Panel:SortUnits(untouched), untouched, "default settings skip sorting entirely")
+
 print("panel layout tests passed")

@@ -151,7 +151,10 @@ function Handle:Update()
     --   nothing calls back here when it does. A handle hidden because the panel
     --   happened to be invisible when you ticked a condition stayed hidden for
     --   good, leaving a panel that could not be dragged.
-    self.frame:SetShown(ns.db.showHandle and true or false)
+    -- Attached, the host's frames decide where Salve sits; a drag would only
+    -- be undone by the next rebuild.
+    local attached = ns.Panel and ns.Panel.attached
+    self.frame:SetShown(ns.db.showHandle and not attached and true or false)
 end
 
 -- "Locked" and "no handle" are the same state, so there is one flag and this is
