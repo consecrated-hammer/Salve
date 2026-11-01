@@ -21,7 +21,21 @@ local addonName, ns = ...
 ns.Lockouts = { active = {}, sent = {}, missed = 0 }
 local Lockouts = ns.Lockouts
 
-Lockouts.DEBUFFS = {
+Lockouts.DEBUFFS = ns.isCamelot and {
+    -- Forever's Forbearance lasts a minute, and casts report their own rank.
+    -- Blessing of Protection on a target; Divine Shield, Divine Protection and
+    -- Templar's Bulwark on yourself. Lay on Hands doesn't list it here. Sacred
+    -- Duty can take up to 10 seconds off, which this doesn't read, so the icon
+    -- can outlast the debuff but never ends early.
+    { id = 25771, duration = 60,
+      causes = {
+          [1022] = "TARGET", [5599] = "TARGET", [10278] = "TARGET",
+          [642] = "SELF", [1020] = "SELF",
+          [498] = "SELF", [5573] = "SELF",
+          [1311015] = "SELF",
+      },
+      blocks = { 1022, 5599, 10278, 642, 1020, 498, 5573, 1311015 } },
+} or {
     -- Forbearance: Blessing of Protection, Blessing of Spellwarding and Lay
     -- on Hands on a target, Divine Shield on yourself.
     { id = 25771, duration = 30,

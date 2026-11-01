@@ -136,3 +136,43 @@ L:NoteCast("player", "cast-9", BOP)
 equal(next(L.active), nil, "off tracks nothing")
 
 print("lockout tests passed")
+
+-- WoW Forever has its own Forbearance: a minute, every rank, and its own spells.
+do
+    local foreverShown, foreverBound = {}, { 5599 }
+    local forever = {
+        isCamelot = true,
+        db = { lockoutIcons = true, lockoutPlacement = "CELL" },
+        Cooldowns = { BoundSpells = function() return foreverBound end },
+        Box = { UpdateLockoutIcon = function(box, entry) foreverShown[box.unit] = entry end },
+        CooldownBar = { UpdateLockouts = function() end },
+    }
+    assert(loadfile("Features/Bindings.lua"))("Salve", forever)
+    assert(loadfile("Features/Lockouts.lua"))("Salve", forever)
+    local F = forever.Lockouts
+    forever.Panel = { boxes = {
+        { unit = "player" },
+        { unit = "party1", clickAuditActions = { BUTTON2 = { spellID = 10278 } } },
+    } }
+    equal(F:Enabled(), true, "a higher rank bound turns it on")
+
+    for _, id in ipairs({ 642, 1020, 498, 5573, 1311015 }) do
+        foreverShown, F.active = {}, {}
+        F:NoteCast("player", "self-" .. id, id)
+        equal(foreverShown.player and foreverShown.player.duration, 60,
+            "spell " .. id .. " puts a minute of Forbearance on you")
+    end
+
+    foreverShown, F.active = {}, {}
+    F:NoteClick(forever.Panel.boxes[2], "RightButton")
+    F:NoteCast("player", "bop-3", 10278)
+    equal(foreverShown.party1 and foreverShown.party1.duration, 60, "rank 3 Protection on a member")
+
+    foreverShown, F.active = {}, {}
+    local missed = F.missed
+    for _, id in ipairs({ 633, 2800, 10310, 204018 }) do
+        F:NoteCast("player", "none-" .. id, id)
+    end
+    equal(next(foreverShown), nil, "Lay on Hands and Retail's Spellwarding don't start it")
+    equal(F.missed, missed, "and don't count as untracked casts")
+end

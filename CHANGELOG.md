@@ -5,6 +5,16 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2026-11-01
+
+### Fixed
+
+- **Show lockout debuffs** on WoW Forever now times Forbearance at 1 minute
+  instead of 30 seconds. It also follows every rank of Blessing of Protection
+  and Divine Shield, plus Divine Protection and Templar's Bulwark, and no
+  longer starts from Lay on Hands. Sacred Duty's reduction isn't read, so the
+  icon can stay up to 10 seconds longer than the debuff.
+
 ## [1.8.0] - 2026-11-01
 
 ### Added
