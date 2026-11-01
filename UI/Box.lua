@@ -37,6 +37,11 @@ local function StyleCooldownText(box)
     if text.SetShadowColor then text:SetShadowColor(0, 0, 0, 1) end
     if text.SetShadowOffset then text:SetShadowOffset(1, -1) end
     text:ClearAllPoints()
+    -- On a small icon the only sensible place for the number is its middle.
+    if box.cooldownIconMode then
+        text:SetPoint("CENTER", cooldown, "CENTER", 1, 0)
+        return
+    end
     local point = CooldownPoint(ns.db and ns.db.cooldownJustifyH,
         ns.db and ns.db.cooldownJustifyV)
     local x = point:find("LEFT", 1, true) and 3
@@ -73,7 +78,203 @@ function Box.CreateMovementCooldown(box, index)
     if cooldown.SetHideCountdownNumbers then cooldown:SetHideCountdownNumbers(true) end
     if cooldown.SetMinimumCountdownDuration then cooldown:SetMinimumCountdownDuration(0) end
     if cooldown.EnableMouse then cooldown:EnableMouse(false) end
+    Box.WatchCooldown(cooldown)
     return cooldown
+end
+
+-- ── Cooldown icons ─────────────────────────────────────────────────────────
+--
+-- Whole box is the original look: the sweep covers the cell. Icon moves each
+-- sweep onto a small spell icon that shows only while the spell recovers,
+-- which keeps names readable. Features/Cooldowns.lua decides visibility.
+--
+-- ☠ The icons and the cooldown widgets are plain children of the secure box.
+--   Re-anchoring and fading them is allowed in combat; nothing secure is ever
+--   anchored to them.
+
+function Box.CooldownStyle()
+    local db = ns.db
+    local style = db and db.cooldownStyle
+    if style == "AUTO" then return db.showNames and "ICON" or "BOX" end
+    return style == "ICON" and "ICON" or "BOX"
+end
+
+-- Hooked once at creation. A finished sweep is the edge where the icon
+-- should go away, so it asks for a re-check of that spell only.
+function Box.WatchCooldown(cooldown)
+    if not cooldown or cooldown.salveWatched or not cooldown.HookScript then return end
+    cooldown.salveWatched = true
+    cooldown:HookScript("OnCooldownDone", function(self)
+        if ns.Cooldowns and self.salveSpellID then ns.Cooldowns:Request(self.salveSpellID) end
+    end)
+end
+
+local function CreateCooldownIcon(box)
+    local frame = CreateFrame("Frame", nil, box)
+    if frame.EnableMouse then frame:EnableMouse(false) end
+    frame:SetAlpha(0)
+    frame.texture = frame:CreateTexture(nil, "ARTWORK")
+    frame.texture:SetAllPoints(frame)
+    if frame.texture.SetTexCoord then frame.texture:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
+    return frame
+end
+
+-- The dispel first, then each movement action that sweeps on this cell, in
+-- the same order Features/AuraBinding.lua hands them their widgets.
+function Box.CellCooldowns(box)
+    local entries = {}
+    if ns.spellID then entries[1] = { spellID = ns.spellID, cooldown = box.dispelCooldown, movement = false } end
+    local sweeps = ns.Escape and ns.Escape.SweepSpellIDs and ns.Escape:SweepSpellIDs() or {}
+    for index, spellID in ipairs(sweeps) do
+        local cooldown = box.movementCooldowns and box.movementCooldowns[index]
+        if cooldown and ns.Escape:CanSweepForUnit(spellID, box.unit) then
+            entries[#entries + 1] = { spellID = spellID, cooldown = cooldown, movement = true }
+        end
+    end
+    return entries
+end
+
+local function LayoutCooldownIcons(box, placed)
+    local point = ns.db.cooldownIconPosition or "RIGHT"
+    local leftward = point:find("RIGHT", 1, true) ~= nil
+    local x = point:find("LEFT", 1, true) and 1 or (leftward and -1 or 0)
+    local y = point:find("TOP", 1, true) and -1 or (point:find("BOTTOM", 1, true) and 1 or 0)
+    for index, icon in ipairs(placed) do
+        icon.frame:ClearAllPoints()
+        if index == 1 then
+            icon.frame:SetPoint(point, box, point, x, y)
+        elseif leftward then
+            icon.frame:SetPoint("RIGHT", placed[index - 1].frame, "LEFT", -1, 0)
+        else
+            icon.frame:SetPoint("LEFT", placed[index - 1].frame, "RIGHT", 1, 0)
+        end
+    end
+end
+
+local function RestoreBoxSweep(box)
+    for _, icon in ipairs(box.cooldownIcons or {}) do
+        icon.frame:SetAlpha(0)
+        icon.frame:Hide()
+        icon.mode = nil
+    end
+    local cooldown = box.dispelCooldown
+    cooldown:ClearAllPoints()
+    cooldown:SetAllPoints(box)
+    cooldown:SetAlpha(1)
+    for _, movement in ipairs(box.movementCooldowns or {}) do
+        movement:ClearAllPoints()
+        movement:SetAllPoints(box)
+        movement:SetAlpha(1)
+        if movement.SetDrawSwipe then movement:SetDrawSwipe(false) end
+        if movement.SetDrawEdge then movement:SetDrawEdge(true) end
+    end
+    box.cooldownIconMode = false
+    StyleCooldownText(box)
+end
+
+-- A lockout debuff such as Forbearance on this member, with its own timer.
+-- `entry` is { spellID, start, duration } from Features/Lockouts.lua, or nil.
+function Box.UpdateLockoutIcon(box, entry)
+    local icon = box.lockoutIcon
+    if not entry then
+        if icon then icon:Hide() end
+        return
+    end
+    if not icon then
+        icon = CreateFrame("Frame", nil, box)
+        if icon.EnableMouse then icon:EnableMouse(false) end
+        icon.texture = icon:CreateTexture(nil, "ARTWORK")
+        icon.texture:SetAllPoints(icon)
+        if icon.texture.SetTexCoord then icon.texture:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
+        icon.cooldown = CreateFrame("Cooldown", nil, icon, "CooldownFrameTemplate")
+        icon.cooldown:SetAllPoints(icon)
+        if icon.cooldown.SetDrawEdge then icon.cooldown:SetDrawEdge(false) end
+        if icon.cooldown.SetDrawBling then icon.cooldown:SetDrawBling(false) end
+        if icon.cooldown.SetReverse then icon.cooldown:SetReverse(true) end
+        if icon.cooldown.SetSwipeColor then icon.cooldown:SetSwipeColor(0, 0, 0, 0.6) end
+        if icon.cooldown.SetMinimumCountdownDuration then icon.cooldown:SetMinimumCountdownDuration(0) end
+        if icon.cooldown.EnableMouse then icon.cooldown:EnableMouse(false) end
+        box.lockoutIcon = icon
+    end
+    local db = ns.db
+    local size = math.max(8, math.min(48, tonumber(db.lockoutIconSize) or 14))
+    local point = db.lockoutIconPosition or "TOPLEFT"
+    icon:SetSize(size, size)
+    icon:ClearAllPoints()
+    icon:SetPoint(point, box, point, 0, 0)
+    -- Above the sweeps and the cooldown icons: it's the one warning on the
+    -- cell that says "not this one".
+    icon:SetFrameLevel((box.movementFrameLevel or (box:GetFrameLevel() + 13)) + 8)
+    icon.texture:SetTexture(ns.Cooldowns.SpellTexture(entry.spellID))
+    local text = icon.cooldown.GetCountdownFontString and icon.cooldown:GetCountdownFontString()
+    if text then
+        local fontPath = STANDARD_TEXT_FONT
+        if fontPath then text:SetFont(fontPath, math.max(7, math.floor(size * 0.6 + 0.5)), "OUTLINE") end
+    end
+    icon.cooldown:SetCooldown(entry.start, entry.duration)
+    icon:Show()
+end
+
+-- `entries` is only passed by the preview, with a fixed state per spell.
+function Box.UpdateCooldownIcons(box, target, entries)
+    if not box.dispelCooldown then return end
+    if Box.CooldownStyle() ~= "ICON" then
+        if box.cooldownIconMode then RestoreBoxSweep(box) end
+        return
+    end
+
+    entries = entries or Box.CellCooldowns(box)
+    local size = math.max(8, math.min(64, tonumber(ns.db.cooldownIconSize) or 16))
+    box.cooldownIcons = box.cooldownIcons or {}
+    local icons = {}
+    for index, entry in ipairs(entries) do
+        local icon = box.cooldownIcons[index] or {}
+        box.cooldownIcons[index] = icon
+        icon.frame = icon.frame or CreateCooldownIcon(box)
+        if icon.spellID ~= entry.spellID then icon.mode = nil end
+        icon.spellID = entry.spellID
+        icon.forcedState = entry.state
+        icon.cooldown = entry.cooldown
+        icon.cooldownAlpha = true
+        icon.frame.texture:SetTexture(ns.Cooldowns.SpellTexture(entry.spellID))
+        icon.frame:SetSize(size, size)
+        -- Just under its own sweep, which already sits above the aura fill
+        -- and the name.
+        icon.frame:SetFrameLevel(math.max(0, entry.cooldown:GetFrameLevel() - 1))
+        icon.frame:Show()
+        local cooldown = entry.cooldown
+        cooldown.salveSpellID = entry.spellID
+        cooldown:ClearAllPoints()
+        cooldown:SetAllPoints(icon.frame)
+        if entry.movement then
+            if cooldown.SetDrawEdge then cooldown:SetDrawEdge(false) end
+            if cooldown.SetDrawSwipe then cooldown:SetDrawSwipe(true) end
+            if cooldown.SetSwipeColor then cooldown:SetSwipeColor(0, 0, 0, 0.72) end
+        end
+        icons[index] = icon
+    end
+    for index = #entries + 1, #box.cooldownIcons do
+        local icon = box.cooldownIcons[index]
+        icon.frame:SetAlpha(0)
+        icon.frame:Hide()
+        icon.mode = nil
+    end
+    -- An unused widget may still point at an icon it had before.
+    local used = {}
+    for _, entry in ipairs(entries) do used[entry.cooldown] = true end
+    local widgets = { box.dispelCooldown }
+    for _, movement in ipairs(box.movementCooldowns or {}) do widgets[#widgets + 1] = movement end
+    for _, widget in ipairs(widgets) do
+        if not used[widget] then
+            widget:ClearAllPoints()
+            widget:SetAllPoints(box)
+            widget:SetAlpha(1)
+        end
+    end
+
+    box.cooldownIconMode = true
+    LayoutCooldownIcons(box, ns.Cooldowns:Arrange(icons, false, target))
+    StyleCooldownText(box)
 end
 
 
@@ -193,7 +394,10 @@ local function CreateVisuals(box, registerCooldown)
         box.dispelCooldown:SetMinimumCountdownDuration(0)
     end
     if box.dispelCooldown.EnableMouse then box.dispelCooldown:EnableMouse(false) end
-    if registerCooldown then ns.Binding:RegisterCooldown(box.dispelCooldown) end
+    if registerCooldown then
+        ns.Binding:RegisterCooldown(box.dispelCooldown)
+        Box.WatchCooldown(box.dispelCooldown)
+    end
     StyleCooldownText(box)
 
     -- One thin coloured edge per selected movement action. They draw only a
@@ -244,6 +448,7 @@ function Box.Create(index, parent)
     -- why the cell was visible.
     box:HookScript("OnClick", function(self, button)
         if ns.ClickLog then ns.ClickLog:Record(self, button) end
+        if ns.Lockouts then ns.Lockouts:NoteClick(self, button) end
     end)
 
     CreateVisuals(box, true)

@@ -169,6 +169,8 @@ local function cooldownDuration(spellID)
     return duration
 end
 
+Binding.CooldownDuration = cooldownDuration
+
 local function applyCooldown(cooldown, duration)
     local ok, err
     if duration and cooldown.SetCooldownFromDurationObject then
@@ -181,6 +183,8 @@ local function applyCooldown(cooldown, duration)
     if not ok then Binding.lastCooldownFailure = tostring(err) end
     return ok
 end
+
+Binding.ApplyCooldown = applyCooldown
 
 local SWEEP_COLOURS = {
     { r = 0.95, g = 0.66, b = 0.18, a = 0.78 },
@@ -213,8 +217,11 @@ local function applyMovementCooldown(cooldown, box, spellID, duration)
         or ns.Escape:CanSweepForUnit(spellID, box.unit))
     if not allowed then return applyCooldown(cooldown, nil) end
     local r, g, b, a = Binding:GetMovementSweepColour(spellID)
-    if cooldown.SetDrawSwipe then cooldown:SetDrawSwipe(false) end
-    if cooldown.SetDrawEdge then cooldown:SetDrawEdge(true) end
+    -- On an icon the plain swipe reads best; the coloured edge is what tells
+    -- concurrent sweeps apart on a whole cell.
+    local onIcon = ns.Box and ns.Box.CooldownStyle and ns.Box.CooldownStyle() == "ICON"
+    if cooldown.SetDrawSwipe then cooldown:SetDrawSwipe(onIcon) end
+    if cooldown.SetDrawEdge then cooldown:SetDrawEdge(not onIcon) end
     if cooldown.SetEdgeColor then cooldown:SetEdgeColor(r, g, b, a) end
     return applyCooldown(cooldown, duration)
 end

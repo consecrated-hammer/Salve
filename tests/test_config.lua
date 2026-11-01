@@ -220,4 +220,29 @@ ns.db.inferredSlowAlertsEnabled = "yes"
 ns.InitConfig()
 equal(ns.db.inferredSlowAlertsEnabled, false, "malformed inferred opt-in resets to its default")
 
+-- The bar is opt-in, and bad saved values fall back.
+equal(ns.db.cooldownStyle, "AUTO", "Auto sweep style is the default")
+equal(ns.db.cooldownBarMatchPanel, true, "the bar matches the panel by default")
+equal(ns.db.cooldownBar, false, "cooldown bar defaults off")
+equal(type(ns.db.cooldownBarHidden), "table", "bar spell toggles default to a table")
+ns.db.cooldownStyle, ns.db.cooldownBarSide = "SPIN", "MIDDLE"
+ns.db.cooldownIconSize, ns.db.cooldownBarGap = 500, -3
+ns.db.cooldownBar, ns.db.cooldownBarHidden = "yes", "none"
+ns.db.cooldownIconPosition = "TOP"
+ns.InitConfig()
+equal(ns.db.cooldownStyle, "AUTO", "unknown sweep style resets")
+equal(ns.db.cooldownBarSide, "BOTTOM", "unknown bar side resets")
+equal(ns.db.cooldownIconSize, 64, "icon size clamps")
+equal(ns.db.cooldownBarGap, 0, "bar gap clamps")
+equal(ns.db.cooldownBar, false, "malformed bar switch resets")
+equal(type(ns.db.cooldownBarHidden), "table", "malformed bar toggles reset")
+equal(ns.db.cooldownIconPosition, "RIGHT", "unknown icon position resets")
+local restyles, requests = 0, 0
+ns.Panel = { Restyle = function() restyles = restyles + 1 end }
+ns.Cooldowns = { Request = function() requests = requests + 1 end }
+ns.Set("cooldownBar", true)
+equal(requests, 1, "bar setting updates the cooldown icons")
+equal(restyles, 1, "bar setting restyles rather than rebuilding")
+ns.Panel, ns.Cooldowns = nil, nil
+
 print("config tests passed")

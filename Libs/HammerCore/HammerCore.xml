@@ -7,7 +7,18 @@
     <Script file="Pages.lua"/>
     <Script file="Commands.lua"/>
     <Script file="Copy.lua"/>
+    <Script file="WhatsNew.lua"/>
     <Script file="Minimap.lua"/>
     <Script file="QuizData.lua"/>
+    <Script file="Quiz_bossquotes.lua"/>
+    <Script file="Quiz_class.lua"/>
+    <Script file="Quiz_geography.lua"/>
+    <Script file="Quiz_goblins.lua"/>
+    <Script file="Quiz_hallowsend.lua"/>
+    <Script file="Quiz_items.lua"/>
+    <Script file="Quiz_lastwords.lua"/>
+    <Script file="Quiz_lore.lua"/>
+    <Script file="Quiz_murlocs.lua"/>
+    <Script file="Quiz_race.lua"/>
     <Script file="Quiz.lua"/>
 </Ui>

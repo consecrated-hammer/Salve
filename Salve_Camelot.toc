@@ -1,8 +1,8 @@
 ## Interface: 16001
 ## Title: Salve (WoW Forever)
 ## Author: consecrated-hammer
-## Version: 1.7.0
-## X-ReleaseDate: 2026-10-31
+## Version: 1.8.0
+## X-ReleaseDate: 2026-11-01
 ## Notes: WoW Forever (Camelot) build using Salve's Mainline backend.
 ## AllowLoadGameType: camelot
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
@@ -19,6 +19,7 @@
 # is the only candidate that respects Retail's private-aura model.
 Libs\HammerCore\HammerCore.xml
 Core.lua
+Core\WhatsNew.lua
 Setup.lua
 Core\Config.lua
 Core\ClickLog.lua
@@ -30,18 +31,23 @@ Features\Bindings.lua
 Features\PersonalDispel.lua
 Features\Escape.lua
 Features\MovementDetection.lua
+# When cooldown icons and the bar show a spell. Off by default.
+Features\Cooldowns.lua
+Features\Lockouts.lua
 Features\Sound.lua
 Catalog\Curated.lua
 Features\SelfAlert.lua
 Features\MovementAlert.lua
 UI\Box.lua
 UI\Handle.lua
+UI\CooldownBar.lua
 UI\Panel.lua
 UI\Preview.lua
 UI\Broker.lua
 Options\Salve.lua
 Options\Sorting.lua
 Options\Attach.lua
+Options\Cooldowns.lua
 Options\Tooltips.lua
 Options\Dispel.lua
 Options\Visibility.lua

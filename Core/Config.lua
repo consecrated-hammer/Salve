@@ -48,6 +48,18 @@ ns.defaults = {
     cooldownJustifyH = "CENTER",
     cooldownJustifyV = "MIDDLE",
     cooldownFontSize = 14,
+    -- BOX sweeps the whole cell (the original look). ICON draws the spell's
+    -- icon on the cell, only while it recovers. AUTO picks ICON when names
+    -- are on, where a whole-cell sweep hides the text.
+    cooldownStyle = "AUTO",     -- BOX | ICON | AUTO
+    cooldownIconSize = 16,
+    cooldownIconPosition = "RIGHT",
+    -- Forbearance and similar on the member you just cast on, from your own
+    -- casts. See Features/Lockouts.lua.
+    lockoutIcons = false,
+    lockoutIconSize = 14,
+    lockoutIconPosition = "TOPLEFT",
+    lockoutPlacement = "BAR",   -- BAR | CELL | BOTH
     showStacks    = true,   -- engine-driven; Blizzard hides it at one stack
     useClassColours = false,
     showWhenClean = true,
@@ -90,6 +102,20 @@ ns.defaults = {
     -- with, then a nudge up (positive) or down (negative) in pixels.
     attachAlign   = "CENTER",  -- TOP | CENTER | BOTTOM
     attachOffsetY = 0,
+
+    -- A strip of icons beside the grid for the spells bound on Actions. Off
+    -- by default; existing layouts must not change until a player opts in.
+    cooldownBar        = false,
+    cooldownBarShowReady = false,
+    cooldownBarSide    = "BOTTOM",  -- TOP | BOTTOM | LEFT | RIGHT
+    cooldownBarOrientation = "HORIZONTAL",  -- HORIZONTAL | VERTICAL
+    -- Cell height, cell spacing and the cell border setting instead of the
+    -- bar's own size and spacing, so icons line up with the grid.
+    cooldownBarMatchPanel = true,
+    cooldownBarGap     = 4,
+    cooldownBarIconSize = 24,
+    cooldownBarSpacing = 2,
+    cooldownBarHidden  = {},        -- [spellID] = true leaves a spell out
 
     -- ALWAYS | NEVER, combined with the conditions below. See
     -- Features/Visibility.lua for why this is a state driver and not Show/Hide.
@@ -184,7 +210,7 @@ end
 
 local function normalizePreferences(db)
     for _, key in ipairs({ "bindings", "visibility", "escapes", "movementSweepSpellIDs",
-        "movementSweepColours" }) do
+        "movementSweepColours", "cooldownBarHidden" }) do
         resetIfWrongType(db, key, "table")
     end
     for _, key in ipairs({ "showNames", "showBorders", "showTooltip", "tooltipUnitInfo", "tooltipActions",
@@ -192,7 +218,8 @@ local function normalizePreferences(db)
         "showWhenClean", "showHandle", "bindingsCustom", "clickAuditEnabled",
         "soundEnabled", "dispelSoundEnabled", "movementSoundEnabled", "movementTextNotification",
         "movementAlertsEnabled", "inferredSlowAlertsEnabled",
-        "selfDispelNotification", "sortReverse" }) do
+        "selfDispelNotification", "sortReverse", "cooldownBar", "cooldownBarShowReady",
+        "cooldownBarMatchPanel", "lockoutIcons" }) do
         resetIfWrongType(db, key, "boolean")
     end
     for _, key in ipairs({ "scale", "cleanAlpha" }) do numberInRange(db, key, 0, key == "scale" and 3 or 1) end
@@ -204,6 +231,23 @@ local function normalizePreferences(db)
     numberInRange(db, "cooldownFontSize", 6, 48, true)
     numberInRange(db, "dispelTypeIconSize", 8, 64, true)
     numberInRange(db, "movementChatWindow", 0, 20, true)
+    numberInRange(db, "cooldownIconSize", 8, 64, true)
+    numberInRange(db, "lockoutIconSize", 8, 48, true)
+    enumOrDefault(db, "lockoutPlacement", { BAR = true, CELL = true, BOTH = true })
+    enumOrDefault(db, "lockoutIconPosition", {
+        LEFT = true, RIGHT = true, CENTER = true,
+        TOPLEFT = true, TOPRIGHT = true, BOTTOMLEFT = true, BOTTOMRIGHT = true,
+    })
+    numberInRange(db, "cooldownBarGap", 0, 50, true)
+    numberInRange(db, "cooldownBarIconSize", 12, 64, true)
+    numberInRange(db, "cooldownBarSpacing", 0, 20, true)
+    enumOrDefault(db, "cooldownStyle", { BOX = true, ICON = true, AUTO = true })
+    enumOrDefault(db, "cooldownIconPosition", {
+        LEFT = true, RIGHT = true, CENTER = true,
+        TOPLEFT = true, TOPRIGHT = true, BOTTOMLEFT = true, BOTTOMRIGHT = true,
+    })
+    enumOrDefault(db, "cooldownBarSide", { TOP = true, BOTTOM = true, LEFT = true, RIGHT = true })
+    enumOrDefault(db, "cooldownBarOrientation", { HORIZONTAL = true, VERTICAL = true })
     numberInRange(db, "attachGap", 0, 100, true)
     numberInRange(db, "attachOffsetY", -100, 100, true)
     enumOrDefault(db, "attachAlign", { TOP = true, CENTER = true, BOTTOM = true })
@@ -427,6 +471,15 @@ local GEOMETRY = {
     visibilityMode = true,
 }
 
+local COOLDOWNS = {
+    cooldownStyle = true, cooldownIconSize = true, cooldownIconPosition = true,
+    cooldownBar = true, cooldownBarShowReady = true, cooldownBarSide = true,
+    cooldownBarGap = true, cooldownBarIconSize = true, cooldownBarSpacing = true,
+    cooldownBarHidden = true, cooldownBarOrientation = true, cooldownBarMatchPanel = true,
+    lockoutIcons = true, lockoutIconSize = true, lockoutIconPosition = true,
+    lockoutPlacement = true,
+}
+
 function ns.Set(key, value)
     if ns.db[key] == value then return end
     ns.db[key] = value
@@ -457,6 +510,16 @@ function ns.Set(key, value)
 
     -- Debounced: settings arrive from sliders, which fire on every drag tick.
     -- Events (roster, spec) call ns.RequestRebuild directly and stay immediate.
+    -- Cooldown icons and the bar are plain frames, so they update in place,
+    -- in or out of combat.
+    if COOLDOWNS[key] then
+        if ns.Panel and ns.Panel.Restyle then ns.Panel:Restyle() end
+        if ns.Cooldowns then ns.Cooldowns:Request() end
+        if ns.Lockouts then ns.Lockouts:Refresh() end
+        if ns.Preview and ns.Preview.active then ns.Preview:Refresh() end
+        return
+    end
+
     if GEOMETRY[key] then
         ns.RequestRebuildSoon()
     elseif ns.Panel and ns.Panel.Restyle then

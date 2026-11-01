@@ -79,6 +79,7 @@ HC:Init({
         rightClickLabel = "show or hide the drag handle",
     },
     onSettingsHidden = function() if ns.Preview then ns.Preview:Stop() end end,
+    whatsNew = ns.WHATS_NEW,
     toggle = { help = "Show or hide the panel", run = function()
         ns.db.visibilityMode = ns.db.visibilityMode == "NEVER" and "ALWAYS" or "NEVER"
         ns.RequestRebuildSoon(0.05)
@@ -107,6 +108,11 @@ HC.Commands:AddAction({ section = "Panel", usage = "Click a lit cell", help = "U
 HC.Commands:AddAction({ section = "Panel", usage = "Drag the gold handle", help = "Move the panel; right-click it for settings" })
 HC.Commands:Add({ name = "forever", section = "Diagnostics", help = "Copy a Forever cure and spellbook report",
     run = function() ns.Options.ShowForeverSpellReport() end })
+HC.Commands:Add({ name = "cooldowns", section = "Diagnostics", help = "Show how cooldown icons read each spell; works in combat",
+    run = function()
+        ns.Print("cooldown icon report")
+        ns.Cooldowns:Report()
+    end })
 HC.Commands:Add({ name = "snares", section = "Diagnostics", help = "List captured root and snare spell IDs",
     run = function() ns.Escape:DumpCaptured() end })
 HC.Commands:Add({ name = "learned", section = "Learning", help = "List recorded auras",

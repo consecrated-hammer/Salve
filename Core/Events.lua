@@ -101,7 +101,7 @@ local function scheduleMovementRecheck(addedMovement)
     end)
 end
 
-frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
+frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
     if event == "ADDON_LOADED" then
         if arg1 ~= addonName then return end
         ns.InitConfig()
@@ -170,7 +170,11 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         end
         if ns.SelfAlert and ns.SelfAlert.Update then ns.SelfAlert:Update() end
 
+    elseif event == "UNIT_SPELLCAST_SENT" then
+        if ns.Lockouts then ns.Lockouts:NoteSent(arg1, arg2, arg3, arg4) end
+
     elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
+        if ns.Lockouts then ns.Lockouts:NoteCast(arg1, arg2, arg3) end
         -- Only a successful player dispel should start the sweep. Refreshing on
         -- SPELL_UPDATE_COOLDOWN makes every ordinary cast paint the GCD over
         -- the boxes. Do not refresh synchronously here either: Retail can fire
@@ -185,10 +189,13 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             C_Timer.After(0, function()
                 ns.Binding:RefreshMovementCooldowns("deferred player movement removal",
                     movementSpellID)
+                if ns.Cooldowns then ns.Cooldowns:RequestCast(movementSpellID) end
             end)
         elseif ns.Binding:ObserveDispelCast(arg1, arg3) then
+            local castID = arg3
             C_Timer.After(0, function()
                 ns.Binding:RefreshCooldowns("deferred player dispel")
+                if ns.Cooldowns then ns.Cooldowns:RequestCast(castID) end
             end)
         end
 
@@ -275,11 +282,14 @@ pcall(frame.RegisterEvent, frame, "PLAYER_ROLES_ASSIGNED")
 -- then narrows this further to Salve's known dispel spell IDs.
 if frame.RegisterUnitEvent then
     frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
+    -- Lockouts only: the target name of a cast made outside Salve's cells.
+    frame:RegisterUnitEvent("UNIT_SPELLCAST_SENT", "player")
     -- Warlock's Command Demon can become Singe Magic only while an Imp is
     -- active. Filter at registration: other players' pets cannot affect this
     -- character's armed dispel or justify a secure rebuild.
     frame:RegisterUnitEvent("UNIT_PET", "player")
 else
     frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+    frame:RegisterEvent("UNIT_SPELLCAST_SENT")
     frame:RegisterEvent("UNIT_PET")
 end

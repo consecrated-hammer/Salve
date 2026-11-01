@@ -5,7 +5,46 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.8.0] - 2026-11-01
+
+### Added
+
+- A **Cooldowns** settings page. The cooldown bar and lockouts are off by
+  default.
+- **Sweep style** on the cells: **Auto** (the default), **Whole cell** or
+  **Icon**. Icon shows each spell's icon on the cell only while it's on
+  cooldown, with its sweep and countdown, so names stay readable. Movement
+  sweeps such as Freedom get their own icon beside it. Auto uses Icon when
+  names are on and the whole-cell sweep when they're off, so cells without
+  names look as before. **Icon size** and **Icon position** set where they
+  sit.
+- A **cooldown bar** beside the grid for the spells bound on Actions, such as
+  Cleanse, Freedom and Blessing of Protection. Each spell shows only while
+  it's on cooldown, or dimmed when ready with **Show when ready**. Pick its
+  side, gap, icon size and spacing, run it horizontally (the default) or
+  vertically, and switch individual spells off. **Match Salve panel**, on by
+  default, uses the cell height, cell spacing and box borders so icons line up
+  with the cells.
+  It moves with Salve, including when attached.
+- **Show lockout debuffs** shows Forbearance, with its timer, after you cast
+  Blessing of Protection, Blessing of Spellwarding or Lay on Hands on someone,
+  or Divine Shield on yourself. **Show on** puts it on the cooldown bar with
+  the member's name (the default, and the bar appears for it even with the
+  spells off), on their cell, or both. It only shows while it lasts. It
+  follows your own casts, from a Salve cell or anywhere else, so another
+  paladin's Forbearance isn't shown. Off by default.
+- `/salve cooldowns` shows how the cooldown icons read each spell. It works
+  in combat, which is where it matters.
+- A **What's new** window after updates, listing new features with one button
+  per settings page. News from your other Consecrated Hammer addons shares the
+  same window. It never opens on a fresh install or in combat.
+  Turn it off with **Show what's new after updates** on Visibility, and reopen
+  it with `/salve whatsnew` or the About page.
+
+### Changed
+
+- Updated the bundled HammerCore library, which adds the What's new window,
+  quiz questions grouped by category and a minimap click fix.
 
 ## [1.7.0] - 2026-10-31
 

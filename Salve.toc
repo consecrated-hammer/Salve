@@ -1,8 +1,8 @@
 ## Interface: 120105
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 1.7.0
-## X-ReleaseDate: 2026-10-31
+## Version: 1.8.0
+## X-ReleaseDate: 2026-11-01
 ## Notes: Compact clickable group-dispel panel built for Midnight's private aura rules.
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
 ## LoadSavedVariablesFirst: 1
@@ -32,6 +32,7 @@
 # Namespace and saved variables. Everything else assumes these exist.
 Libs\HammerCore\HammerCore.xml
 Core.lua
+Core\WhatsNew.lua
 Setup.lua
 Core\Config.lua
 Core\ClickLog.lua
@@ -54,6 +55,9 @@ Features\PersonalDispel.lua
 # Movement-impairing effects and the class spells that remove them.
 Features\Escape.lua
 Features\MovementDetection.lua
+# When cooldown icons and the bar show a spell. Off by default.
+Features\Cooldowns.lua
+Features\Lockouts.lua
 
 # Alert sounds and the selector for the built-in, instance-scoped catalogue.
 Features\Sound.lua
@@ -73,6 +77,7 @@ Features\MovementAlert.lua
 # their box styling, geometry and handle placement.
 UI\Box.lua
 UI\Handle.lua
+UI\CooldownBar.lua
 UI\Panel.lua
 UI\Preview.lua
 # Optional LibDataBroker launcher. Registers nothing when LibStub is absent, and
@@ -85,6 +90,7 @@ UI\Broker.lua
 Options\Salve.lua
 Options\Sorting.lua
 Options\Attach.lua
+Options\Cooldowns.lua
 Options\Tooltips.lua
 Options\Dispel.lua
 Options\Visibility.lua

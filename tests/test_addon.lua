@@ -88,7 +88,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     local names = {}
     for _, spec in ipairs(HC.Settings.order) do names[#names + 1] = spec.name end
     equal(table.concat(names, ","),
-        "Salve,Sorting,Attach,Tooltips,Actions,Visibility,Alerts,Movement,Learned Spells,Commands,Troubleshooting,About",
+        "Salve,Sorting,Attach,Cooldowns,Tooltips,Actions,Visibility,Alerts,Movement,Learned Spells,Commands,Troubleshooting,About",
         toc .. ": rail order")
     local failures = {}
     for name, err in pairs(HC.Settings.errors) do failures[#failures + 1] = name .. ": " .. err end
@@ -98,6 +98,17 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
         HC.Settings:Show(spec.name)
         equal(HC.Settings.selected, spec.name, toc .. ": " .. spec.name .. " opens")
     end
+    -- Every What's new button must open a page that exists.
+    local pages = {}
+    for _, spec in ipairs(HC.Settings.order) do pages[spec.name] = true end
+    for _, release in ipairs(ns.WHATS_NEW) do
+        for _, item in ipairs(release.items) do
+            if item.page then
+                equal(pages[item.page], true, toc .. ": What's new page " .. item.page .. " exists")
+            end
+        end
+    end
+    equal(HC.Commands.byName.whatsnew ~= nil, true, toc .. ": /salve whatsnew is registered")
 
     -- Page content carried over from the old settings shell.
     for _, text in ipairs({ "Show dispel-type icon", "Show Salve actions", "Show self-dispel combat text",

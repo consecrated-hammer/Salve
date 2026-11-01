@@ -83,6 +83,11 @@ local function buildReport()
             lines[#lines + 1] = line
         end
     end
+    if ns.Cooldowns then
+        for _, line in ipairs(ns.Cooldowns:DiagnosticLines()) do
+            lines[#lines + 1] = line
+        end
+    end
     if ns.Binding.lastFailure then
         lines[#lines + 1] = "Last binding failure: " .. tostring(ns.Binding.lastFailure)
     end
@@ -139,6 +144,7 @@ function O.TroubleshootingExtras(panel, y)
         "Check the aura engine, clicks, spell data and sound registrations, and print the result.")
     probe:SetScript("OnClick", function()
         ns.Binding:Report()
+        if ns.Cooldowns then ns.Cooldowns:Report() end
         ns.Sound:Report()
         panel.hcRefreshAll()
     end)

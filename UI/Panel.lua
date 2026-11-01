@@ -264,6 +264,7 @@ function Panel:Create()
 
     ns.Handle:Create(f)
     ns.Handle:Update()
+    if ns.CooldownBar then ns.CooldownBar:Create(f) end
 end
 
 -- ── Rebuild ────────────────────────────────────────────────────────────────
@@ -355,6 +356,9 @@ function Panel:Rebuild()
 
     ns.Handle:Update()
     if ns.Options and ns.Options.RefreshAttachStatus then ns.Options.RefreshAttachStatus() end
+    if ns.CooldownBar then ns.CooldownBar:Anchor() end
+    if ns.Cooldowns then ns.Cooldowns:Request() end
+    if ns.Lockouts then ns.Lockouts:Refresh() end
 
     -- Warn ONCE per session. Silent binding failure is the worst outcome here:
     -- the panel looks perfectly healthy and simply never lights up, which reads
@@ -380,6 +384,7 @@ function Panel:Restyle()
         local box = self.boxes[i]
         if box.unit then ns.Box.Restyle(box) end
     end
+    if ns.Cooldowns then ns.Cooldowns:Request() end
 end
 
 -- ☠ Re-anchoring a frame full of protected buttons is a blocked action in

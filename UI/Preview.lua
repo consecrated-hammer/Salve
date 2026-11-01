@@ -89,6 +89,9 @@ local function renderBoxes(boxes, frame, count, layout, state, cooldownState,
         cooldownStart, movementSweepState, movementSweepStart, cells)
     local types = knownDispelTypes()
     local roster = Preview:Roster(count)
+    -- The sample lockout goes on the second cell (the only one when solo).
+    local lockoutCell = math.min(2, count)
+    Preview.lockoutName = roster[lockoutCell] and roster[lockoutCell].name or nil
     for i, box in ipairs(boxes) do
         if i <= count then
             if cells then
@@ -156,10 +159,37 @@ local function renderBoxes(boxes, frame, count, layout, state, cooldownState,
                     cooldown:Hide()
                 end
             end
+            -- Icon mode: the same sweeps, moved onto spell icons. Each spell's
+            -- state is the test panel's, not the client's.
+            local entries = {}
+            if ns.spellID then
+                entries[1] = { spellID = ns.spellID, cooldown = box.dispelCooldown,
+                    state = cooldownState == "COOLDOWN" and "ACTIVE" or "READY" }
+            end
+            for index, spellID in ipairs(sweeps) do
+                if cooldowns[index] then
+                    entries[#entries + 1] = { spellID = spellID, cooldown = cooldowns[index],
+                        movement = true, state = "ACTIVE" }
+                end
+            end
+            ns.Box.UpdateCooldownIcons(box, nil, entries)
+            local lockout = ns.Lockouts and ns.Lockouts:Enabled() and ns.Lockouts:OnCells()
+                and i == lockoutCell
+            ns.Box.UpdateLockoutIcon(box, lockout and ns.Lockouts.DEBUFFS[1] and {
+                spellID = ns.Lockouts.DEBUFFS[1].id, start = cooldownStart or GetTime(),
+                duration = ns.Lockouts.DEBUFFS[1].duration,
+            } or nil)
             box:Show()
         else
             box:Hide()
         end
+    end
+    if ns.CooldownBar then
+        ns.CooldownBar:RenderPreview(frame, {
+            cooldownState = cooldownState, cooldownStart = cooldownStart,
+            movementSweepState = movementSweepState, movementSweepStart = movementSweepStart,
+            lockoutName = Preview.lockoutName,
+        })
     end
 end
 
@@ -285,10 +315,11 @@ function Preview:Create()
         Preview.elapsed = (Preview.elapsed or 0) + elapsed
         if Preview.elapsed < 0.1 then return end
         Preview.elapsed = 0
-        local now = GetTime()
+        local now, restarted = GetTime(), false
         if Preview.cooldownState == "COOLDOWN"
             and (not Preview.cooldownStart or now - Preview.cooldownStart >= 8) then
             Preview.cooldownStart = now
+            restarted = true
             for _, box in ipairs(Preview.boxes) do
                 if box:IsShown() then
                     box.dispelCooldown:SetCooldown(Preview.cooldownStart, 8)
@@ -298,6 +329,7 @@ function Preview:Create()
         if Preview.movementSweepState
             and (not Preview.movementSweepStart or now - Preview.movementSweepStart >= 25) then
             Preview.movementSweepStart = now - 8
+            restarted = true
             for index, box in ipairs(Preview.boxes) do
                 if index == 1 and box:IsShown() then
                     for sweepIndex, cooldown in ipairs(box.movementCooldowns or { box.movementCooldown }) do
@@ -305,6 +337,10 @@ function Preview:Create()
                     end
                 end
             end
+        end
+        if restarted and ns.CooldownBar and frame.salveCooldownBar
+            and frame.salveCooldownBar.frame:IsShown() then
+            ns.CooldownBar:RenderPreview(frame, Preview)
         end
     end)
 end
