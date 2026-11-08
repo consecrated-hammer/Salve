@@ -14,7 +14,7 @@ function Panel:SetMovementPrompt(spell, active)
         local isPlayer = box.unit == "player"
             or (ns.Escape and ns.Escape.IsPlayerUnit and ns.Escape:IsPlayerUnit(box.unit))
         if isPlayer then
-            ns.Box.SetMovementPrompt(box, active and key ~= nil)
+            ns.Box.SetMovementPrompt(box, active and key ~= nil, spellID)
         end
     end
 end

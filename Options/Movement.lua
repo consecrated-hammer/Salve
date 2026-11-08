@@ -19,12 +19,12 @@ HC.Settings:NewPage({
     end
 
     _, y = O.Check(panel, "Enable movement alerts (beta)",
-        "Master switch for automatic movement text, sounds and the orange player-cell cue. Detection is in beta and may not work correctly. Your movement-spell bindings and dispel alerts still work when this is off.", y,
+        "Master switch for automatic movement text, sounds and the movement badge on your cell. Detection is in beta and may not work correctly. Your movement-spell bindings and dispel alerts still work when this is off.", y,
         function() return ns.db.movementAlertsEnabled end,
         function(value) ns.Set("movementAlertsEnabled", value) end)
     local inferredRow
     inferredRow, y = O.Check(panel, "Include inferred slows (beta)",
-        "Also alert when your run speed drops sharply without a reported root or snare. Shows movement text and the orange cue on your cell, pointing at your movement-spell mouse binding. Salve can't tell whether an inferred slow is removable, so this may not work correctly. Inferred slows never play a sound.", y,
+        "Also alert when your run speed drops sharply without a reported root or snare. Shows movement text and the movement badge on your cell, pointing at your movement-spell mouse binding. Salve can't tell whether an inferred slow is removable, so this may not work correctly. Inferred slows never play a sound.", y,
         function() return ns.db.inferredSlowAlertsEnabled end,
         function(value) ns.Set("inferredSlowAlertsEnabled", value) end)
     local movementRow

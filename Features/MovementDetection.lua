@@ -71,6 +71,18 @@ function Detector:Reset()
     self.lastStatus = "monitoring player ground speed"
 end
 
+-- True only while an alerted slow is still measurable. Unknown or secret
+-- speed counts as not slowed, so the badge can't stick on bad data.
+function Detector:StillSlowed()
+    if not (self.alerted and self.baseline) or type(GetUnitSpeed) ~= "function" then
+        return false
+    end
+    local ok, _, runSpeed = pcall(GetUnitSpeed, "player")
+    runSpeed = ok and plain(runSpeed) or nil
+    if type(runSpeed) ~= "number" then return false end
+    return runSpeed < self.baseline * RECOVERY_RATIO
+end
+
 function Detector:AcknowledgeRemoval()
     self.alerted = false
     self.lastStatus = "movement action used; awaiting speed recovery"

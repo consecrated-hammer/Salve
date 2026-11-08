@@ -425,13 +425,8 @@ local function CreateVisuals(box, registerCooldown)
     box.name:SetJustifyV("MIDDLE")
     StyleNameText(box)
 
-    -- Salve-owned response cue. Unlike the native aura fill, this can be
-    -- driven by a safe player-state signal (for example a measured slow)
-    -- without reading any aura metadata.
-    box.actionPrompt = box.textLayer:CreateTexture(nil, "BACKGROUND")
-    box.actionPrompt:SetAllPoints(box)
-    box.actionPrompt:SetColorTexture(1, 0.25, 0.02, 0.55)
-    box.actionPrompt:Hide()
+    -- The movement badge (Box.SetMovementPrompt) is created lazily: only the
+    -- player's cell ever shows one.
 
     return box
 end
@@ -533,13 +528,68 @@ function Box.Bind(box, unit)
     ns.Bindings:Apply(box)
 end
 
-function Box.SetMovementPrompt(box, active)
-    if not box or not box.actionPrompt then return end
+local MOVEMENT_BADGE_FALLBACK = "Interface\\Icons\\INV_Misc_QuestionMark"
+
+-- First corner not already claimed by the dispel-type or lockout icon.
+function Box.MovementBadgePosition()
+    local db = ns.db or {}
+    local taken = {
+        [db.dispelTypeIconPosition or "BOTTOMLEFT"] = true,
+        [db.lockoutIconPosition or "TOPLEFT"] = true,
+    }
+    for _, corner in ipairs({ "TOPRIGHT", "TOPLEFT", "BOTTOMRIGHT", "BOTTOMLEFT" }) do
+        if not taken[corner] then return corner end
+    end
+    return "TOPRIGHT"
+end
+
+-- Salve-owned movement badge: the movement spell's icon in a free corner,
+-- with an orange edge. It's driven by safe player-state signals (loss of
+-- control or a measured slow) and never reads aura metadata. It sits beside
+-- the native dispel fill and icon rather than over them, so a dispel and a
+-- root on the same cell both stay readable.
+local function MovementBadge(box)
+    local badge = box.movementBadge
+    if badge then return badge end
+    badge = CreateFrame("Frame", nil, box)
+    if badge.EnableMouse then badge:EnableMouse(false) end
+    badge.edge = badge:CreateTexture(nil, "BACKGROUND")
+    badge.edge:SetPoint("TOPLEFT", badge, "TOPLEFT", -1, 1)
+    badge.edge:SetPoint("BOTTOMRIGHT", badge, "BOTTOMRIGHT", 1, -1)
+    badge.edge:SetColorTexture(1, 0.35, 0.04, 1)
+    badge.texture = badge:CreateTexture(nil, "ARTWORK")
+    badge.texture:SetAllPoints(badge)
+    if badge.texture.SetTexCoord then badge.texture:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
+    badge:Hide()
+    box.movementBadge = badge
+    return badge
+end
+
+-- `spellID` is the enabled movement spell the badge points at. The badge only
+-- says "this binding may help"; a click still casts whatever the player bound
+-- out of combat in Features/Bindings.lua.
+function Box.SetMovementPrompt(box, active, spellID)
+    if not box then return end
     if active then
-        box.actionPrompt:Show()
+        local badge = MovementBadge(box)
+        local size = math.max(10, math.min(48, (tonumber(ns.db and ns.db.lockoutIconSize) or 14) + 2))
+        local point = Box.MovementBadgePosition()
+        local inset = point:find("LEFT", 1, true) and 1 or -1
+        local lift = point:find("TOP", 1, true) and -1 or 1
+        badge:SetSize(size, size)
+        badge:ClearAllPoints()
+        badge:SetPoint(point, box, point, inset, lift)
+        badge:SetFrameLevel((box.movementFrameLevel or (box:GetFrameLevel() + 13)) + 9)
+        local texture = spellID and ns.Cooldowns and ns.Cooldowns.SpellTexture(spellID)
+        badge.texture:SetTexture(texture or MOVEMENT_BADGE_FALLBACK)
+        badge.spellID = spellID
+        badge:Show()
         if box.border then box.border:SetBackdropBorderColor(1, 0.35, 0.04, 1) end
     else
-        box.actionPrompt:Hide()
+        if box.movementBadge then
+            box.movementBadge:Hide()
+            box.movementBadge.spellID = nil
+        end
         if box.border then box.border:SetBackdropBorderColor(0.55, 0.55, 0.55, 0.72) end
     end
 end

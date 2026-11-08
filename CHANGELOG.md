@@ -5,6 +5,24 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-11-08
+
+### Changed
+
+- **Movement alerts got a makeover.** When you're rooted or snared, your cell
+  no longer turns into a big orange traffic cone. You get a small badge in a
+  spare corner instead, showing the icon of the spell that frees you, such as
+  Blessing of Freedom.
+- **Dispels and Freedom now share the cell.** If you have a dispellable debuff
+  and a root at the same time, you'll see both. Each mouse binding still casts
+  its own spell, so nothing gets swapped behind your back.
+- **The badge waits for the root to actually go.** Pressing Freedom doesn't
+  hide it straight away. If the root sticks (an immunity, or a second root
+  piling on), the badge stays until you can really move again.
+
+Movement alerts are still **in beta**, so let me know if the badge hangs around
+longer than the root does.
+
 ## [1.8.2] - 2026-11-01
 
 ### Fixed

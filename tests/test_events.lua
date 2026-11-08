@@ -176,14 +176,29 @@ equal(#timers, 2, "ordinary player casts do not schedule a GCD sweep")
 
 local clearsBeforeMovementCast = movementPromptClears
 handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast-guid", 1044)
-equal(#timers, 3, "movement removal schedules one deferred border-sweep refresh")
-equal(movementPromptClears, clearsBeforeMovementCast + 1,
-    "using a movement action clears its orange cue even without an active speed alert")
+equal(#timers, 4, "movement removal schedules a removal check and a border-sweep refresh")
+equal(movementPromptClears, clearsBeforeMovementCast,
+    "pressing a movement action doesn't clear the badge by itself")
+equal(timers[3].delay > 0, true, "removal check waits for the client to settle")
 timers[3].callback()
+equal(movementPromptClears, clearsBeforeMovementCast,
+    "badge stays while a root or snare is still in the loss-of-control list")
+local originalCount = C_LossOfControl.GetActiveLossOfControlDataCount
+C_LossOfControl.GetActiveLossOfControlDataCount = function() return 0 end
+timers[3].callback()
+equal(movementPromptClears, clearsBeforeMovementCast + 1,
+    "badge clears once the impairment is gone")
+ns.MovementDetection.StillSlowed = function() return true end
+timers[3].callback()
+equal(movementPromptClears, clearsBeforeMovementCast + 1,
+    "badge stays while run speed is still reduced")
+ns.MovementDetection.StillSlowed = nil
+C_LossOfControl.GetActiveLossOfControlDataCount = originalCount
+timers[4].callback()
 equal(movementRefreshes, 1, "movement removal refreshes border-sweep widgets")
 
 handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "party1", "cast-guid", 4987)
-equal(#timers, 3, "another unit's dispel does not schedule a sweep")
+equal(#timers, 4, "another unit's dispel does not schedule a sweep")
 
 handler(nil, "LOSS_OF_CONTROL_ADDED", "player", 4)
 timers[#timers].callback()

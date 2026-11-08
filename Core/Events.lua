@@ -52,7 +52,7 @@ local function alertPlayerMovement(movement, isVerifiedMovement)
     if spell and detector and movement and movement.locType then detector.alerted = true end
     -- A speed drop is only an inference: terrain, transfers and client-side
     -- movement-state changes can produce one without a removable impairment.
-    -- The orange player-cell cue needs the explicit loss-of-control signal or
+    -- The player-cell movement badge needs the explicit loss-of-control signal or
     -- the player's Include inferred slows opt-in. The cue only points at the
     -- existing secure mouse binding; it never rewrites a click.
     if (actionable or (inferred and spell)) and ns.Panel then
@@ -99,6 +99,34 @@ local function scheduleMovementRecheck(addedMovement)
         end
         if chosen then alertPlayerMovement(chosen, verified) end
     end)
+end
+
+-- Long enough for the loss-of-control list and run speed to reflect a
+-- successful removal; short enough that the badge doesn't linger.
+local MOVEMENT_REMOVAL_SETTLE = 0.3
+
+local function movementControlActive()
+    local api = C_LossOfControl
+    if not (api and api.GetActiveLossOfControlDataCount) then return false end
+    local ok, count = pcall(api.GetActiveLossOfControlDataCount)
+    if not ok or (issecretvalue and issecretvalue(count)) or type(count) ~= "number"
+        or count ~= count or count < 0 or count > 64 then return false end
+    for index = 1, count do
+        local _, _, movement = ns.Escape:CaptureLossOfControl("player", index)
+        if movement then return true end
+    end
+    return false
+end
+
+-- After a movement spell: clear the badge only once nothing says the player
+-- is still impaired. A remaining slow keeps the detector alerted, so speed
+-- recovery clears the badge later through the normal CLEAR path.
+local function clearIfMovementRemoved()
+    if movementControlActive() then return end
+    local detector = ns.MovementDetection
+    if detector and detector.StillSlowed and detector:StillSlowed() then return end
+    if detector then detector:AcknowledgeRemoval() end
+    if ns.Panel then ns.Panel:SetMovementPrompt(nil, false) end
 end
 
 frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
@@ -183,9 +211,10 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
         -- commit the real Cleanse/Purify/etc. cooldown first.
         local movementSpellID = ns.Binding:ObserveMovementCast(arg1, arg3)
         if movementSpellID then
-            if ns.MovementDetection then
-                alertPlayerMovement(ns.MovementDetection:AcknowledgeRemoval(), false)
-            end
+            -- Pressing Freedom doesn't prove the impairment is gone (it may
+            -- be immune, or a second root may still be up). Keep the badge
+            -- until the loss-of-control list and run speed both say so.
+            C_Timer.After(MOVEMENT_REMOVAL_SETTLE, clearIfMovementRemoved)
             C_Timer.After(0, function()
                 ns.Binding:RefreshMovementCooldowns("deferred player movement removal",
                     movementSpellID)
