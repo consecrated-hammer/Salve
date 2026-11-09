@@ -20,6 +20,12 @@ function Handle:PositionFrame(h, parent)
     if not h or not parent then return end
     local position = ns.db.handlePosition or "TOPLEFT"
     local halfCell = (ns.db.boxWidth or 20) / 2
+    -- Start corner: the handle sits on the corner that stays fixed while the
+    -- group grows, so it never wanders as rows are added.
+    if position == "CORNER" then
+        position = (ns.db.verticalGrowth == "UP" and "BOTTOM" or "TOP")
+            .. (ns.db.horizontalGrowth == "LEFT" and "RIGHT" or "LEFT")
+    end
 
     h:ClearAllPoints()
     if position == "LEFT" then
@@ -104,7 +110,8 @@ function Handle:Create(parent)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText("Salve")
         GameTooltip:AddLine("Drag: move the panel", 0.85, 0.85, 0.85)
-        GameTooltip:AddLine("Right-click: options", 0.85, 0.85, 0.85)
+        GameTooltip:AddLine(ns.db.handleRightClick == "PROFILES" and "Right-click: profiles"
+            or "Right-click: options", 0.85, 0.85, 0.85)
         GameTooltip:Show()
     end)
 
@@ -114,7 +121,13 @@ function Handle:Create(parent)
     end)
 
     h:RegisterForClicks("RightButtonUp")
-    h:SetScript("OnClick", function() ns.HammerCore.Settings:Toggle() end)
+    h:SetScript("OnClick", function()
+        if ns.db.handleRightClick == "PROFILES" and ns.OpenProfileMenu then
+            ns.OpenProfileMenu("HANDLE")
+        else
+            ns.HammerCore.Settings:Toggle()
+        end
+    end)
 
     self.frame = h
     self:Position()

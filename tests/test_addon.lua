@@ -35,9 +35,9 @@ local function choose(label, choice)
 end
 
 -- Load Salve exactly as a TOC lists it, then fire ADDON_LOADED.
-local function loadAddon(tocName, saved)
+local function loadAddon(tocName, saved, version)
     local camelot = tocName:find("Camelot") and "Camelot" or nil
-    wow.Install({ Salve = { Version = "1.5.26-dev1", ["X-Salve-Target"] = camelot } })
+    wow.Install({ Salve = { Version = version or "1.5.26-dev1", ["X-Salve-Target"] = camelot } })
     C_Timer = { After = function() end,
         NewTimer = function() return { Cancel = function() end } end,
         NewTicker = function() return { Cancel = function() end } end }
@@ -88,7 +88,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     local names = {}
     for _, spec in ipairs(HC.Settings.order) do names[#names + 1] = spec.name end
     equal(table.concat(names, ","),
-        "Salve,Sorting,Attach,Cooldowns,Tooltips,Actions,Visibility,Alerts,Movement,Learned Spells,Commands,Troubleshooting,About",
+        "Salve,Profiles,Sorting,Attach,Cooldowns,Tooltips,Key Bindings,Visibility,Alerts,Movement,Learned Spells,What's new,Commands,Troubleshooting,About",
         toc .. ": rail order")
     local failures = {}
     for name, err in pairs(HC.Settings.errors) do failures[#failures + 1] = name .. ": " .. err end
@@ -119,7 +119,26 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
         equal(wow.FindText(text), nil, toc .. ": settings omit '" .. text .. "'")
     end
 
-    -- Presets and the in-settings preview.
+    -- The live preview opens from the header in its own window.
+    HC.Settings:Show("Salve")
+    assert(wow.FindButton("Show live preview"), toc .. ": Panel offers the live preview")
+    wow.Click(wow.FindButton("Show live preview"))
+    equal(ns.Preview:IsWindowShown(), true, toc .. ": the header button opens the live preview")
+    assert(wow.FindButton("Hide live preview"), toc .. ": and then offers to hide it")
+    local drawnScale
+    ns.Preview.settingsPreview.frame.SetScale = function(_, value) drawnScale = value end
+    ns.Set("scale", 1.5)
+    ns.Preview:RefreshSettingsPreview()
+    equal(drawnScale, ns.Panel:Layout(ns.db.previewUnits).scale, toc .. ": the preview draws at the panel's own scale")
+    ns.Set("scale", ns.defaults.scale)
+    HC.Settings:Show("Sorting")
+    equal(ns.Preview:IsWindowShown(), true, toc .. ": it stays open across pages")
+    assert(wow.FindButton("Hide live preview"), toc .. ": Sorting offers it too")
+    HC.Settings:Show("Commands")
+    equal(wow.Visible(wow.FindButton("Hide live preview")), false, toc .. ": reference pages don't")
+    HC.Settings:Show("Salve")
+
+    -- Presets.
     clickText("Named")
     equal(ns.db.boxWidth, 95, toc .. ": Named preset sets cell width")
     equal(ns.db.columns, 5, toc .. ": Named preset sets cells per row")
@@ -152,22 +171,85 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     equal(box.movementBadge:IsShown(), false, toc .. ": clearing hides the badge")
     equal(box.border.alpha, 0, toc .. ": clearing movement cue leaves border hidden")
     ns.Set("showTooltip", false)
-    clickText("Preview movement sweep")
-    wow.Click(wow.FindButton("Reset Panel"))
-    equal(ns.db.showTooltip, false, toc .. ": Panel reset leaves tooltip preference alone")
-    equal(ns.Preview.movementSweepState, false, toc .. ": Panel reset clears movement preview")
-    equal(ns.db.showBorders, true, toc .. ": Panel reset restores borders")
-    equal(box.border.alpha, 1, toc .. ": Panel reset restores live outline")
+    local layer
+    ns.Preview.window.SetFrameStrata = function(_, strata) layer = strata end
+    ns.Preview:ApplyWindowLayer()
+    equal(layer, "FULLSCREEN", toc .. ": the preview keeps in front of settings by default")
+    clickText("Keep in front")
+    equal(ns.db.previewWindowOnTop, false, toc .. ": Keep in front saves off")
+    equal(layer, "DIALOG", toc .. ": off, it shares the settings window's layer")
+    clickText("Keep in front")
+    local redraws = 0
+    local redraw = ns.Preview.RefreshSettingsPreview
+    ns.Preview.RefreshSettingsPreview = function(self) redraws = redraws + 1; return redraw(self) end
+    ns.Set("boxWidth", 60)
+    ns.Set("cooldownFontSize", 16)
+    equal(redraws, 2, toc .. ": settings changes redraw the live preview straight away")
+    ns.Preview.RefreshSettingsPreview = redraw
+    ns.Set("boxWidth", ns.defaults.boxWidth)
+    ns.Set("cooldownFontSize", ns.defaults.cooldownFontSize)
+    clickText("Movement sweep")
+    equal(ns.Preview.movementSweepState, true, toc .. ": the window's switch previews the sweep")
+    -- Sample states mix freely, and say why one can't show.
+    equal(ns.Preview.cooldownState, "READY", toc .. ": the dispel starts ready, so the debuff reads clearly")
+    clickText("Dispel on cooldown")
+    equal(ns.Preview.cooldownState, "COOLDOWN", toc .. ": the cooldown state is its own switch")
+    equal(ns.Preview.cellState, "DISPELLABLE", toc .. ": alongside the debuff")
+    clickText("Dispel on cooldown")
+    local bound, enabled = ns.Cooldowns.BoundSpells, ns.Escape.IsEnabledSpell
+    ns.Cooldowns.BoundSpells = function() return { 1044 } end
+    ns.Escape.IsEnabledSpell = function(_, id) return id == 1044 end
+    clickText("Rooted")
+    local badges = 0
+    for _, sample in ipairs(ns.Preview.settingsPreview.boxes) do
+        if sample:IsShown() and sample.movementBadge and sample.movementBadge:IsShown() then
+            badges = badges + 1
+            equal(sample.movementBadge.spellID, 1044, toc .. ": the rooted badge shows the bound freedom spell")
+        end
+    end
+    equal(badges, 1, toc .. ": Rooted badges only the player's cell")
+    ns.Cooldowns.BoundSpells, ns.Escape.IsEnabledSpell = bound, enabled
+    ns.Preview:RefreshSettingsPreview()
+    assert(ns.Preview.settingsPreview.note.text:find("Rooted: no movement spell is bound", 1, true),
+        toc .. ": the note explains a state that can't show")
+    ns.Set("lockoutIcons", false)
+    assert(ns.Preview.settingsPreview.note.text:find("Show lockout debuffs is off", 1, true),
+        toc .. ": and a lockout that's turned off")
+    clickText("Rooted")
+    -- Each tab resets only its own settings.
+    ns.Set("boxWidth", 70)
+    ns.Set("nameFontSize", 18)
+    HC.Settings:Show("Salve", "Cells")
+    wow.Click(wow.FindButton("Reset Cells"))
+    equal(ns.db.showTooltip, false, toc .. ": Reset Cells leaves tooltip preference alone")
+    equal(ns.db.showBorders, true, toc .. ": Reset Cells restores borders")
+    equal(box.border.alpha, 1, toc .. ": Reset Cells restores live outline")
+    equal(ns.db.boxWidth, 70, toc .. ": Reset Cells leaves Layout alone")
+    equal(ns.db.nameFontSize, 18, toc .. ": and Text")
+    equal(ns.Preview.movementSweepState, true, toc .. ": and the preview window's own switches")
+    HC.Settings:Show("Salve", "Text")
+    wow.Click(wow.FindButton("Reset Text"))
+    equal(ns.db.nameFontSize, ns.defaults.nameFontSize, toc .. ": Reset Text restores text size")
+    equal(ns.db.boxWidth, 70, toc .. ": and leaves Layout alone")
+    HC.Settings:Show("Salve", "Layout")
+    wow.Click(wow.FindButton("Reset Layout"))
+    equal(ns.db.boxWidth, ns.defaults.boxWidth, toc .. ": Reset Layout restores cell width")
+    clickText("Movement sweep")
     ns.Box.RestylePreview(previewBox, "Tester", "PALADIN")
     equal(previewBox.border.alpha, 1, toc .. ": preview outline can be restored")
 
-    -- Combined controls keep the old saved keys, including the inactive axis.
+    -- Fill and Start corner write the old saved keys; both axes always apply.
     HC.Settings:Show("Salve")
-    ns.Set("horizontalGrowth", "LEFT")
-    choose("Grid direction", "Columns from bottom")
-    equal(ns.db.orientation, "VERTICAL", toc .. ": direction sets fill")
-    equal(ns.db.verticalGrowth, "UP", toc .. ": direction sets growth")
-    equal(ns.db.horizontalGrowth, "LEFT", toc .. ": direction preserves other axis")
+    choose("Fill", "Columns")
+    equal(ns.db.orientation, "VERTICAL", toc .. ": Fill sets orientation")
+    choose("Start corner", "Bottom right")
+    equal(ns.db.verticalGrowth, "UP", toc .. ": bottom corner grows up")
+    equal(ns.db.horizontalGrowth, "LEFT", toc .. ": right corner grows left")
+    choose("Fill", "Rows")
+    choose("Start corner", "Bottom left")
+    equal(ns.db.orientation .. ":" .. ns.db.verticalGrowth .. ":" .. ns.db.horizontalGrowth,
+        "HORIZONTAL:UP:RIGHT", toc .. ": rows from the bottom left")
+    equal(ns.Panel:GrowthAnchor(), "BOTTOMLEFT", toc .. ": anchored at the bottom left")
     clickText("Show unit names")
     local positions = {
         { "Top left", "LEFT", "TOP" }, { "Top centre", "CENTER", "TOP" }, { "Top right", "RIGHT", "TOP" },
@@ -181,9 +263,12 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
             equal(ns.db[spec[2] .. "JustifyV"], position[3], toc .. ": vertical " .. spec[1])
         end
     end
+    HC.Settings:Show("Salve", "Text")
+    equal(wow.Visible(wow.FindText("Name position")), true, toc .. ": name details show on the Text tab")
     clickText("Show unit names")
     equal(wow.Visible(wow.FindText("Name position")), false, toc .. ": name details collapse")
     equal(wow.Visible(wow.FindText("Show unit names")), true, toc .. ": name enable remains visible")
+    HC.Settings:Show("Salve", "Cells")
     clickText("Show idle backgrounds")
     equal(wow.Visible(wow.FindText("Idle opacity")), false, toc .. ": idle details collapse")
     equal(ns.db.cleanAlpha, 0.25, toc .. ": hiding backgrounds remembers opacity")
@@ -214,6 +299,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
         equal(sample.previewDispelIcon.testAtlas, "RaidFrame-Icon-DebuffMagic", toc .. ": available atlas is used")
     end
     C_Texture = previousTextureAPI
+    HC.Settings:Show("Salve", "Cells")
     clickText("Show dispel-type icon")
     equal(wow.Visible(wow.FindText("Icon size")), false, toc .. ": icon details collapse")
     ns.Set("showStacks", false)
@@ -227,7 +313,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     -- The preview survives page changes and stops when settings close.
     HC.Settings:Show("Salve")
     ns.Preview.active = true
-    HC.Settings:Show("Actions")
+    HC.Settings:Show("Key Bindings")
     equal(ns.Preview.active, true, toc .. ": preview persists across pages")
     local stops = 0
     local stop = ns.Preview.Stop
@@ -235,9 +321,20 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     HC.Settings:Hide()
     equal(stops, 1, toc .. ": closing settings stops the preview")
     ns.Preview.Stop = stop
+    equal(ns.Preview:IsWindowShown(), false, toc .. ": closing settings closes the live preview")
+    HC.Settings:Show("Salve")
+    equal(ns.Preview:IsWindowShown(), false, toc .. ": it stays closed by default")
+    HC.Settings:Hide()
+    ns.db.previewWindowOpen = true
+    HC.Settings:Show("Salve")
+    equal(ns.Preview:IsWindowShown(), true, toc .. ": Open with settings reopens it")
+    ns.db.previewWindowOpen = false
 
     -- Movement page owns every automatic movement control.
     HC.Settings:Show("Movement")
+    assert(wow.FindText("MOVEMENT SWEEPS"), toc .. ": sweep settings live on Movement")
+    assert(wow.FindText("No movement spells bound yet.") or wow.FindText("Show sweep"),
+        toc .. ": the sweep section lists bound movement spells or says none")
     equal(ns.db.movementAlertsEnabled, true, toc .. ": movement alerts preserve previous default")
     equal(ns.db.inferredSlowAlertsEnabled, false, toc .. ": inferred slows start opted out")
     clickText("Enable movement alerts (beta)")
@@ -259,8 +356,8 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     equal(ns.db.inferredSlowAlertsEnabled, false, toc .. ": Reset Movement opts out of inferred slows")
     equal(ns.db.movementSoundEnabled, false, toc .. ": Reset Movement restores the movement sound")
     equal(ns.db.movementTextOutput, "SCREEN", toc .. ": Reset Movement restores the text destination")
-    clickText("Open Actions")
-    equal(HC.Settings.selected, "Actions", toc .. ": Movement links to Actions for bindings")
+    clickText("Open Key Bindings")
+    equal(HC.Settings.selected, "Key Bindings", toc .. ": Movement links to Key Bindings")
 
     -- Alerts reset.
     HC.Settings:Show("Alerts")
@@ -312,6 +409,104 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
         equal(wow.LastPrint(), "Salve: unknown command. Type /salve help for the list.",
             toc .. ": old command '" .. old .. "' is removed")
     end
+end
+
+-- Layout profiles: seeding, switching, quick menus and the slash command.
+for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
+    local ns = loadAddon(toc, { columns = 8, schemaVersion = 9,
+        point = { "BOTTOMLEFT", "BOTTOMLEFT", 300, 120 } })
+    local HC = ns.HammerCore
+    local P = HC.Profiles
+    ns.Panel:Create()
+    -- The harness has no state drivers; count rebuild requests instead.
+    local rebuilds = 0
+    ns.RequestRebuild = function() rebuilds = rebuilds + 1 end
+    equal(table.concat(P:Names(), ","), "Party,Raid 20,Raid 40", toc .. ": starter profiles")
+    equal(P:Loaded(), "Party", toc .. ": Party is active on upgrade")
+    equal(ns.db.columns, 8, toc .. ": the upgrade keeps the current layout")
+    equal(ns.db.previewUnits, 5, toc .. ": Party previews five")
+    equal(SalveDB.hcProfiles.list["Raid 40"].point[3], 300, toc .. ": every profile starts at the old position")
+
+    P:Switch("Raid 40", "manual")
+    equal(ns.db.previewUnits, 40, toc .. ": Raid 40 previews forty")
+    equal(rebuilds, 1, toc .. ": a switch rebuilds the panel")
+    ns.Set("columns", 10)
+    ns.Set("verticalGrowth", "UP")
+    P:Switch("Party", "manual")
+    equal(ns.db.columns, 8, toc .. ": Party keeps its own columns")
+    equal(ns.db.verticalGrowth, "DOWN", toc .. ": Party keeps its own start corner")
+    SlashCmdList.SALVE("profile raid 40")
+    equal(P:Loaded(), "Raid 40", toc .. ": /salve profile switches, ignoring case")
+    equal(ns.db.columns .. ":" .. ns.db.verticalGrowth, "10:UP", toc .. ": Raid 40 comes back as left")
+    equal(wow.LastPrint(), "Salve: switched to the Raid 40 profile", toc .. ": the command confirms")
+
+    -- Minimap right-click: the profile menu by default, the handle toggle by choice.
+    equal(tostring(HC.spec.minimap.rightClickLabel), "profiles", toc .. ": minimap tooltip names the menu")
+    ns.MinimapRightClick()
+    equal(HC.Menu:IsShown(), true, toc .. ": minimap right-click opens the profile menu")
+    assert(wow.FindText("Hide drag handle"), toc .. ": the menu keeps the handle toggle")
+    equal(HC.Menu.items[1].spec.text, "Salve settings", toc .. ": the minimap menu matches the handle's")
+    HC.Menu:Close()
+    ns.Set("minimapRightClick", "HANDLE")
+    local locked = ns.IsLocked()
+    ns.MinimapRightClick()
+    equal(ns.IsLocked(), not locked, toc .. ": Drag handle toggles straight away")
+    equal(tostring(HC.spec.minimap.rightClickLabel), "show or hide the drag handle",
+        toc .. ": minimap tooltip follows the setting")
+    ns.SetLocked(false)
+    equal(ns.db.handleRightClick, "PROFILES", toc .. ": handle right-click opens profiles by default")
+    wow.Click(ns.Handle.frame, "RightButton")
+    equal(HC.Menu:IsShown(), true, toc .. ": the handle opens the profile menu")
+    assert(wow.FindText("Raid 20"), toc .. ": the handle menu lists profiles")
+    assert(wow.FindText("Salve settings"), toc .. ": the handle menu still reaches settings")
+    local order = {}
+    for index = 1, 5 do order[index] = HC.Menu.items[index].spec.text end
+    equal(table.concat(order, ","), "Salve settings,Profile settings,Hide drag handle,Profiles,Party",
+        toc .. ": actions first, then a line, then the profiles")
+    equal(HC.Menu.rules[1].shown, true, toc .. ": a line divides actions from profiles")
+    HC.Menu:Close()
+
+    -- The page builds, with Salve's quick-switch rows.
+    HC.Settings:Show("Profiles")
+    equal(HC.Settings.selected, "Profiles", toc .. ": Profiles page opens")
+    choose("Handle right-click", "Open settings")
+    equal(ns.db.handleRightClick, "SETTINGS", toc .. ": handle right-click setting")
+    choose("Mode", "Ask first")
+    equal(SalveDB.hcProfiles.auto.mode, "ASK", toc .. ": auto-switch mode from the page")
+    HC.Settings:Show("Salve")
+    assert(wow.FindButton("Save as new..."), toc .. ": the Panel page offers Save as new")
+    equal(wow.FindButton("Save as new..."):GetPoint(), "LEFT", toc .. ": Save as new follows the profile dropdown")
+end
+
+-- What's new fires once for a dev build of the next release, and not again.
+for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
+    local saved = { hammerCore = { startupMessage = false, whatsNewSeen = "1.9.0" } }
+    local ns = loadAddon(toc, saved, "1.10.0-dev1")
+    local HC = ns.HammerCore
+    local W = HC.WhatsNew
+    assert(W.eventFrame, toc .. ": an update from 1.9.0 schedules What's new")
+    -- The window opens on a short timer after entering the world.
+    C_Timer.After = function(_, fn) fn() end
+    W.eventFrame.scripts.OnEvent(W.eventFrame, "PLAYER_ENTERING_WORLD")
+    equal(W.frame ~= nil and W.frame.shown, true, toc .. ": What's new shows after the update")
+    assert(wow.FindText("Salve 1.10.0"), toc .. ": it lists 1.10.0")
+    equal(wow.FindText("Salve 1.8.0"), nil, toc .. ": releases already seen stay hidden")
+    assert(wow.FindButton("Open Profiles"), toc .. ": a button opens the Profiles page")
+    assert(wow.FindButton("Open Panel"), toc .. ": a button opens the Panel page")
+    equal(saved.hammerCore.whatsNewSeen, "1.10.0", toc .. ": showing records 1.10.0")
+    wow.Click(wow.FindButton("Open Profiles"))
+    equal(HC.Settings.selected, "Profiles", toc .. ": the button opens Profiles")
+
+    -- The What's new page keeps the history, with an unread badge until visited.
+    HC.Settings:Show("What's new")
+    assert(wow.FindText("Salve 1.0.0"), toc .. ": the page lists the first stable release")
+    assert(wow.FindText("EARLIER RELEASES"), toc .. ": back-filled history is grouped")
+    local badge = HC.Settings.buttons["What's new"].unreadBadge
+    badge.complete.scripts.OnFinished()
+    equal(badge.shown, false, toc .. ": visiting clears the badge")
+
+    ns = loadAddon(toc, saved, "1.10.0-dev2")
+    equal(ns.HammerCore.WhatsNew.eventFrame, nil, toc .. ": the next dev build stays quiet")
 end
 
 -- Every page also builds under HammerCore's Classic theme.

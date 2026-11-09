@@ -73,6 +73,13 @@ equal(conflict, false, "a mouse chord cannot replace another spell implicitly")
 equal(message, "Left click is already assigned to Cleanse (automatic)",
     "binding conflict identifies the existing action")
 
+local _, _, why = ns.Bindings:SetSpellBinding(1044, "BUTTON1")
+equal(why, "conflict", "a taken chord is reported as a conflict, so settings can offer Replace")
+equal(ns.Bindings:SetSpellBinding(1044, "BUTTON1", true), true, "Replace takes the chord")
+equal(ns.Bindings:KeysForSpell(1044)[1], "BUTTON1", "the new spell owns it")
+equal(#ns.Bindings:KeysForSpell(ns.spellID), 0, "and the old one is left unbound")
+ns.Bindings:SetSpellBinding(ns.spellID, "BUTTON1", true)
+
 ns.Bindings:ClearSpellBinding(1044)
 equal(#ns.Bindings:KeysForSpell(1044), 0, "escape binding can be cleared")
 

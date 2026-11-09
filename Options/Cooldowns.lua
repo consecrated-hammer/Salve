@@ -10,7 +10,8 @@ local SPELL_ROWS = 8
 
 local function section(parent, width)
     local frame = CreateFrame("Frame", nil, parent)
-    frame:SetSize(width or 264, 1)
+    frame:SetSize(O.CONTENT_WIDTH + O.PAD * 2, 1)
+    frame.hcColumns = 2
     frame.hcRefresh = parent.hcRefresh
     frame.hcRefreshAll = parent.hcRefreshAll
     frame.hcHeaderOwner = parent.hcHeaderOwner or parent
@@ -24,9 +25,13 @@ end
 
 HC.Settings:NewPage({
     name = "Cooldowns",
+    profileGroups = { "cooldownBar" },
+    -- Cooldown icons and lockouts are shared by all profiles.
+    profilePartial = true,
     title = "Cooldowns",
     group = "main",
     description = "Spell icons for cooldown sweeps, and a cooldown bar.",
+    headerAction = ns.Options.LivePreviewAction,
 }, function(panel, y)
     local db = ns.db
     local controls = section(panel, 264)
@@ -53,7 +58,7 @@ HC.Settings:NewPage({
 
     _, y = O.Header(controls, "Lockouts", y - 4)
     _, y = O.Check(controls, "Show lockout debuffs",
-        "Show Forbearance after you cast Blessing of Protection or similar on someone, until you can again. Only your own casts are tracked. Needs one of those spells bound on Actions.", y,
+        "Show Forbearance after you cast Blessing of Protection or similar on someone, until you can again. Only your own casts are tracked. Needs one of those spells bound on Key Bindings.", y,
         function() return db.lockoutIcons end,
         function(value) ns.Set("lockoutIcons", value) end, 264)
     _, y = O.Dropdown(controls, "Show on", "Cooldown bar shows it with the member's name, only while it lasts. Cell puts a small icon on their cell.", y,
@@ -76,7 +81,7 @@ HC.Settings:NewPage({
 
     _, y = O.Header(controls, "Cooldown bar", y - 4)
     _, y = O.Check(controls, "Show cooldown bar",
-        "Icons beside the grid for the spells bound on Actions. Moves with Salve.", y,
+        "Icons beside the grid for the spells bound on Key Bindings. Moves with Salve.", y,
         function() return db.cooldownBar end,
         function(value) ns.Set("cooldownBar", value) end, 264)
     _, y = O.Check(controls, "Show when ready",
@@ -115,10 +120,12 @@ HC.Settings:NewPage({
         nil, 264)
 
     _, y = O.Header(controls, "Bar spells", y - 4)
+    -- The spell list is one column: rows come and go as bindings change.
+    y = O.Columns(controls, 1, y)
     local empty
-    empty, y = O.Text(controls, "No spells bound on Actions.", y)
+    empty, y = O.Text(controls, "No spells bound on Key Bindings.", y)
     local rowsY = y
-    -- One row per bound spell. The list follows spec and Actions, so the rows
+    -- One row per bound spell. The list follows spec and Key Bindings, so the rows
     -- are a fixed pool relabelled on every refresh.
     local rows = {}
     for index = 1, SPELL_ROWS do
@@ -164,7 +171,7 @@ HC.Settings:NewPage({
         lockoutPositionRow:SetAlpha(onCells)
         local spells = ns.Cooldowns:BoundSpells()
         empty:SetShown(#spells == 0)
-        local rowY = #spells == 0 and rowsY or (rowsY + 20)
+        local rowY = #spells == 0 and rowsY or (rowsY + 24)
         for index, row in ipairs(rows) do
             local id = spells[index]
             row:SetShown(id ~= nil)
@@ -173,7 +180,7 @@ HC.Settings:NewPage({
                 row.hcHintTitle = ns.Cooldowns.SpellName(id)
                 row:ClearAllPoints()
                 row:SetPoint("TOPLEFT", controls, "TOPLEFT", O.PAD or 16, rowY)
-                rowY = rowY - 32
+                rowY = rowY - O.CELL_H - 4
             end
         end
         footer:ClearAllPoints()

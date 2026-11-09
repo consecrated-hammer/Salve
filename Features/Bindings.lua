@@ -174,7 +174,10 @@ end
 -- One row in Options owns one action. Rebinding replaces every old chord for
 -- that spell, which keeps the page truthful instead of hiding duplicate
 -- bindings behind a single button.
-function Bindings:SetSpellBinding(spellID, key)
+-- replace: take the chord from whatever has it. Without it, a chord another
+-- armed spell owns is refused (third return "conflict"), so nothing moves
+-- without the player saying so.
+function Bindings:SetSpellBinding(spellID, key, replace)
     if type(spellID) ~= "number" or not attributeParts(key or "") then
         return false, "invalid mouse binding"
     end
@@ -187,9 +190,9 @@ function Bindings:SetSpellBinding(spellID, key)
             -- player cannot bind an enabled movement removal to (for example)
             -- right click while an old, disabled escape still owns that key.
             local name = spellFor(entry)
-            if name then
+            if name and not replace then
                 local what = self:Describe(entry)
-                return false, self:Label(key) .. " is already assigned to " .. what
+                return false, self:Label(key) .. " is already assigned to " .. what, "conflict"
             end
         end
     end
@@ -197,8 +200,8 @@ function Bindings:SetSpellBinding(spellID, key)
     local kept = {}
     for _, entry in ipairs(list) do
         local replacesThisSpell = self:SpellID(entry) == spellID
-        local replacesUnarmedChord = entry.key == key and not spellFor(entry)
-        if not replacesThisSpell and not replacesUnarmedChord then kept[#kept + 1] = entry end
+        local takesChord = entry.key == key and (replace or not spellFor(entry))
+        if not replacesThisSpell and not takesChord then kept[#kept + 1] = entry end
     end
 
     local replacement = { key = key, spell = spellID }

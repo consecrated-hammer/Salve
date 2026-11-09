@@ -83,8 +83,40 @@ local _, y5 = placed(5, upward)
 equal(y1, -84, "bottom-to-top starts at bottom anchor")
 equal(y5, 0, "bottom-to-top ends at top edge")
 
+-- Both axes apply in both orientations: rows from the bottom left fill left
+-- to right, and each new row goes above the last.
+ns.db.orientation = "HORIZONTAL"
+ns.db.horizontalGrowth = "RIGHT"
+ns.db.verticalGrowth = "UP"
+local bottomLeft = ns.Panel:Layout(12)
+local bx1, by1 = placed(1, bottomLeft)
+local bx5, by5 = placed(5, bottomLeft)
+local bx6, by6 = placed(6, bottomLeft)
+local bx11, by11 = placed(11, bottomLeft)
+equal((bx1 + 0) .. "," .. (by1 + 0), "0,-42", "rows from bottom left start in the bottom row")
+equal((bx5 + 0) .. "," .. (by5 + 0), "84,-42", "the first row fills left to right")
+equal((bx6 + 0) .. "," .. (by6 + 0), "0,-21", "the second row goes above the first")
+equal((bx11 + 0) .. "," .. (by11 + 0), "0,0", "the last row is at the top")
+equal(ns.Panel:GrowthAnchor(), "BOTTOMLEFT", "bottom-left rows anchor at the bottom left")
+ns.db.horizontalGrowth = "LEFT"
+equal(ns.Panel:GrowthAnchor(), "BOTTOMRIGHT", "bottom-right rows anchor at the bottom right")
+local bottomRight = ns.Panel:Layout(7)
+local rx1, ry1 = placed(1, bottomRight)
+local rx6, ry6 = placed(6, bottomRight)
+equal((rx1 + 0) .. "," .. (ry1 + 0), "84,-21", "rows from bottom right start bottom right")
+equal((rx6 + 0) .. "," .. (ry6 + 0), "84,0", "the next row starts above, on the right")
+ns.db.orientation = "VERTICAL"
+ns.db.verticalGrowth = "DOWN"
+equal(ns.Panel:GrowthAnchor(), "TOPRIGHT", "columns from top right anchor at the top right")
+local columnsRight = ns.Panel:Layout(7)
+local cx1, cy1 = placed(1, columnsRight)
+local cx6, cy6 = placed(6, columnsRight)
+equal((cx1 + 0) .. "," .. (cy1 + 0), "21,0", "columns from top right start in the right column")
+equal((cx6 + 0) .. "," .. (cy6 + 0), "0,0", "the next column goes to the left")
+
 ns.db.orientation = "HORIZONTAL"
 ns.db.horizontalGrowth = "LEFT"
+ns.db.verticalGrowth = "DOWN"
 local anchoredPoint
 local anchored = {
     GetPoint = function() return "TOPLEFT", {}, "CENTER", 0, 0 end,
@@ -103,6 +135,13 @@ equal(ns.Panel:NormalizeGrowthAnchor(anchored), true,
 equal(ns.db.point[1], "TOPRIGHT", "right-to-left stores right edge anchor")
 equal(ns.db.point[3], 114, "right edge coordinate is preserved")
 equal(anchoredPoint[1], "TOPRIGHT", "frame is reanchored at right edge")
+
+ns.db.horizontalGrowth = "RIGHT"
+ns.db.verticalGrowth = "UP"
+ns.Panel:SavePositionFromFrame(anchored)
+equal(ns.db.point[1] .. "," .. ns.db.point[3] .. "," .. ns.db.point[4], "BOTTOMLEFT,10,180",
+    "a bottom-left grid saves its bottom-left corner")
+ns.db.verticalGrowth = "DOWN"
 
 -- The player's frame can have a raid token. Gold movement guidance must not
 -- silently disappear merely because that token is not literally "player".

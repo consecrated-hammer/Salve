@@ -27,9 +27,15 @@ local FALLBACK_DISPEL_COLOURS = {
 }
 
 Preview.count = 5
+-- Sample states. Each is independent, so any mix the player can meet in game
+-- can be previewed: a dispellable debuff while the dispel is cooling down, a
+-- root alongside a lockout, and so on. Dispellable with the dispel ready is
+-- the default, since that's what shows the debuff colour and type icon best.
 Preview.cellState = "DISPELLABLE"
-Preview.cooldownState = "COOLDOWN"
+Preview.cooldownState = "READY"
 Preview.movementSweepState = false
+Preview.lockoutState = true
+Preview.rootedState = false
 
 local function knownDispelTypes()
     local known, list = {}, {}
@@ -64,6 +70,28 @@ local function previewSweepSpellIDs()
     return ids
 end
 
+-- The lockout the player can actually meet: the first one their bindings
+-- trigger. Nil when the setting is off or nothing bound causes one.
+function Preview:SampleLockout()
+    if not (self.lockoutState and ns.Lockouts and ns.Lockouts:Enabled()) then return nil end
+    local debuff = ns.Lockouts:Relevant()[1]
+    if not debuff then return nil end
+    local now = GetTime()
+    if not self.lockoutStart or now - self.lockoutStart >= debuff.duration then
+        self.lockoutStart = now
+    end
+    return { spellID = debuff.id, start = self.lockoutStart, duration = debuff.duration }
+end
+
+-- The spell the rooted badge points at: the first bound movement spell.
+function Preview:SampleRootedSpell()
+    if not self.rootedState or (ns.db and ns.db.movementAlertsEnabled == false) then return nil end
+    for _, id in ipairs(ns.Cooldowns and ns.Cooldowns:BoundSpells() or {}) do
+        if ns.Escape and ns.Escape:IsEnabledSpell(id) then return id end
+    end
+    return nil
+end
+
 function Preview:NeedsDispel(index, count)
     if count <= 2 then return index == count end
     return index == 2 or index == math.min(count, 4)
@@ -92,6 +120,8 @@ local function renderBoxes(boxes, frame, count, layout, state, cooldownState,
     -- The sample lockout goes on the second cell (the only one when solo).
     local lockoutCell = math.min(2, count)
     Preview.lockoutName = roster[lockoutCell] and roster[lockoutCell].name or nil
+    local lockoutSample = Preview:SampleLockout()
+    local rootedSpell = Preview:SampleRootedSpell()
     for i, box in ipairs(boxes) do
         if i <= count then
             if cells then
@@ -173,12 +203,10 @@ local function renderBoxes(boxes, frame, count, layout, state, cooldownState,
                 end
             end
             ns.Box.UpdateCooldownIcons(box, nil, entries)
-            local lockout = ns.Lockouts and ns.Lockouts:Enabled() and ns.Lockouts:OnCells()
-                and i == lockoutCell
-            ns.Box.UpdateLockoutIcon(box, lockout and ns.Lockouts.DEBUFFS[1] and {
-                spellID = ns.Lockouts.DEBUFFS[1].id, start = cooldownStart or GetTime(),
-                duration = ns.Lockouts.DEBUFFS[1].duration,
-            } or nil)
+            ns.Box.UpdateLockoutIcon(box, lockoutSample and ns.Lockouts:OnCells()
+                and i == lockoutCell and lockoutSample or nil)
+            -- The rooted badge goes on the player's cell, as in game.
+            ns.Box.SetMovementPrompt(box, rootedSpell ~= nil and roster[i].isPlayer, rootedSpell)
             box:Show()
         else
             box:Hide()
@@ -188,19 +216,164 @@ local function renderBoxes(boxes, frame, count, layout, state, cooldownState,
         ns.CooldownBar:RenderPreview(frame, {
             cooldownState = cooldownState, cooldownStart = cooldownStart,
             movementSweepState = movementSweepState, movementSweepStart = movementSweepStart,
-            lockoutName = Preview.lockoutName,
+            lockoutName = Preview.lockoutName, lockout = lockoutSample,
         })
     end
 end
 
-function Preview:CreateSettingsPreview(parent, top, left, width, height)
-    if self.settingsPreview and self.settingsPreview.parent == parent then return end
+-- ── Live preview window ────────────────────────────────────────────────────
+-- A floating, draggable window opened from settings.  It is parented to the
+-- screen, not to the settings window, and draws the grid at the panel's own
+-- scale, so a cell here is the size it will be in game.  It only shrinks
+-- when the layout wouldn't fit on screen, and says so.
 
-    width = width or 508
-    height = height or 100
-    local viewport = CreateFrame("Frame", nil, parent)
-    viewport:SetPoint("TOPLEFT", left or 10, top or -24)
-    viewport:SetSize(width, height)
+local WINDOW_MIN_WIDTH, WINDOW_PAD, WINDOW_HEADER, WINDOW_CONTROLS = 480, 16, 40, 208
+local HANDLE_ROOM = 14
+
+local function windowSwitch(parent, label, hint)
+    local HC = ns.HammerCore
+    local switch = HC.UI.Switch(parent)
+    switch:SetSize(210, 26)
+    switch.Text:SetText(label)
+    HC.UI.AttachHint(switch, label, hint)
+    return switch
+end
+
+-- Why a ticked state draws nothing, so the preview never just looks broken.
+function Preview:MissingStates()
+    local db, out = ns.db, {}
+    if self.lockoutState and not self:SampleLockout() then
+        if not db.lockoutIcons then
+            out[#out + 1] = "Lockout: Show lockout debuffs is off (Cooldowns)."
+        else
+            out[#out + 1] = "Lockout: nothing you've bound causes one."
+        end
+    end
+    if self.rootedState and not self:SampleRootedSpell() then
+        if db.movementAlertsEnabled == false then
+            out[#out + 1] = "Rooted: movement alerts are off (Movement)."
+        else
+            out[#out + 1] = "Rooted: no movement spell is bound."
+        end
+    end
+    if self.movementSweepState and #previewSweepSpellIDs() == 0 then
+        out[#out + 1] = "Movement sweep: none picked (Movement)."
+    end
+    return #out > 0 and table.concat(out, " ") or nil
+end
+
+function Preview:CreateSettingsPreview()
+    if self.window then return self.window end
+    local HC = ns.HammerCore
+    local UI, T = HC.UI, HC.Theme
+
+    local win = CreateFrame("Frame", "SalveLivePreview", UIParent, "BackdropTemplate")
+    win:SetFrameStrata("DIALOG")
+    win:SetToplevel(true)
+    win:SetClampedToScreen(true)
+    win:SetMovable(true)
+    win:EnableMouse(true)
+    win:SetScale(1)
+    T.Surface(win, "outer", "edge")
+    win:Hide()
+    local point = ns.db.previewWindowPoint
+    if type(point) == "table" and point[1] then
+        win:SetPoint(point[1], UIParent, point[2], point[3], point[4])
+    else
+        win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 40, -120)
+    end
+
+    local bar = CreateFrame("Frame", nil, win)
+    bar:SetPoint("TOPLEFT", 1, -1)
+    bar:SetPoint("TOPRIGHT", -1, -1)
+    bar:SetHeight(WINDOW_HEADER)
+    T.Fill(bar:CreateTexture(nil, "BACKGROUND"), "header"):SetAllPoints()
+    bar:EnableMouse(true)
+    bar:RegisterForDrag("LeftButton")
+    bar:SetScript("OnDragStart", function() win:StartMoving() end)
+    bar:SetScript("OnDragStop", function()
+        win:StopMovingOrSizing()
+        local from, _, to, x, y = win:GetPoint()
+        ns.db.previewWindowPoint = { from, to, x, y }
+    end)
+    local title = T.Font(UI.FontString(bar, "GameFontNormalLarge", "text"), 16)
+    title:SetPoint("LEFT", WINDOW_PAD, 0)
+    title:SetText("Live preview")
+    local close = UI.CloseButton(bar, function() Preview:HideWindow() end, 24)
+    close:SetPoint("RIGHT", -8, 0)
+
+    -- Controls: test units and the sample states, two to a line.
+    local controls = CreateFrame("Frame", nil, win)
+    controls:SetPoint("TOPLEFT", 0, -WINDOW_HEADER)
+    controls:SetPoint("TOPRIGHT", 0, -WINDOW_HEADER)
+    controls:SetHeight(WINDOW_CONTROLS)
+    local function place(control, row, right, drop)
+        local y = -8 - (row - 1) * 32 - (drop or 0)
+        control:ClearAllPoints()
+        if right then
+            control:SetPoint("TOPLEFT", controls, "TOP", 4, y)
+        else
+            control:SetPoint("TOPLEFT", controls, "TOPLEFT", WINDOW_PAD, y)
+        end
+    end
+    local units = CreateFrame("Frame", nil, controls)
+    units:SetSize(210, 26)
+    place(units, 1)
+    local unitsLabel = UI.FontString(units, "GameFontHighlight", "text")
+    unitsLabel:SetPoint("LEFT")
+    unitsLabel:SetText("Units")
+    local minus = UI.Button(units, 26, 24)
+    minus:SetPoint("LEFT", unitsLabel, "RIGHT", 12, 0)
+    minus:SetText("-")
+    local count = UI.FontString(units, "GameFontHighlight", "text")
+    count:SetPoint("LEFT", minus, "RIGHT", 6, 0)
+    count:SetWidth(26)
+    count:SetJustifyH("CENTER")
+    local plus = UI.Button(units, 26, 24)
+    plus:SetPoint("LEFT", count, "RIGHT", 6, 0)
+    plus:SetText("+")
+    UI.AttachHint(minus, "Fewer units", "Preview a smaller group. Saved per profile.")
+    UI.AttachHint(plus, "More units", "Preview a bigger group. Saved per profile.")
+
+    local openWith = windowSwitch(controls, "Open with settings",
+        "Open this window whenever Salve's settings open.")
+    place(openWith, 1, true)
+    local onScreen = windowSwitch(controls, "At panel position",
+        "Also show the test panel where Salve sits on screen, over the real one. It closes with settings and when combat starts.")
+    place(onScreen, 2)
+    local inFront = windowSwitch(controls, "Keep in front",
+        "Keep this window above the settings window. Off, whichever you click comes to the front.")
+    place(inFront, 2, true)
+
+    -- Sample states: mix them freely, as they can mix in game.
+    local statesLabel = T.Font(UI.FontString(controls, "GameFontNormal", "accent"), 12)
+    statesLabel:SetPoint("TOPLEFT", controls, "TOPLEFT", WINDOW_PAD, -8 - 2 * 32 - 6)
+    statesLabel:SetText("Preview options")
+    local function placeState(control, row, right) place(control, row, right, 18) end
+    local dispellable = windowSwitch(controls, "Dispellable debuff",
+        "One or two cells with a debuff you can dispel: colour, type icon and stacks.")
+    placeState(dispellable, 3)
+    local cooldown = windowSwitch(controls, "Dispel on cooldown",
+        "Your dispel cooling down: the sweep and countdown on every cell and the cooldown bar.")
+    placeState(cooldown, 3, true)
+    local sweep = windowSwitch(controls, "Movement sweep",
+        "Your movement spells' coloured sweeps on the first cell and the cooldown bar.")
+    placeState(sweep, 4)
+    local rooted = windowSwitch(controls, "Rooted",
+        "The badge on your own cell when you're rooted or snared, showing the spell that frees you.")
+    placeState(rooted, 4, true)
+    local lockout = windowSwitch(controls, "Lockout",
+        "A lockout debuff such as Forbearance, where Show on puts it: a cell, the cooldown bar or both.")
+    placeState(lockout, 5)
+
+    local note = UI.FontString(win, "GameFontHighlightSmall", "muted")
+    note:SetPoint("TOPLEFT", WINDOW_PAD, -(WINDOW_HEADER + WINDOW_CONTROLS))
+    note:SetPoint("RIGHT", -WINDOW_PAD, 0)
+    note:SetJustifyH("LEFT")
+
+    local viewport = CreateFrame("Frame", nil, win)
+    viewport:SetPoint("TOPLEFT", WINDOW_PAD, -(WINDOW_HEADER + WINDOW_CONTROLS + 22))
+    T.Fill(viewport:CreateTexture(nil, "BACKGROUND"), "rail"):SetAllPoints()
     if viewport.SetClipsChildren then viewport:SetClipsChildren(true) end
 
     local frame = CreateFrame("Frame", nil, viewport)
@@ -211,50 +384,230 @@ function Preview:CreateSettingsPreview(parent, top, left, width, height)
         box:Hide()
         boxes[i] = box
     end
+    -- The drag handle, drawn as the panel draws it.
+    local handle = CreateFrame("Frame", nil, frame)
+    handle:SetSize(10, 10)
+    local handleFill = handle:CreateTexture(nil, "ARTWORK")
+    handleFill:SetAllPoints()
+    handleFill:SetColorTexture(0.58, 0.43, 0.22, 0.85)
+    local handleEdge = handle:CreateTexture(nil, "BACKGROUND")
+    handleEdge:SetPoint("TOPLEFT", -1, 1)
+    handleEdge:SetPoint("BOTTOMRIGHT", 1, -1)
+    handleEdge:SetColorTexture(0, 0, 0, 0.9)
+
+    self.window = win
     self.settingsPreview = {
-        parent = parent, viewport = viewport, frame = frame, boxes = boxes,
-        width = width, height = height,
+        window = win, viewport = viewport, frame = frame, boxes = boxes, handle = handle,
+        note = note, count = count, openWith = openWith, dispellable = dispellable,
+        cooldown = cooldown, sweep = sweep, onScreen = onScreen, inFront = inFront,
+        rooted = rooted, lockout = lockout,
     }
-    viewport:SetScript("OnUpdate", function(_, elapsed)
-        if not Preview.settingsPreview
-            or (Preview.cooldownState ~= "COOLDOWN" and not Preview.movementSweepState) then return end
+
+    local function changed()
+        Preview:RefreshSettingsPreview()
+        if Preview.active then Preview:Refresh() end
+        Preview:RefreshWindowControls()
+    end
+    minus:SetScript("OnClick", function()
+        ns.Set("previewUnits", math.max(1, ns.db.previewUnits - 1))
+        Preview.count = ns.db.previewUnits
+        changed()
+    end)
+    plus:SetScript("OnClick", function()
+        ns.Set("previewUnits", math.min(MAX_BOXES, ns.db.previewUnits + 1))
+        Preview.count = ns.db.previewUnits
+        changed()
+    end)
+    openWith:SetScript("OnClick", function()
+        ns.db.previewWindowOpen = not ns.db.previewWindowOpen
+        Preview:RefreshWindowControls()
+    end)
+    dispellable:SetScript("OnClick", function()
+        Preview.cellState = Preview.cellState == "DISPELLABLE" and "CLEAR" or "DISPELLABLE"
+        changed()
+    end)
+    cooldown:SetScript("OnClick", function()
+        Preview.cooldownState = Preview.cooldownState == "COOLDOWN" and "READY" or "COOLDOWN"
+        changed()
+    end)
+    sweep:SetScript("OnClick", function()
+        Preview.movementSweepState = not Preview.movementSweepState
+        changed()
+    end)
+    rooted:SetScript("OnClick", function()
+        Preview.rootedState = not Preview.rootedState
+        changed()
+    end)
+    lockout:SetScript("OnClick", function()
+        Preview.lockoutState = not Preview.lockoutState
+        Preview.lockoutStart = nil
+        changed()
+    end)
+    inFront:SetScript("OnClick", function()
+        ns.db.previewWindowOnTop = not ns.db.previewWindowOnTop
+        Preview:ApplyWindowLayer()
+        Preview:RefreshWindowControls()
+    end)
+    onScreen:SetScript("OnClick", function()
+        Preview.count = ns.db.previewUnits
+        Preview:Toggle()
+        Preview:RefreshWindowControls()
+    end)
+
+    win:SetScript("OnUpdate", function(_, elapsed)
+        if Preview.cooldownState ~= "COOLDOWN" and not Preview.movementSweepState
+            and not Preview.lockoutStart then return end
         Preview.settingsElapsed = (Preview.settingsElapsed or 0) + elapsed
         if Preview.settingsElapsed < 0.1 then return end
         Preview.settingsElapsed = 0
-        local now, changed = GetTime(), false
+        local now, restart = GetTime(), false
         if Preview.cooldownState == "COOLDOWN"
             and (not Preview.cooldownStart or now - Preview.cooldownStart >= 8) then
             Preview.cooldownStart = now
-            changed = true
+            restart = true
         end
         if Preview.movementSweepState
             and (not Preview.movementSweepStart or now - Preview.movementSweepStart >= 25) then
             Preview.movementSweepStart = now - 8
-            changed = true
+            restart = true
         end
-        if changed then
-            Preview:RefreshSettingsPreview()
-        end
+        local lockout = Preview.lockoutStart and Preview:SampleLockout()
+        if lockout and lockout.start == now then restart = true end
+        if restart then Preview:RefreshSettingsPreview() end
     end)
+    return win
+end
+
+-- Keep in front: one layer above the settings window (DIALOG), so it always
+-- floats over it.  Off, it shares that layer and whichever was clicked last
+-- is on top.  HammerCore's menus and dialogs sit higher either way.
+function Preview:ApplyWindowLayer()
+    if not self.window then return end
+    self.window:SetFrameStrata(ns.db.previewWindowOnTop ~= false and "FULLSCREEN" or "DIALOG")
+    if self.window.Raise then self.window:Raise() end
+end
+
+function Preview:RefreshWindowControls()
+    local preview = self.settingsPreview
+    if not preview then return end
+    preview.count:SetText(tostring(ns.db.previewUnits))
+    preview.openWith:SetChecked(ns.db.previewWindowOpen == true)
+    preview.dispellable:SetChecked(self.cellState == "DISPELLABLE")
+    preview.cooldown:SetChecked(self.cooldownState == "COOLDOWN")
+    preview.sweep:SetChecked(self.movementSweepState and true or false)
+    preview.rooted:SetChecked(self.rootedState and true or false)
+    preview.lockout:SetChecked(self.lockoutState and true or false)
+    preview.onScreen:SetChecked(self.active and true or false)
+    preview.inFront:SetChecked(ns.db.previewWindowOnTop ~= false)
+end
+
+function Preview:IsWindowShown()
+    return self.window and self.window:IsShown() or false
+end
+
+function Preview:ShowWindow()
+    self:CreateSettingsPreview()
+    self.count = ns.db.previewUnits
+    self.window:Show()
+    self:ApplyWindowLayer()
+    self:RefreshWindowControls()
+    self:RefreshSettingsPreview()
+end
+
+function Preview:HideWindow()
+    if self.window then self.window:Hide() end
+    local HC = ns.HammerCore
+    if HC and HC.Settings and HC.Settings.RefreshHeaderAction then HC.Settings:RefreshHeaderAction() end
+end
+
+function Preview:ToggleWindow()
+    if self:IsWindowShown() then self:HideWindow() else self:ShowWindow() end
+end
+
+-- How far the cooldown bar and handle reach past the grid, in grid units:
+-- left, top, right, bottom, measured from the grid's top-left corner.
+local function extents(frame, layout, handleShown)
+    local left, top, right, bottom = 0, 0, layout.frameWidth, layout.frameHeight
+    local bar = frame.salveCooldownBar
+    if bar and bar.frame:IsShown() then
+        local width, height = bar.frame:GetSize()
+        local gap = tonumber(ns.db.cooldownBarGap) or 4
+        local side = ns.db.cooldownBarSide or "BOTTOM"
+        if side == "TOP" then
+            top = math.min(top, -(gap + height)); right = math.max(right, width)
+        elseif side == "LEFT" then
+            left = math.min(left, -(gap + width)); bottom = math.max(bottom, height)
+        elseif side == "RIGHT" then
+            right = math.max(right, layout.frameWidth + gap + width); bottom = math.max(bottom, height)
+        else
+            bottom = math.max(bottom, layout.frameHeight + gap + height); right = math.max(right, width)
+        end
+    end
+    if handleShown then
+        left, top = left - HANDLE_ROOM, top - HANDLE_ROOM
+        right, bottom = right + HANDLE_ROOM, bottom + HANDLE_ROOM
+    end
+    return left, top, right, bottom
 end
 
 function Preview:RefreshSettingsPreview()
     local preview = self.settingsPreview
-    if not preview then return end
+    if not (preview and preview.window:IsShown()) then return end
 
     local count = math.max(1, math.min(MAX_BOXES, tonumber(self.count) or 5))
     local layout = ns.Panel:Layout(count)
-    local fit = math.min(1, preview.width / math.max(1, layout.frameWidth * layout.scale),
-        preview.height / math.max(1, layout.frameHeight * layout.scale))
-    preview.frame:ClearAllPoints()
-    preview.frame:SetPoint("CENTER", preview.viewport, "CENTER")
-    preview.frame:SetScale(layout.scale * fit)
     preview.frame:SetSize(layout.frameWidth, layout.frameHeight)
     self.cooldownStart = self.cooldownStart or GetTime()
     self.movementSweepStart = self.movementSweepStart or (GetTime() - 8)
     renderBoxes(preview.boxes, preview.frame, count, layout, self.cellState,
         self.cooldownState, self.cooldownStart, self.movementSweepState, self.movementSweepStart)
+
+    local handleShown = ns.db.showHandle and true or false
+    preview.handle:SetShown(handleShown)
+    if handleShown then ns.Handle:PositionFrame(preview.handle, preview.frame) end
+
+    -- Actual size unless the layout is bigger than most of the screen.
+    local left, top, right, bottom = extents(preview.frame, layout, handleShown)
+    local naturalWidth = (right - left) * layout.scale
+    local naturalHeight = (bottom - top) * layout.scale
+    local screenWidth = UIParent.GetWidth and UIParent:GetWidth() or 0
+    local screenHeight = UIParent.GetHeight and UIParent:GetHeight() or 0
+    local fit = 1
+    if screenWidth > 0 and screenHeight > 0 then
+        fit = math.min(1, (screenWidth * 0.8) / math.max(1, naturalWidth),
+            (screenHeight * 0.7) / math.max(1, naturalHeight))
+    end
+    local scale = layout.scale * fit
+    local contentWidth, contentHeight = (right - left) * scale, (bottom - top) * scale
+    local innerWidth = math.max(WINDOW_MIN_WIDTH - WINDOW_PAD * 2, contentWidth + 24)
+    local innerHeight = math.max(80, contentHeight + 24)
+    preview.viewport:SetSize(innerWidth, innerHeight)
+    preview.frame:SetScale(scale)
+    preview.frame:ClearAllPoints()
+    -- Offsets are in the grid's own units.
+    preview.frame:SetPoint("TOPLEFT", preview.viewport, "TOPLEFT",
+        ((innerWidth - contentWidth) / 2) / scale - left,
+        -(((innerHeight - contentHeight) / 2) / scale - top))
     preview.frame:Show()
+    preview.window:SetSize(innerWidth + WINDOW_PAD * 2,
+        WINDOW_HEADER + WINDOW_CONTROLS + 22 + innerHeight + WINDOW_PAD)
+
+    -- Attached Left or Right, each cell lines up with its member's frame in
+    -- game, which a window can't show; Top and Bottom keep this grid.
+    local attachTo = ns.db.attachTo
+    local followsHost = attachTo and attachTo ~= "NONE" and ns.Attach and ns.Attach:IsLoaded(attachTo)
+        and (ns.db.attachSide == "LEFT" or ns.db.attachSide == "RIGHT")
+    local text
+    if followsHost then
+        text = "Attached Left or Right: in game, cells line up with the host's frames. At panel position shows that."
+    elseif fit < 1 then
+        text = ("Scaled to %d%% to fit your screen."):format(math.floor(fit * 100 + 0.5))
+    else
+        text = ("Actual size, %d units."):format(count)
+    end
+    local missing = self:MissingStates()
+    if missing then text = text .. " " .. missing end
+    preview.note:SetText(text)
 end
 
 function Preview:Create()

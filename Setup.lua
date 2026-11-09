@@ -9,6 +9,15 @@ local HC = ns.HammerCore
 ns.Print = HC.Print
 ns.Options = setmetatable({}, { __index = HC.UI })
 
+-- The header button on every page whose settings change how the grid looks.
+ns.Options.LivePreviewAction = {
+    text = function()
+        return ns.Preview and ns.Preview:IsWindowShown() and "Hide live preview" or "Show live preview"
+    end,
+    onClick = function() ns.Preview:ToggleWindow() end,
+    hint = "An actual-size preview of the panel in its own window. Drag it anywhere; it stays open while you change pages.",
+}
+
 -- Events refresh Troubleshooting when spells or zones change.
 function ns.Options.RefreshTroubleshooting()
     local settings = HC.Settings
@@ -59,6 +68,34 @@ local function setLocked(locked)
     HC.Print(locked and "drag handle hidden" or "drag handle shown - grab the small square above the panel")
 end
 
+-- The quick profile menu, from the minimap button, broker or drag handle.
+-- One menu for the minimap button and the drag handle: actions, a line, then
+-- the profiles. `source` says which opened it, for any future difference.
+function ns.OpenProfileMenu(source)
+    -- Actions first, so they stay put however many profiles follow the line.
+    -- The handle and minimap menus match; right-click used to open settings,
+    -- so they stay one click away.
+    local items = { { text = "Salve settings", func = function() HC.Settings:Show() end } }
+    items[#items + 1] = { text = "Profile settings", func = function() HC.Settings:Show("Profiles") end }
+    items[#items + 1] = { text = ns.IsLocked() and "Show drag handle" or "Hide drag handle",
+        func = function() setLocked(not ns.IsLocked()) end }
+    items[#items + 1] = { separator = true }
+    for _, item in ipairs(HC.Profiles:MenuItems()) do items[#items + 1] = item end
+    HC.Menu:Open(items)
+end
+
+function ns.MinimapRightClick()
+    if ns.db and ns.db.minimapRightClick == "HANDLE" then
+        setLocked(not ns.IsLocked())
+    else
+        ns.OpenProfileMenu("MINIMAP")
+    end
+end
+
+function ns.MinimapRightClickLabel()
+    return ns.db and ns.db.minimapRightClick == "HANDLE" and "show or hide the drag handle" or "profiles"
+end
+
 HC:Init({
     name = "Salve",
     command = "salve",
@@ -75,10 +112,20 @@ HC:Init({
     clientLabel = function() return ns.isCamelot and "WoW Forever" or "Retail" end,
     minimap = {
         icon = "Interface\\AddOns\\Salve\\Textures\\SalveClean",
-        rightClick = function() setLocked(not ns.IsLocked()) end,
-        rightClickLabel = "show or hide the drag handle",
+        rightClick = function() ns.MinimapRightClick() end,
+        -- HammerCore prints the label with tostring(), so a table with
+        -- __tostring follows the Minimap right-click setting.
+        rightClickLabel = setmetatable({}, { __tostring = function() return ns.MinimapRightClickLabel() end }),
     },
-    onSettingsHidden = function() if ns.Preview then ns.Preview:Stop() end end,
+    onSettingsShown = function()
+        if ns.Preview and ns.db.previewWindowOpen then ns.Preview:ShowWindow() end
+    end,
+    onSettingsHidden = function()
+        if ns.Preview then
+            ns.Preview:Stop()
+            ns.Preview:HideWindow()
+        end
+    end,
     whatsNew = ns.WHATS_NEW,
     toggle = { help = "Show or hide the panel", run = function()
         ns.db.visibilityMode = ns.db.visibilityMode == "NEVER" and "ALWAYS" or "NEVER"
@@ -119,3 +166,67 @@ HC.Commands:Add({ name = "learned", section = "Learning", help = "List recorded 
     run = function() ns.Sound:DumpLearned() end })
 HC.Commands:Add({ name = "learned clear", section = "Learning", help = "Clear recorded auras",
     run = function() ns.Sound:ClearLearned() end })
+
+-- ── Layout profiles ────────────────────────────────────────────────────────
+-- HammerCore owns the store, auto-switch and the Profiles page; Salve says
+-- which settings can belong to a profile and how to redraw after a switch.
+-- Position and Grid and size are in profiles by default; the rest can be
+-- ticked in on the Profiles page.
+HC.Profiles:Setup({
+    groups = {
+        { key = "position", label = "Position", default = true,
+            hint = "Where the panel sits and where its drag handle is.",
+            keys = { "point", "handlePosition" } },
+        { key = "grid", label = "Grid and size", default = true,
+            hint = "Grid direction, start corner, cells per row, spacing, cell size, scale and preview units.",
+            keys = { "orientation", "horizontalGrowth", "verticalGrowth", "columns", "spacing",
+                "scale", "boxWidth", "boxHeight", "previewUnits" } },
+        { key = "names", label = "Unit names", default = false,
+            hint = "Show names, their position and text size.",
+            keys = { "showNames", "nameJustifyH", "nameJustifyV", "nameFontSize" } },
+        { key = "sorting", label = "Sorting", default = false,
+            hint = "Sort order, role order and your own cell.",
+            keys = { "sortMode", "sortRoleOrder", "sortReverse", "sortSelf" } },
+        { key = "cooldownBar", label = "Cooldown bar", default = false,
+            hint = "Whether the bar shows, where, its size and hidden spells.",
+            keys = { "cooldownBar", "cooldownBarShowReady", "cooldownBarSide", "cooldownBarOrientation",
+                "cooldownBarMatchPanel", "cooldownBarGap", "cooldownBarIconSize", "cooldownBarSpacing",
+                "cooldownBarHidden" } },
+        { key = "visibility", label = "Visibility", default = false,
+            hint = "When the panel shows.",
+            keys = { "visibilityMode", "visibility" } },
+        { key = "attach", label = "Attach", default = false,
+            hint = "Attaching to another addon's frames.",
+            keys = { "attachTo", "attachSide", "attachGap", "attachAlign", "attachOffsetY" } },
+    },
+    defaults = function() return ns.defaults end,
+    seed = {
+        { name = "Party", values = { previewUnits = 5 } },
+        { name = "Raid 20", values = { previewUnits = 20 } },
+        { name = "Raid 40", values = { previewUnits = 40 } },
+    },
+    active = "Party",
+    rules = {
+        { profile = "Party", group = "ANY", min = 1, max = 5, instance = "ANY", source = "INSTANCE" },
+        { profile = "Raid 20", group = "ANY", min = 6, max = 20, instance = "ANY", source = "INSTANCE" },
+        { profile = "Raid 40", group = "ANY", min = 21, max = 40, instance = "ANY", source = "INSTANCE" },
+    },
+    unsafe = function() return ns.StructuralChangesUnsafe() end,
+    apply = function()
+        local panel = ns.Panel
+        if not (panel and panel.frame) then return end
+        -- ☠ Position BEFORE the rebuild. Rebuild normalises the anchor from
+        --   the frame's current edges; run first, it would save the old
+        --   profile's position into the new one.
+        panel:ApplyPosition()
+        ns.RequestRebuild()
+        if ns.Handle then ns.Handle:Update() end
+        panel:Restyle()
+        if ns.CooldownBar and ns.CooldownBar.Anchor then ns.CooldownBar:Anchor() end
+        if ns.Preview and ns.Preview.active then ns.Preview:Refresh() end
+        if ns.Preview and ns.Preview.RefreshSettingsPreview then
+            ns.Preview.count = ns.db.previewUnits
+            ns.Preview:RefreshSettingsPreview()
+        end
+    end,
+})

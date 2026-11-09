@@ -22,6 +22,12 @@ ns.defaults = {
     boxHeight     = 20,
     spacing       = 1,
     point         = { "CENTER", "CENTER", 0, -140 },
+    -- How many test cells the settings preview draws. Saved so each layout
+    -- profile previews its own group size (5, 20 or 40).
+    previewUnits  = 5,
+    -- The floating live preview: open it with settings, and where it sits.
+    previewWindowOpen = false,
+    previewWindowOnTop = true,
 
     -- Appearance
     showNames     = false,
@@ -65,7 +71,12 @@ ns.defaults = {
     showWhenClean = true,
     cleanAlpha    = 0.25,
     showHandle    = true,   -- the persistent drag grip, like Decursive's
-    handlePosition = "TOPLEFT",
+    handlePosition = "TOPLEFT",  -- an edge or corner, or CORNER = the grid's start corner
+    -- Right-clicking the minimap button opens a profile menu (which also
+    -- shows or hides the handle) or toggles the handle straight away.
+    minimapRightClick = "PROFILES",  -- PROFILES | HANDLE
+    -- Right-clicking the drag handle opens settings or the profile menu.
+    handleRightClick = "PROFILES",   -- PROFILES | SETTINGS
 
     -- Behaviour
     -- Click bindings. Fresh/restored profiles use automatic defaults (left =
@@ -159,7 +170,7 @@ ns.defaults = {
 
     -- Saved-variable migrations. Increment only when an old shape needs an
     -- explicit conversion; ordinary new defaults do not need a bump.
-    schemaVersion = 9,
+    schemaVersion = 11,
 
 }
 
@@ -227,6 +238,7 @@ local function normalizePreferences(db)
     numberInRange(db, "boxWidth", 8, 200, true)
     numberInRange(db, "boxHeight", 8, 200, true)
     numberInRange(db, "spacing", 0, 40, true)
+    numberInRange(db, "previewUnits", 1, 40, true)
     numberInRange(db, "nameFontSize", 6, 48, true)
     numberInRange(db, "cooldownFontSize", 6, 48, true)
     numberInRange(db, "dispelTypeIconSize", 8, 64, true)
@@ -272,9 +284,14 @@ local function normalizePreferences(db)
     })
     enumOrDefault(db, "movementTextOutput", { SCREEN = true, CHAT = true, BOTH = true })
     enumOrDefault(db, "soundChannel", { Master = true, SFX = true, Music = true, Ambience = true, Dialog = true })
+    -- Every edge and corner the Visibility page offers. This used to allow
+    -- corners only, so Left, Top, Right and Bottom reset on every reload.
     enumOrDefault(db, "handlePosition", {
-        TOPLEFT = true, TOPRIGHT = true, BOTTOMLEFT = true, BOTTOMRIGHT = true,
+        LEFT = true, TOPLEFT = true, TOP = true, TOPRIGHT = true, RIGHT = true,
+        BOTTOMRIGHT = true, BOTTOM = true, BOTTOMLEFT = true, CORNER = true,
     })
+    enumOrDefault(db, "minimapRightClick", { PROFILES = true, HANDLE = true })
+    enumOrDefault(db, "handleRightClick", { SETTINGS = true, PROFILES = true })
     if db.soundFile ~= nil and type(db.soundFile) ~= "string" and type(db.soundFile) ~= "number" then
         db.soundFile = ns.defaults.soundFile
     end
@@ -375,9 +392,27 @@ function ns.InitConfig()
         SalveDB.movementSweepSpellID = nil
         SalveDB.schemaVersion = 9
     end
+    if oldSchema < 10 then
+        -- Grid flow now uses both growth axes in both orientations (any start
+        -- corner). Older builds read only one axis per orientation, so reset
+        -- the unused one: every existing layout keeps exactly its old look.
+        if SalveDB.orientation == "VERTICAL" then
+            SalveDB.horizontalGrowth = "RIGHT"
+        else
+            SalveDB.verticalGrowth = "DOWN"
+        end
+        SalveDB.schemaVersion = 10
+    end
+    if oldSchema < 11 then
+        -- 1.10.0 dev builds saved the handle's right-click as Open settings,
+        -- the default back then. It's the profile menu now; the setting was
+        -- never in a release, so nobody chose the old value on purpose.
+        if SalveDB.handleRightClick == "SETTINGS" then SalveDB.handleRightClick = "PROFILES" end
+        SalveDB.schemaVersion = 11
+    end
     -- A profile from a newer build can otherwise retain a fictional future
-    -- schema forever after a partial sync. This build owns schema 9.
-    SalveDB.schemaVersion = 9
+    -- schema forever after a partial sync. This build owns schema 11.
+    SalveDB.schemaVersion = 11
 
     -- Learning supplies the coverage that encounter-journal data cannot,
     -- especially for trash roots and snares. It is always active in 1.4.0;
@@ -449,6 +484,14 @@ function ns.InitConfig()
 
     ns.db = SalveDB
     ns.learned = SalveLearnedDB
+    -- Layout profiles (HammerCore). On first run this seeds Party, Raid 20
+    -- and Raid 40 from the current layout; on later loads it may load this
+    -- character's own profile into the flat keys, so normalise once more.
+    local profiles = ns.HammerCore and ns.HammerCore.Profiles
+    if profiles and profiles.enabled then
+        profiles:Ready()
+        normalizePreferences(SalveDB)
+    end
     return ns.db
 end
 
@@ -517,6 +560,7 @@ function ns.Set(key, value)
         if ns.Cooldowns then ns.Cooldowns:Request() end
         if ns.Lockouts then ns.Lockouts:Refresh() end
         if ns.Preview and ns.Preview.active then ns.Preview:Refresh() end
+        if ns.Preview and ns.Preview.RefreshSettingsPreview then ns.Preview:RefreshSettingsPreview() end
         return
     end
 
@@ -530,4 +574,7 @@ function ns.Set(key, value)
         ns.Handle:Update()
     end
     if ns.Preview and ns.Preview.active then ns.Preview:Refresh() end
+    -- The live preview window redraws straight away, rather than at its next
+    -- sweep restart.  It does nothing while the window is closed.
+    if ns.Preview and ns.Preview.RefreshSettingsPreview then ns.Preview:RefreshSettingsPreview() end
 end

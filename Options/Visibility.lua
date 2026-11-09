@@ -5,10 +5,15 @@ local O = ns.Options
 -- HammerCore's Visibility page supplies "Other" (minimap button, startup
 -- message); this adds when the panel shows and where its handle sits.
 
-local HANDLE_VALUES = { "LEFT", "TOPLEFT", "TOP", "TOPRIGHT", "RIGHT", "BOTTOMRIGHT", "BOTTOM", "BOTTOMLEFT" }
-local HANDLE_LABELS = { "Left", "Top left", "Top centre", "Top right", "Right", "Bottom right", "Bottom centre", "Bottom left" }
+local HANDLE_VALUES = { "CORNER", "LEFT", "TOPLEFT", "TOP", "TOPRIGHT", "RIGHT", "BOTTOMRIGHT", "BOTTOM", "BOTTOMLEFT" }
+local HANDLE_LABELS = { "Start corner", "Left", "Top left", "Top centre", "Top right", "Right", "Bottom right", "Bottom centre", "Bottom left" }
 
 HC.Settings:AddVisibility()
+-- Handle position shows in the live preview.
+HC.Pages.visibility.headerAction = ns.Options.LivePreviewAction
+-- When the panel shows, plus the drag handle (stored with Position).
+HC.Pages.visibility.profileGroups = { "visibility", "position" }
+HC.Pages.visibility.profilePartial = true
 
 HC.spec.visibility = function(panel, y)
     local db = ns.db
@@ -52,21 +57,19 @@ HC.spec.visibility = function(panel, y)
         y, { items = items, summary = function() return ns.Visibility:Summary() end }, 264)
 
     _, y = O.Header(panel, "Position", y)
-    _, y = O.Check(panel, "Show drag handle", "Drag the gold handle to move Salve. Right-click it for settings.", y,
+    _, y = O.Check(panel, "Show drag handle", "Drag the gold handle to move Salve. Right-click opens settings or profiles (Profiles page).", y,
         function() return db.showHandle end,
         function(value) ns.Set("showHandle", value) end)
-    _, y = O.Dropdown(panel, "Handle position", "Which edge of the grid holds the handle.", y,
+    _, y = O.Dropdown(panel, "Handle position",
+        "Which edge of the grid holds the handle. Start corner follows the grid's fixed corner (Panel > Grid). Saved per profile when Position is in profiles.", y,
         HANDLE_VALUES, HANDLE_LABELS,
         function() return db.handlePosition end,
         function(value) ns.Set("handlePosition", value) end)
-    local resetPosition = O.Button(panel, 160, 22)
-    resetPosition:SetPoint("TOPLEFT", 16, y - 4)
-    resetPosition:SetText("Reset frame position")
-    O.AttachHint(resetPosition, "Reset frame position", "Move Salve back to the centre of the screen.")
-    resetPosition:SetScript("OnClick", function() HC.Commands:Dispatch("reset position") end)
-    y = y - 38
+    _, y = O.ActionButton(panel, y, "Reset frame position",
+        function() HC.Commands:Dispatch("reset position") end,
+        "Move Salve back to the centre of the screen.")
 
-    _, y = O.PageReset(panel, y, function()
+    _, y = O.PageReset(panel, y + 12, function()
         db.visibilityMode = ns.defaults.visibilityMode
         db.visibility = {}
         ns.Set("showHandle", ns.defaults.showHandle)

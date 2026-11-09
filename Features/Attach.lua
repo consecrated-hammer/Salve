@@ -368,7 +368,7 @@ function Attach:Plan(units, layout, scale, preview)
             frameRect.bottom = math.min(frameRect.bottom, cell.top - layout.height * scale)
         end
     else
-        local fromRight = layout.orientation ~= "VERTICAL" and layout.horizontalGrowth == "LEFT"
+        local fromRight = layout.horizontalGrowth == "LEFT"
         frameRect = Attach.PlanStacked(rects, side, gap,
             layout.frameWidth * scale, layout.frameHeight * scale, fromRight)
     end

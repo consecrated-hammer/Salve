@@ -280,10 +280,11 @@ function Bar:RenderPreview(parent, preview)
     if not parent then return end
     local bar = parent.salveCooldownBar
     local lockouts = {}
-    local sample = ns.Lockouts and ns.Lockouts.DEBUFFS[1]
-    if sample and ns.Lockouts:Enabled() and ns.Lockouts:OnBar() then
-        lockouts[1] = { spellID = sample.id, name = preview.lockoutName,
-            start = preview.cooldownStart or GetTime(), duration = sample.duration }
+    -- The test panel's sample lockout: the player's own, on its own timer.
+    local sample = preview.lockout or (ns.Preview and ns.Preview.SampleLockout and ns.Preview:SampleLockout())
+    if sample and ns.Lockouts and ns.Lockouts:OnBar() then
+        lockouts[1] = { spellID = sample.spellID, name = preview.lockoutName,
+            start = sample.start, duration = sample.duration }
     end
     if not (ns.db and (ns.db.cooldownBar or #lockouts > 0)) then
         if bar then bar.frame:Hide() end

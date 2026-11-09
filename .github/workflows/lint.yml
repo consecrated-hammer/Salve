@@ -40,6 +40,8 @@ jobs:
         run: python3 hammercore/tools/check.py addon
       - name: Each TOC loads exactly the addon's Lua files
         run: python3 hammercore/tools/toc_check.py addon
+      - name: What's new covers every release
+        run: python3 hammercore/tools/whatsnew_check.py addon
 
   data:
     runs-on: ubuntu-latest

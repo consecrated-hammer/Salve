@@ -4,7 +4,8 @@ local O = ns.Options
 
 local function section(parent, width)
     local frame = CreateFrame("Frame", nil, parent)
-    frame:SetSize(width or 264, 1)
+    frame:SetSize(O.CONTENT_WIDTH + O.PAD * 2, 1)
+    frame.hcColumns = 2
     frame.hcRefresh = parent.hcRefresh
     frame.hcRefreshAll = parent.hcRefreshAll
     return frame
@@ -14,9 +15,11 @@ local ROLE_NAMES = { TANK = "Tank", HEALER = "Healer", DAMAGER = "DPS" }
 
 HC.Settings:NewPage({
     name = "Sorting",
+    profileGroups = { "sorting" },
     title = "Sorting",
     group = "main",
-    description = "Which member gets which cell. The Panel preview shows the result.",
+    description = "Which member gets which cell. The live preview shows the result.",
+    headerAction = ns.Options.LivePreviewAction,
 }, function(panel, y)
     local db = ns.db
     local controls = section(panel, 264)

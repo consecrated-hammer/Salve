@@ -19,14 +19,14 @@ function Panel:SetMovementPrompt(spell, active)
     end
 end
 
--- The frame itself is anchored to the edge selected by Grid flow. Reversing
--- cell coordinates alone would change roster order but still make a growing
--- frame expand across the edge the player lined up with another addon.
+-- The frame is anchored at the grid's start corner, chosen by the two growth
+-- axes (both apply in both orientations). Reversing cell coordinates alone
+-- would change roster order but still make a growing frame expand across the
+-- edge the player lined up with action bars or another addon.
 function Panel:GrowthAnchor()
-    if ns.db.orientation == "VERTICAL" then
-        return ns.db.verticalGrowth == "UP" and "BOTTOMLEFT" or "TOPLEFT"
-    end
-    return ns.db.horizontalGrowth == "LEFT" and "TOPRIGHT" or "TOPLEFT"
+    local vertical = ns.db.verticalGrowth == "UP" and "BOTTOM" or "TOP"
+    local horizontal = ns.db.horizontalGrowth == "LEFT" and "RIGHT" or "LEFT"
+    return vertical .. horizontal
 end
 
 function Panel:SavePositionFromFrame(frame)
@@ -36,8 +36,8 @@ function Panel:SavePositionFromFrame(frame)
     local top, bottom = frame:GetTop(), frame:GetBottom()
     if not (left and right and top and bottom) then return false end
 
-    local x = anchor == "TOPRIGHT" and right or left
-    local y = anchor == "BOTTOMLEFT" and bottom or top
+    local x = anchor:find("RIGHT", 1, true) and right or left
+    local y = anchor:find("BOTTOM", 1, true) and bottom or top
     ns.db.point = { anchor, "BOTTOMLEFT", x, y }
     return true
 end
@@ -88,11 +88,12 @@ function Panel:PlaceBox(box, index, layout)
     local col, row
     if layout.orientation == "VERTICAL" then
         col, row = math.floor(n0 / layout.columns), n0 % layout.columns
-        if layout.verticalGrowth == "UP" then row = layout.down - 1 - row end
     else
         col, row = n0 % layout.columns, math.floor(n0 / layout.columns)
-        if layout.horizontalGrowth == "LEFT" then col = layout.across - 1 - col end
     end
+    -- Count from the start corner: up from the bottom, left from the right.
+    if layout.verticalGrowth == "UP" then row = layout.down - 1 - row end
+    if layout.horizontalGrowth == "LEFT" then col = layout.across - 1 - col end
 
     box:SetSize(layout.width, layout.height)
     box:ClearAllPoints()

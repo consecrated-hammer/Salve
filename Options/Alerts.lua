@@ -27,17 +27,14 @@ HC.Settings:NewPage({
         "Play a sound for built-in catalogue auras in this zone whose dispel school matches a known cure. This spell-ID list cannot exactly mirror the cell's live dispellability filter; learned-only auras do not trigger sounds.", y,
         dispelSoundEnabled,
         function(value) ns.Set("dispelSoundEnabled", value) end)
-    local selfDispelY = y
     _, y = O.Check(panel, "Show self-dispel combat text",
         "Show an instruction when a reviewed scripted dispel reaches you. It never marks a party member or a Salve cell.", y,
         function() return ns.db.selfDispelNotification end,
         function(value) ns.Set("selfDispelNotification", value) end)
+    local detailsY = y
 
     local function testButton(row, title, hint, play)
-        local button = O.Button(row, 42, 20)
-        button:SetPoint("LEFT", row.hcCheckbox.Text, "RIGHT", 8, 0)
-        button:SetText("Test")
-        O.AttachHint(button, title, hint)
+        local button = O.CellAction(row, "Test", 52, hint)
         button:SetScript("OnClick", play)
         return button
     end
@@ -46,7 +43,7 @@ HC.Settings:NewPage({
         "Play the dispel alert.", function() ns.Sound:Test() end)
 
     local soundDetails = CreateFrame("Frame", nil, panel)
-    soundDetails:SetSize(560, 1)
+    soundDetails:SetSize(O.CONTENT_WIDTH + O.PAD * 2, 1)
     soundDetails.hcRefresh = panel.hcRefresh
     soundDetails.hcRefreshAll = panel.hcRefreshAll
     soundDetails.hcHeaderOwner = panel.hcHeaderOwner or panel
@@ -75,10 +72,11 @@ HC.Settings:NewPage({
     local soundDetailsHeight = -soundY + 4
 
     local learningMessages = CreateFrame("Frame", nil, panel)
-    learningMessages:SetSize(560, 1)
+    learningMessages:SetSize(O.CONTENT_WIDTH + O.PAD * 2, 1)
     learningMessages.hcRefresh = panel.hcRefresh
     learningMessages.hcRefreshAll = panel.hcRefreshAll
     learningMessages.hcHeaderOwner = panel.hcHeaderOwner or panel
+    learningMessages.hcColumns = 2
     local messageY = -4
     _, messageY = O.Header(learningMessages, "Learning messages", messageY)
     _, messageY = O.Check(learningMessages, "Show learning scope changes",
@@ -89,10 +87,11 @@ HC.Settings:NewPage({
         "Print a chat message when Salve records a new dispellable aura, root or snare. Turning this off still records the spell.", messageY,
         function() return ns.db.learningDiscoveryMessages end,
         function(value) ns.Set("learningDiscoveryMessages", value) end)
+    messageY = O.Flush(learningMessages, messageY)
     local learningMessagesHeight = -messageY + 8
 
     local reset = CreateFrame("Frame", nil, panel)
-    reset:SetSize(560, 1)
+    reset:SetSize(O.CONTENT_WIDTH + O.PAD * 2, 1)
     reset.hcRefresh = panel.hcRefresh
     reset.hcRefreshAll = panel.hcRefreshAll
     local _, resetY = O.PageReset(reset, -4, function()
@@ -111,9 +110,7 @@ HC.Settings:NewPage({
         local anySoundEnabled = dispelSoundEnabled() or movementSoundShown()
         soundDetails:SetShown(anySoundEnabled)
         testDispel:SetShown(dispelSoundEnabled())
-        dispelRow.hcCheckbox.Text:ClearAllPoints()
-        dispelRow.hcCheckbox.Text:SetPoint("LEFT", dispelRow.hcCheckbox, "RIGHT", 8, 0)
-        local y0 = selfDispelY - 34
+        local y0 = detailsY
         soundDetails:ClearAllPoints()
         soundDetails:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, y0)
         if anySoundEnabled then y0 = y0 - soundDetailsHeight end

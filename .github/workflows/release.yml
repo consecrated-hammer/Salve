@@ -72,6 +72,13 @@ jobs:
             exit 1
           fi
 
+      # Every CurseForge release gets a What's new entry, fixes included.
+      # HammerCore is cloned outside the workspace so it can't be packaged.
+      - name: What's new covers this release
+        run: |
+          git clone --quiet --depth 1 https://github.com/consecrated-hammer/HammerCore "$RUNNER_TEMP/hammercore"
+          python3 "$RUNNER_TEMP/hammercore/tools/whatsnew_check.py" . --version "$GITHUB_REF_NAME"
+
       - name: Validate generated built-in catalogue
         run: python3 tools/generate_data_modules.py --check
 

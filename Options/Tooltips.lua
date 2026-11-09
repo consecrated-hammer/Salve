@@ -4,7 +4,8 @@ local O, T = ns.Options, HC.Theme
 
 local function section(parent, width)
     local frame = CreateFrame("Frame", nil, parent)
-    frame:SetSize(width or 264, 1)
+    frame:SetSize(O.CONTENT_WIDTH + O.PAD * 2, 1)
+    frame.hcColumns = 2
     frame.hcRefresh = parent.hcRefresh
     frame.hcRefreshAll = parent.hcRefreshAll
     return frame

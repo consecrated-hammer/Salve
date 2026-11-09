@@ -3,13 +3,14 @@ local HC = ns.HammerCore
 local O = ns.Options
 
 -- Automatic root, snare and slow responses. Movement-spell bindings stay on
--- Actions, which owns every secure click; this page only decides when Salve
--- prompts the player to use one.
+-- Key Bindings, which owns every secure click; this page decides when Salve
+-- prompts the player to use one, and how its cooldown sweep looks.
 HC.Settings:NewPage({
     name = "Movement",
     title = "Movement (beta)",
     group = "main",
     description = "Root, snare and slow alerts.",
+    headerAction = ns.Options.LivePreviewAction,
 }, function(panel, y)
     _, y = O.Header(panel, "Movement (beta)", y)
 
@@ -34,7 +35,7 @@ HC.Settings:NewPage({
         function(value) ns.Set("movementSoundEnabled", value) end)
     local textRow
     textRow, y = O.Check(panel, "Show personal Freedom movement text",
-        "Show a notification when you are rooted or snared and a matching movement spell is enabled in Actions.", y,
+        "Show a notification when you are rooted or snared and a matching movement spell is bound on Key Bindings.", y,
         function() return ns.db.movementTextNotification end,
         function(value) ns.Set("movementTextNotification", value) end)
     local destinations = {}
@@ -55,7 +56,6 @@ HC.Settings:NewPage({
             for _, item in ipairs(destinations) do if item.get() then return item.label end end
             return "On-screen text"
         end }, 264)
-    local chatTabY = y
     local chatTabRow
     chatTabRow, y = O.DynamicDropdown(panel, "Movement chat tab",
         "Choose the chat tab used for Chat window or Both. A closed tab falls back to the default window.", y,
@@ -67,7 +67,7 @@ HC.Settings:NewPage({
         function(value) ns.Set("movementChatWindow", value) end)
     local previewY = y
     local preview = O.Button(panel, 220, 24)
-    preview:SetPoint("TOPLEFT", 16, previewY)
+    preview:SetPoint("TOPLEFT", O.PAD, previewY - 8)
     local function previewLabel()
         local destination = ns.db.movementTextOutput or "SCREEN"
         if destination == "CHAT" then return "Preview movement text in chat" end
@@ -83,22 +83,96 @@ HC.Settings:NewPage({
         preview:SetText(previewLabel())
     end
 
-    local testMovement = O.Button(movementRow, 42, 20)
-    testMovement:SetPoint("LEFT", movementRow.hcCheckbox.Text, "RIGHT", 8, 0)
-    testMovement:SetText("Test")
-    O.AttachHint(testMovement, "Test snare-removal sound", "Play the snare-removal alert.")
+    local testMovement = O.CellAction(movementRow, "Test", 52, "Play the snare-removal alert.")
     testMovement:SetScript("OnClick", function() ns.Sound:TestMovement() end)
+
+    -- Movement sweeps: one row per bound movement spell, with its colour and
+    -- whether the sweep shows.
+    local sweeps = CreateFrame("Frame", nil, panel)
+    sweeps:SetSize(O.CONTENT_WIDTH + O.PAD * 2, 1)
+    sweeps.hcRefresh = panel.hcRefresh
+    sweeps.hcRefreshAll = panel.hcRefreshAll
+    sweeps.hcHeaderOwner = panel.hcHeaderOwner or panel
+    local _, sweepTop = O.Header(sweeps, "Movement sweeps", -4)
+    local sweepNote
+    sweepNote, sweepTop = O.Text(sweeps, "The coloured countdown on your cell after you cast a bound movement spell.", sweepTop)
+    local sweepEmpty = O.FontString(sweeps, "GameFontHighlightSmall", "muted")
+    sweepEmpty:SetPoint("TOPLEFT", O.PAD + 2, sweepTop - 4)
+    sweepEmpty:SetText("No movement spells bound yet.")
+    local sweepRows = {}
+    local function sweepRow(index)
+        if sweepRows[index] then return sweepRows[index] end
+        local row = O.Row(sweeps, sweepTop - (index - 1) * (O.CELL_H + 4), O.CELL_H, "",
+            "The sweep's colour, and whether it shows on your cell.")
+        row.icon = row:CreateTexture(nil, "ARTWORK")
+        row.icon:SetSize(24, 24)
+        row.icon:SetPoint("LEFT", O.CELL_INSET, 0)
+        row.Title:ClearAllPoints()
+        row.Title:SetPoint("LEFT", row.icon, "RIGHT", 10, 0)
+        row.swatch = O.Button(row, 34, 22)
+        row.swatch:SetPoint("RIGHT", -O.CELL_INSET, 0)
+        row.swatch.fill = row.swatch:CreateTexture(nil, "ARTWORK")
+        row.swatch.fill:SetSize(20, 12)
+        row.swatch.fill:SetPoint("CENTER")
+        O.AttachHint(row.swatch, "Sweep colour", "Pick the colour of this spell's sweep.")
+        row.show = O.Switch(row)
+        row.show:SetSize(170, O.CELL_H)
+        row.show:SetPoint("RIGHT", row.swatch, "LEFT", -12, 0)
+        row.show.Text:SetText("Show sweep")
+        sweepRows[index] = row
+        return row
+    end
+    local function layoutSweeps()
+        local bound = {}
+        for _, entry in ipairs(O.BoundSpells and O.BoundSpells() or {}) do
+            if entry.kind == "ESCAPE" then bound[#bound + 1] = entry end
+        end
+        sweepEmpty:SetShown(#bound == 0)
+        for index, entry in ipairs(bound) do
+            local row, spell = sweepRow(index), entry.spell
+            row.icon:SetTexture(O.SpellIcon(spell.id))
+            row.Title:SetText(spell.name)
+            local r, g, b, a = ns.Binding:GetMovementSweepColour(spell.id)
+            row.swatch.fill:SetColorTexture(r, g, b, a)
+            row.swatch:SetScript("OnClick", function()
+                O.ShowColourPicker({ r = r, g = g, b = b, a = a }, function(colour)
+                    local colours = {}
+                    for id, value in pairs(ns.db.movementSweepColours or {}) do colours[id] = value end
+                    colours[spell.id] = colour
+                    ns.Set("movementSweepColours", colours)
+                    ns.Binding:RefreshMovementCooldowns("movement sweep colour changed")
+                    panel.hcRefreshAll()
+                end)
+            end)
+            row.show:SetChecked(ns.db.movementSweepSpellIDs and ns.db.movementSweepSpellIDs[spell.id])
+            row.show:SetScript("OnClick", function()
+                local selected = {}
+                for id, enabled in pairs(ns.db.movementSweepSpellIDs or {}) do
+                    if enabled then selected[id] = true end
+                end
+                selected[spell.id] = not selected[spell.id] or nil
+                ns.Set("movementSweepSpellIDs", selected)
+                ns.Binding:RefreshMovementCooldowns("movement sweep selection changed")
+                panel.hcRefreshAll()
+            end)
+            row:ClearAllPoints()
+            row:SetPoint("TOPLEFT", O.PAD, sweepTop - (index - 1) * (O.CELL_H + 4))
+            row:Show()
+        end
+        for index = #bound + 1, #sweepRows do sweepRows[index]:Hide() end
+        local bottom = #bound == 0 and (sweepTop - 28) or (sweepTop - #bound * (O.CELL_H + 4))
+        return -bottom + 8
+    end
 
     -- Everything below the preview moves with the optional chat-tab row.
     local footer = CreateFrame("Frame", nil, panel)
-    footer:SetSize(560, 1)
+    footer:SetSize(O.CONTENT_WIDTH + O.PAD * 2, 1)
     footer.hcRefresh = panel.hcRefresh
     footer.hcRefreshAll = panel.hcRefreshAll
     footer.hcHeaderOwner = panel.hcHeaderOwner or panel
     local footerY = -4
-    _, footerY = O.Header(footer, "Movement spells", footerY)
-    _, footerY = O.Text(footer, "Choose movement spells and their mouse buttons on Actions.", footerY)
-    _, footerY = O.PageLink(footer, footerY, "Open Actions", "Actions")
+    _, footerY = O.Text(footer, "Choose movement spells and their mouse buttons on Key Bindings.", footerY)
+    _, footerY = O.PageLink(footer, footerY, "Open Key Bindings", "Key Bindings")
     _, footerY = O.PageReset(footer, footerY - 4, function()
         ns.Set("movementAlertsEnabled", ns.defaults.movementAlertsEnabled)
         ns.Set("inferredSlowAlertsEnabled", ns.defaults.inferredSlowAlertsEnabled)
@@ -117,16 +191,19 @@ HC.Settings:NewPage({
         testMovement:SetShown(enabled and movementSoundEnabled())
         for _, row in ipairs({ inferredRow, movementRow, textRow }) do
             row:SetAlpha(enabled and 1 or 0.5)
-            row.hcCheckbox.Text:ClearAllPoints()
-            row.hcCheckbox.Text:SetPoint("LEFT", row.hcCheckbox, "RIGHT", 8, 0)
         end
         local usesChat = (ns.db.movementTextOutput or "SCREEN") ~= "SCREEN"
         if not usesChat and chatTabRow.hcCloseMenu then chatTabRow.hcCloseMenu() end
         chatTabRow:SetShown(usesChat)
-        local adjustedPreviewY = usesChat and previewY or chatTabY
+        -- The chat tab is the right-hand cell beside the destination, so
+        -- hiding it leaves the rows below where they are.
+        local adjustedPreviewY = previewY
         preview:ClearAllPoints()
-        preview:SetPoint("TOPLEFT", 16, adjustedPreviewY)
-        local y0 = adjustedPreviewY - 40
+        preview:SetPoint("TOPLEFT", O.PAD, adjustedPreviewY - 8)
+        local y0 = adjustedPreviewY - 48
+        sweeps:ClearAllPoints()
+        sweeps:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, y0)
+        y0 = y0 - layoutSweeps()
         footer:ClearAllPoints()
         footer:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, y0)
         pageBottom = y0 - footerHeight - 8
@@ -134,6 +211,7 @@ HC.Settings:NewPage({
     end
 
     panel.hcRefresh[#panel.hcRefresh + 1] = reflow
+    ns.Options.RefreshMovementSweeps = reflow
     reflow()
     return pageBottom
 end)

@@ -4,7 +4,8 @@ local O = ns.Options
 
 local function section(parent, width)
     local frame = CreateFrame("Frame", nil, parent)
-    frame:SetSize(width or 264, 1)
+    frame:SetSize(O.CONTENT_WIDTH + O.PAD * 2, 1)
+    frame.hcColumns = 2
     frame.hcRefresh = parent.hcRefresh
     frame.hcRefreshAll = parent.hcRefreshAll
     return frame
@@ -26,6 +27,7 @@ end
 
 HC.Settings:NewPage({
     name = "Attach",
+    profileGroups = { "attach" },
     title = "Attach",
     group = "main",
     description = "Line Salve up with DandersFrames or EllesmereUI group frames.",

@@ -31,7 +31,7 @@ local chunk = assert(loadfile("Core/Config.lua"))
 chunk("Salve", ns)
 ns.InitConfig()
 
-equal(ns.db.schemaVersion, 9, "schema migrated")
+equal(ns.db.schemaVersion, 11, "schema migrated")
 equal(ns.db.learnMode, true, "learning normalized on")
 equal(ns.db.soundEnabled, false, "alert sound defaults off")
 equal(ns.db.dispelSoundEnabled, false, "dispel alert sound defaults off")
@@ -111,7 +111,7 @@ ns.InitConfig()
 -- data source, not a diagnostic, so resetting it meant that category never
 -- accumulated anything.
 equal(ns.db.learnMode, true, "learning survives UI reload")
-equal(ns.db.schemaVersion, 9, "duplicate-binding migration applied")
+equal(ns.db.schemaVersion, 11, "duplicate-binding migration applied")
 equal(#ns.db.bindings, 1, "duplicate mouse bindings collapsed")
 equal(ns.db.bindingsCustom, true, "legacy explicit bindings remain custom")
 equal(ns.db.visibility.mounted, nil, "removed mounted condition cleared")
@@ -139,6 +139,45 @@ equal(ns.db.movementSweepSpellIDs[1044], true,
     "legacy single sweep selection migrates into the multi-sweep set")
 equal(ns.db.movementSweepSpellID, nil, "legacy single sweep selection is cleared")
 
+-- Schema 10: both growth axes now apply in both orientations, so the axis an
+-- older build ignored is reset and every existing layout looks the same.
+SalveDB = { schemaVersion = 9, orientation = "HORIZONTAL", horizontalGrowth = "LEFT", verticalGrowth = "UP" }
+SalveLearnedDB = nil
+ns.InitConfig()
+equal(ns.db.verticalGrowth, "DOWN", "rows lose the vertical axis they never used")
+equal(ns.db.horizontalGrowth, "LEFT", "rows keep their direction")
+SalveDB = { schemaVersion = 9, orientation = "VERTICAL", horizontalGrowth = "LEFT", verticalGrowth = "UP" }
+SalveLearnedDB = nil
+ns.InitConfig()
+equal(ns.db.horizontalGrowth, "RIGHT", "columns lose the horizontal axis they never used")
+equal(ns.db.verticalGrowth, "UP", "columns keep their direction")
+SalveDB.verticalGrowth, SalveDB.horizontalGrowth = "UP", "LEFT"
+ns.InitConfig()
+equal(ns.db.horizontalGrowth, "LEFT", "the migration runs once")
+
+-- Every handle position the Visibility page offers survives a reload.
+for _, position in ipairs({ "LEFT", "TOP", "RIGHT", "BOTTOM", "CORNER", "BOTTOMRIGHT" }) do
+    SalveDB = { handlePosition = position }
+    SalveLearnedDB = nil
+    ns.InitConfig()
+    equal(ns.db.handlePosition, position, "handle position " .. position .. " is kept")
+end
+SalveDB = { schemaVersion = 10, handleRightClick = "SETTINGS" }
+SalveLearnedDB = nil
+ns.InitConfig()
+equal(ns.db.handleRightClick, "PROFILES", "dev builds' saved Open settings moves to the profile menu")
+SalveDB = { schemaVersion = 11, handleRightClick = "SETTINGS" }
+SalveLearnedDB = nil
+ns.InitConfig()
+equal(ns.db.handleRightClick, "SETTINGS", "a choice made after the move is kept")
+
+SalveDB = { previewUnits = 99, minimapRightClick = "SIDEWAYS", handleRightClick = 3 }
+SalveLearnedDB = nil
+ns.InitConfig()
+equal(ns.db.previewUnits, 40, "preview units are clamped")
+equal(ns.db.minimapRightClick, "PROFILES", "minimap right-click defaults to the profile menu")
+equal(ns.db.handleRightClick, "PROFILES", "handle right-click defaults to the profile menu")
+
 -- SavedVariables are persisted input, not trusted Lua. A bad or partly
 -- written profile must recover to independent sane values on the next load.
 SalveDB = {
@@ -160,7 +199,7 @@ SalveDB = {
 }
 SalveLearnedDB = nil
 ns.InitConfig()
-equal(ns.db.schemaVersion, 9, "invalid schema is normalized")
+equal(ns.db.schemaVersion, 11, "invalid schema is normalized")
 equal(type(ns.db.bindings), "table", "invalid bindings are repaired")
 equal(type(ns.db.visibility), "table", "invalid visibility is repaired")
 equal(type(ns.db.escapes), "table", "invalid escapes are repaired")

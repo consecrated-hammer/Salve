@@ -5,6 +5,83 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-11-09
+
+### Added
+
+- **A fresh coat of paint.** Settings have a new look: a cleaner header,
+  tabs on Panel and Profiles (the preview stays put), two columns
+  throughout, proper toggle switches and a Window scale slider so it fits
+  your screen. Knobs! Widgets! So many knobs and widgets. All the knobs
+  and all the widgets, polished, re-seated and lined up in neat rows, plus a
+  few brand-new knobs nobody asked for but everybody will twiddle. If it can
+  be adjusted, there's now a knob for it. Possibly two. Reload UI lives in the footer now, next to links to the
+  CurseForge page, Discord and Buy me a coffee (hide those on Visibility if
+  they're not your thing). Clicking one of those links now shows the whole
+  address, with a little icon so you know where it's taking you.
+- **Live preview window.** The preview moved out of the Panel page into its
+  own window: **Show live preview** at the top of any page that changes how
+  the grid looks. It draws your panel at actual size, cooldown bar and drag
+  handle included, stays open while you hop between pages, and only shrinks
+  if your layout wouldn't fit on screen (it'll tell you). Turn on **Open
+  with settings** in the window to have it pop up every time, and **Keep in
+  front** (on by default) keeps it above the settings window. Under **Preview options**,
+  mix and match sample states: a dispellable debuff, your dispel on
+  cooldown, movement sweeps, being rooted and a lockout such as Forbearance,
+  on the cells and the cooldown bar. If one can't show (say lockouts are
+  off), the window tells you why.
+- **Key bindings, the easy way.** Actions is now **Key Bindings**: click a
+  spell on the right, click the mouse button you want, done. Everything
+  you've bound is listed on the left, with an x to remove it. Picked a click
+  that's already taken? Hit **Replace** and it moves over, no unbinding
+  dance required. Movement sweep
+  colours moved to the Movement page.
+
+- **Layout profiles.** Keep a different position and grid for different
+  group sizes. You start with **Party**, **Raid 20** and **Raid 40**, all
+  copies of your current layout, so nothing moves after the update. Pick a
+  profile from the top of the Panel page, the minimap button's right-click
+  menu or `/salve profile <name>`, and manage them on the new **Profiles**
+  page. You choose which settings belong to profiles; position and grid are
+  in by default, and names, sorting, the cooldown bar, visibility and attach
+  can join them. Every settings page wears a little tag by its title saying
+  which profile is active and whether that page saves to it, so you're never
+  left guessing.
+- **Auto-switch.** Salve can change profile when your group or instance
+  changes, either straight away or after asking ("Switch to the Raid 40
+  profile?"). It's off by default. The rules, what triggers a check, what
+  happens when you say no and how long a profile you pick yourself sticks
+  are all settings. A rule can cover several groups and places at once, say
+  party *or* raid, in a dungeon *or* a raid. Switches never happen mid-fight; they wait for combat to
+  end.
+- **Start corner.** The grid can now grow from any corner, for rows and
+  columns alike. Choose **Bottom left** and new rows stack upwards, politely
+  stepping around your action bars.
+- **Handle position: Start corner** keeps the drag handle on the grid's
+  fixed corner, so it doesn't wander off as rows are added.
+- **What's new page.** Every release's highlights now live in settings, under
+  REFERENCE, going all the way back to 1.0.0, one card per release. A yellow
+  "!" beside it means there's something you haven't read yet, and opening the
+  page hands it in, quest turn-in sound and all. **Mark unread What's new**
+  and **Turn-in sound** on Visibility turn those off.
+- **Quick switch settings.** Minimap right-click opens the profile menu
+  (which can still show or hide the drag handle) or toggles the handle as
+  before. Right-clicking the drag handle opens the same menu, with a link to
+  Salve's settings (or set it back to opening settings directly).
+
+### Changed
+
+- **Reset per tab.** Panel's Layout, Cells and Text tabs each have their own
+  reset button, which only touches that tab. Fixing your fonts no longer
+  costs you your grid.
+- **Grid direction** is now two settings, **Fill** and **Start corner**.
+  Your existing layout looks exactly the same.
+
+### Fixed
+
+- **Handle position** Left, Top centre, Right and Bottom centre no longer
+  jump back to Top left after a reload.
+
 ## [1.9.0] - 2026-11-08
 
 ### Changed
