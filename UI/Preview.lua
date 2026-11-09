@@ -92,7 +92,11 @@ function Preview:SampleRootedSpell()
     return nil
 end
 
+-- With Rooted on, your own cell (the first) carries the debuff too, so a
+-- poison that roots you shows the fill, the stacks and the rooted badge
+-- together.
 function Preview:NeedsDispel(index, count)
+    if index == 1 and self.rootedState then return true end
     if count <= 2 then return index == count end
     return index == 2 or index == math.min(count, 4)
 end
@@ -338,8 +342,8 @@ function Preview:CreateSettingsPreview()
     local openWith = windowSwitch(controls, "Open with settings",
         "Open this window whenever Salve's settings open.")
     place(openWith, 1, true)
-    local onScreen = windowSwitch(controls, "At panel position",
-        "Also show the test panel where Salve sits on screen, over the real one. It closes with settings and when combat starts.")
+    local onScreen = windowSwitch(controls, "Show on screen too",
+        "Also show the test panel where Salve sits on your screen, over the real one, at real size. It closes with settings and when combat starts.")
     place(onScreen, 2)
     local inFront = windowSwitch(controls, "Keep in front",
         "Keep this window above the settings window. Off, whichever you click comes to the front.")
@@ -360,7 +364,7 @@ function Preview:CreateSettingsPreview()
         "Your movement spells' coloured sweeps on the first cell and the cooldown bar.")
     placeState(sweep, 4)
     local rooted = windowSwitch(controls, "Rooted",
-        "The badge on your own cell when you're rooted or snared, showing the spell that frees you.")
+        "You're rooted: the badge on your own cell shows the spell that frees you. With Dispellable debuff on, you're poisoned too.")
     placeState(rooted, 4, true)
     local lockout = windowSwitch(controls, "Lockout",
         "A lockout debuff such as Forbearance, where Show on puts it: a cell, the cooldown bar or both.")
@@ -599,7 +603,7 @@ function Preview:RefreshSettingsPreview()
         and (ns.db.attachSide == "LEFT" or ns.db.attachSide == "RIGHT")
     local text
     if followsHost then
-        text = "Attached Left or Right: in game, cells line up with the host's frames. At panel position shows that."
+        text = "Attached Left or Right: in game, cells line up with the host's frames. Show on screen too shows that."
     elseif fit < 1 then
         text = ("Scaled to %d%% to fit your screen."):format(math.floor(fit * 100 + 0.5))
     else

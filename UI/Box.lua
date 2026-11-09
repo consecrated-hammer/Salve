@@ -573,6 +573,12 @@ function Box.SetMovementPrompt(box, active, spellID)
     if active then
         local badge = MovementBadge(box)
         local size = math.max(10, math.min(48, (tonumber(ns.db and ns.db.lockoutIconSize) or 14) + 2))
+        -- A dispellable debuff matters more than being rooted, so the badge
+        -- stays a corner marker: never more than half the cell, leaving the
+        -- debuff colour, stacks and type icon readable (Kevin, 2026-11-10).
+        local w, h = box.GetWidth and box:GetWidth() or 0, box.GetHeight and box:GetHeight() or 0
+        local cell = math.min(w > 0 and w or size * 2, h > 0 and h or size * 2)
+        size = math.max(8, math.min(size, math.floor(cell * 0.5)))
         local point = Box.MovementBadgePosition()
         local inset = point:find("LEFT", 1, true) and 1 or -1
         local lift = point:find("TOP", 1, true) and -1 or 1

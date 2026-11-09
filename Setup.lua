@@ -170,32 +170,32 @@ HC.Commands:Add({ name = "learned clear", section = "Learning", help = "Clear re
 -- ── Layout profiles ────────────────────────────────────────────────────────
 -- HammerCore owns the store, auto-switch and the Profiles page; Salve says
 -- which settings can belong to a profile and how to redraw after a switch.
--- Position and Grid and size are in profiles by default; the rest can be
--- ticked in on the Profiles page.
+-- Every group below is saved per profile; settings outside them are the
+-- same in every profile.
 HC.Profiles:Setup({
     groups = {
-        { key = "position", label = "Position", default = true,
+        { key = "position", label = "Position",
             hint = "Where the panel sits and where its drag handle is.",
             keys = { "point", "handlePosition" } },
-        { key = "grid", label = "Grid and size", default = true,
+        { key = "grid", label = "Grid and size",
             hint = "Grid direction, start corner, cells per row, spacing, cell size, scale and preview units.",
             keys = { "orientation", "horizontalGrowth", "verticalGrowth", "columns", "spacing",
                 "scale", "boxWidth", "boxHeight", "previewUnits" } },
-        { key = "names", label = "Unit names", default = false,
+        { key = "names", label = "Unit names",
             hint = "Show names, their position and text size.",
             keys = { "showNames", "nameJustifyH", "nameJustifyV", "nameFontSize" } },
-        { key = "sorting", label = "Sorting", default = false,
+        { key = "sorting", label = "Sorting",
             hint = "Sort order, role order and your own cell.",
             keys = { "sortMode", "sortRoleOrder", "sortReverse", "sortSelf" } },
-        { key = "cooldownBar", label = "Cooldown bar", default = false,
+        { key = "cooldownBar", label = "Cooldown bar",
             hint = "Whether the bar shows, where, its size and hidden spells.",
             keys = { "cooldownBar", "cooldownBarShowReady", "cooldownBarSide", "cooldownBarOrientation",
                 "cooldownBarMatchPanel", "cooldownBarGap", "cooldownBarIconSize", "cooldownBarSpacing",
                 "cooldownBarHidden" } },
-        { key = "visibility", label = "Visibility", default = false,
+        { key = "visibility", label = "Visibility",
             hint = "When the panel shows.",
             keys = { "visibilityMode", "visibility" } },
-        { key = "attach", label = "Attach", default = false,
+        { key = "attach", label = "Attach",
             hint = "Attaching to another addon's frames.",
             keys = { "attachTo", "attachSide", "attachGap", "attachAlign", "attachOffsetY" } },
     },

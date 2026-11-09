@@ -28,6 +28,11 @@ equal(preview:NeedsDispel(2, 2), true, "two-person preview lights one cell")
 equal(preview:NeedsDispel(2, 5), true, "party preview lights first dispel")
 equal(preview:NeedsDispel(4, 5), true, "party preview lights second dispel")
 equal(preview:NeedsDispel(3, 5), false, "party preview leaves other cells clear")
+equal(preview:NeedsDispel(1, 5), false, "your own cell is clear while not rooted")
+preview.rootedState = true
+equal(preview:NeedsDispel(1, 5), true, "rooted puts the debuff on your own cell too")
+equal(preview:NeedsDispel(2, 5), true, "rooted keeps the party's debuffs")
+preview.rootedState = false
 local shown = false
 preview.Create = function(self)
     self.frame = self.frame or { Hide = function() shown = false end }

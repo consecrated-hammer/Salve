@@ -5,6 +5,28 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.1] - 2026-11-10
+
+### Changed
+
+- **Simpler profiles.** A profile now saves your whole layout: position, grid
+  and size, unit names, sorting, cooldown bar, when Salve shows and attach.
+  The switches for picking which bits count are gone (thanks for the nudge,
+  you know who you are). Anything you'd left shared starts out the same in
+  every profile, so nothing moves until you change it.
+- The top of each settings page just says which profile you're on.
+- **Minimap right-click** and **Handle right-click** moved to Visibility,
+  next to the buttons they belong to. Profiles has a link that takes you
+  straight there.
+- The live preview's **At panel position** is now **Show on screen too**.
+- **Poison first.** The rooted badge is never more than half a cell, so on
+  small cells a poison (or any dispellable debuff) on you stays readable under
+  it. With **Rooted** and **Dispellable debuff** both on, the live preview
+  poisons your own cell too, so you can see both together. Double trouble,
+  safely.
+- **Reload UI** is gone from the bottom of settings. Nothing in Salve needs
+  one. If something ever does, the button turns up when it's needed.
+
 ## [1.10.0] - 2026-11-09
 
 ### Added

@@ -97,9 +97,7 @@ end
 
 HC.Settings:NewPage({
     name = "Salve",
-    profileGroups = { "position", "grid", "names" },
     -- Cells and most Text settings are shared by all profiles.
-    profilePartial = true,
     title = "Panel",
     group = "main",
     headerAction = O.LivePreviewAction,

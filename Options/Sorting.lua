@@ -15,7 +15,6 @@ local ROLE_NAMES = { TANK = "Tank", HEALER = "Healer", DAMAGER = "DPS" }
 
 HC.Settings:NewPage({
     name = "Sorting",
-    profileGroups = { "sorting" },
     title = "Sorting",
     group = "main",
     description = "Which member gets which cell. The live preview shows the result.",

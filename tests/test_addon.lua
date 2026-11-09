@@ -165,6 +165,11 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     equal(box.border.alpha, 0, toc .. ": movement cue leaves border hidden")
     equal(box.movementBadge:IsShown(), true, toc .. ": movement badge still draws")
     equal(box.movementBadge.spellID, 1044, toc .. ": badge points at the movement spell")
+    local cellW, cellH = box:GetWidth(), box:GetHeight()
+    box:SetSize(20, 20)
+    ns.Box.SetMovementPrompt(box, true, 1044)
+    equal(box.movementBadge:GetWidth(), 10, toc .. ": a small cell keeps its debuff visible under the badge")
+    box:SetSize(cellW, cellH)
     equal(ns.Box.MovementBadgePosition(), "TOPRIGHT",
         toc .. ": badge avoids the dispel-type and lockout corners")
     ns.Box.SetMovementPrompt(box, false)
@@ -493,7 +498,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     equal(wow.FindText("Salve 1.8.0"), nil, toc .. ": releases already seen stay hidden")
     assert(wow.FindButton("Open Profiles"), toc .. ": a button opens the Profiles page")
     assert(wow.FindButton("Open Panel"), toc .. ": a button opens the Panel page")
-    equal(saved.hammerCore.whatsNewSeen, "1.10.0", toc .. ": showing records 1.10.0")
+    equal(saved.hammerCore.whatsNewSeen, "1.10.1", toc .. ": showing records 1.10.1")
     wow.Click(wow.FindButton("Open Profiles"))
     equal(HC.Settings.selected, "Profiles", toc .. ": the button opens Profiles")
 

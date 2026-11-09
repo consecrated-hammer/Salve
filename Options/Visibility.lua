@@ -11,9 +11,18 @@ local HANDLE_LABELS = { "Start corner", "Left", "Top left", "Top centre", "Top r
 HC.Settings:AddVisibility()
 -- Handle position shows in the live preview.
 HC.Pages.visibility.headerAction = ns.Options.LivePreviewAction
--- When the panel shows, plus the drag handle (stored with Position).
-HC.Pages.visibility.profileGroups = { "visibility", "position" }
-HC.Pages.visibility.profilePartial = true
+
+-- Right-click on the minimap button sits under Show minimap button.
+HC.spec.visibilityMinimap = function(panel, y)
+    local db = ns.db
+    _, y = O.Dropdown(panel, "Minimap right-click",
+        "Profile menu lists your profiles and can show or hide the drag handle. Drag handle toggles it straight away.", y,
+        { "PROFILES", "HANDLE" }, { "Profile menu", "Drag handle" },
+        function() return db.minimapRightClick end,
+        function(value) ns.Set("minimapRightClick", value) end,
+        nil, 150, 130)
+    return y
+end
 
 HC.spec.visibility = function(panel, y)
     local db = ns.db
@@ -57,14 +66,20 @@ HC.spec.visibility = function(panel, y)
         y, { items = items, summary = function() return ns.Visibility:Summary() end }, 264)
 
     _, y = O.Header(panel, "Position", y)
-    _, y = O.Check(panel, "Show drag handle", "Drag the gold handle to move Salve. Right-click opens settings or profiles (Profiles page).", y,
+    _, y = O.Check(panel, "Show drag handle", "Drag the gold handle to move Salve.", y,
         function() return db.showHandle end,
         function(value) ns.Set("showHandle", value) end)
     _, y = O.Dropdown(panel, "Handle position",
-        "Which edge of the grid holds the handle. Start corner follows the grid's fixed corner (Panel > Grid). Saved per profile when Position is in profiles.", y,
+        "Which edge of the grid holds the handle. Start corner follows the grid's fixed corner (Panel > Grid).", y,
         HANDLE_VALUES, HANDLE_LABELS,
         function() return db.handlePosition end,
         function(value) ns.Set("handlePosition", value) end)
+    _, y = O.Dropdown(panel, "Handle right-click",
+        "Profile menu lists your profiles and links to settings. Open settings goes straight there.", y,
+        { "PROFILES", "SETTINGS" }, { "Profile menu", "Open settings" },
+        function() return db.handleRightClick end,
+        function(value) ns.Set("handleRightClick", value) end,
+        nil, 150, 130)
     _, y = O.ActionButton(panel, y, "Reset frame position",
         function() HC.Commands:Dispatch("reset position") end,
         "Move Salve back to the centre of the screen.")
@@ -74,6 +89,8 @@ HC.spec.visibility = function(panel, y)
         db.visibility = {}
         ns.Set("showHandle", ns.defaults.showHandle)
         ns.Set("handlePosition", ns.defaults.handlePosition)
+        ns.Set("handleRightClick", ns.defaults.handleRightClick)
+        ns.Set("minimapRightClick", ns.defaults.minimapRightClick)
         db.point = { ns.defaults.point[1], ns.defaults.point[2], ns.defaults.point[3], ns.defaults.point[4] }
         local state = HC.State()
         state.minimap, state.startupMessage, state.minimapAngle = true, true, 225

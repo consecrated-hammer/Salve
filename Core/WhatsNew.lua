@@ -6,6 +6,16 @@ local addonName, ns = ...
 -- the lines short and player-facing; details stay in CHANGELOG.md. A `page`
 -- adds a button that opens that settings page.
 ns.WHATS_NEW = {
+    { version = "1.10.1", date = "2026-11-10", items = {
+        { title = "Simpler profiles", text = "A profile saves your whole layout. No more picking which bits count. The top of each settings page just shows the profile you're on.",
+            kind = "improved", page = "Profiles" },
+        { title = "Right-click options moved", text = "What right-clicking the minimap button or drag handle does now lives on Visibility, next to those buttons.",
+            kind = "improved", page = "Visibility" },
+        { title = "Poison first", text = "When you're rooted and poisoned, the rooted badge stays a small corner marker so the poison is what you see. The live preview shows both on your own cell when Rooted and Dispellable debuff are on.",
+            kind = "improved", page = "Salve" },
+        { title = "Show on screen too", text = "The live preview's At panel position switch has a clearer name.",
+            kind = "improved", page = "Salve" },
+    } },
     { version = "1.10.0", items = {
         { title = "Profiles", text = "Keep a separate position and grid layout for Party, Raid 20 and Raid 40. Switch from the Panel page, the minimap or drag handle right-click menu, or /salve profile.",
             page = "Profiles" },

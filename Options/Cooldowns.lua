@@ -25,9 +25,7 @@ end
 
 HC.Settings:NewPage({
     name = "Cooldowns",
-    profileGroups = { "cooldownBar" },
     -- Cooldown icons and lockouts are shared by all profiles.
-    profilePartial = true,
     title = "Cooldowns",
     group = "main",
     description = "Spell icons for cooldown sweeps, and a cooldown bar.",

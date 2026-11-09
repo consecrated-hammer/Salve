@@ -27,7 +27,6 @@ end
 
 HC.Settings:NewPage({
     name = "Attach",
-    profileGroups = { "attach" },
     title = "Attach",
     group = "main",
     description = "Line Salve up with DandersFrames or EllesmereUI group frames.",
