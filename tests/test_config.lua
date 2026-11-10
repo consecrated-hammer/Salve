@@ -295,4 +295,12 @@ equal(requests, 1, "bar setting updates the cooldown icons")
 equal(restyles, 1, "bar setting restyles rather than rebuilding")
 ns.Panel, ns.Cooldowns = nil, nil
 
+-- 1.12 defaults and the development probe's leftovers.
+SalveDB = { probeLog = { "x" }, probeOpen = true, probeHover = true, outOfRangeAlpha = 7 }
+ns.InitConfig()
+equal(ns.db.tooltipDebuff, true, "debuff tooltip defaults on")
+equal(ns.db.outOfRangeAlpha, 1, "out of range opacity is clamped")
+equal(ns.db.probeHover, nil, "probe hover removed")
+equal(ns.db.probeOpen, nil, "probe never reopens itself")
+
 print("config tests passed")

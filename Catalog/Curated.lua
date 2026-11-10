@@ -898,6 +898,16 @@ Salve.Sound:RegisterData("Salve", {
                 },
             },
             {
+                spellID = 373477,
+                dispelType = "Poison",
+                name = "Poison Spit",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
                 spellID = 1299185,
                 dispelType = "Poison",
                 name = "Writhing Venom",
@@ -1341,6 +1351,24 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
+    ["instance:3043"] = {
+        name = "The Labyrinth of Kindo'jan",
+        season = "Midnight Season 2",
+        seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1251539,
+                dispelType = "Disease",
+                name = "Rabid Bite",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+        },
+    },
     ["instance:3079"] = {
         name = "Venomfall Deeps",
         season = "Midnight Season 2",
@@ -1359,6 +1387,44 @@ Salve.Sound:RegisterData("Salve", {
             },
         },
     },
+    ["instance:3095"] = {
+        name = "The Unbinding of Kith'ix",
+        season = "Midnight Season 2",
+        seasonSource = "https://news.blizzard.com/en-us/article/24294369/the-shadows-deepen-midnight-season-2-begins-august-18",
+        coverage = "Encounter Journal baseline; trash may be absent",
+        debuffs = {
+            {
+                spellID = 1286720,
+                dispelType = "Magic",
+                name = "Envenomed Net",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1316354,
+                dispelType = "Poison",
+                name = "Toxic Whirl",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1317754,
+                dispelType = "Poison",
+                name = "Heartsting",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+        },
+    },
     ["map:2395"] = {
         name = "Eversong Woods",
         season = "Midnight Season 2",
@@ -1369,6 +1435,16 @@ Salve.Sound:RegisterData("Salve", {
                 spellID = 58180,
                 dispelType = "Disease",
                 name = "Infected Wounds",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 373477,
+                dispelType = "Poison",
+                name = "Poison Spit",
                 verified = true,
                 provenance = {
                     source = "in-game learning",
@@ -1445,6 +1521,16 @@ Salve.Sound:RegisterData("Salve", {
                 spellID = 1299185,
                 dispelType = "Poison",
                 name = "Writhing Venom",
+                verified = true,
+                provenance = {
+                    source = "in-game learning",
+                    build = "12.1.0 live",
+                },
+            },
+            {
+                spellID = 1300038,
+                dispelType = "Poison",
+                name = "Poison Bolt",
                 verified = true,
                 provenance = {
                     source = "in-game learning",

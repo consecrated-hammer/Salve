@@ -1,8 +1,8 @@
 ## Interface: 120105
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 1.11.0
-## X-ReleaseDate: 2026-11-10
+## Version: 1.12.0
+## X-ReleaseDate: 2026-11-11
 ## Notes: Compact clickable group-dispel panel built for Midnight's private aura rules.
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
 ## LoadSavedVariablesFirst: 1
@@ -61,6 +61,8 @@ Features\Lockouts.lua
 
 # Alert sounds and the selector for the built-in, instance-scoped catalogue.
 Features\Sound.lua
+Features\Range.lua
+Features\Probe.lua
 
 # Generated from data/. This is one small catalogue inside Salve, not a second
 # or third AddOns-list entry. Edit the CSVs and manifest, never this file.

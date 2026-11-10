@@ -5,6 +5,31 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-11-11
+
+### Added
+
+- **Debuff tooltips.** Hover a lit cell and Blizzard's own tooltip tells you
+  what the debuff is, stacks and time left included. Salve's tooltip still
+  shows alongside it. Blizzard won't let addons read debuffs in combat, so
+  this is the game's tooltip rather than ours, and it sits just above the
+  cell. "Show Blizzard debuff tooltip" on the Tooltips page turns it off (after a
+  reload). Thanks to ratvanguard for the idea.
+- **Out of range fading.** Cells fade when a group member is out of your
+  dispel's range, so you don't try to cleanse someone who's three rooms
+  away. Your own cell never fades. "Out of range opacity" on the Panel page,
+  under Cells, sets how faded; 100% turns it off. Also ratvanguard's idea.
+- **Probe.** "Open probe" on Troubleshooting opens a little window that
+  snapshots what the game lets Salve see about range and debuffs, in combat
+  too, and copies it all for a bug report. It does nothing until you open it.
+
+### Changed
+
+- Six more debuffs Salve now knows about, all caught in the wild by its own
+  learning: Poison Spit, Poison Bolt, Rabid Bite, Envenomed Net, Toxic Whirl
+  and Heartsting, across Vaults of Atal'Utek, Eversong Woods, the Coiled Isle,
+  the Labyrinth of Kindo'jan and the Unbinding of Kith'ix.
+
 ## [1.11.0] - 2026-11-10
 
 ### Added

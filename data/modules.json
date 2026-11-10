@@ -1,6 +1,6 @@
 {
   "interface": 120105,
-  "version": "1.11.0",
+  "version": "1.12.0",
   "modules": [
     {
       "folder": "Salve_Data_Midnight_S1",
@@ -45,7 +45,9 @@
         { "id": 2963, "name": "The Grudge Pit" },
         { "id": 3004, "name": "The Venomous Abyss" },
         { "id": 3038, "name": "Gnarldor Isle" },
-        { "id": 3079, "name": "Venomfall Deeps" }
+        { "id": 3079, "name": "Venomfall Deeps" },
+        { "id": 3043, "name": "The Labyrinth of Kindo'jan" },
+        { "id": 3095, "name": "The Unbinding of Kith'ix" }
       ],
       "maps": [
         { "id": 2395, "name": "Eversong Woods" },

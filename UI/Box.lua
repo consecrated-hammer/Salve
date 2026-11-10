@@ -288,6 +288,7 @@ end
 --   setting scripts on it during combat would be a blocked action -- but doing
 --   it once here, out of combat, is fine and never needs repeating.
 local function ShowBoxTooltip(box)
+    if ns.Probe then ns.Probe:NoteBoxEnter() end
     if not (ns.db and ns.db.showTooltip) then return end
     if not box.unit or not UnitExists(box.unit) then return end
 
@@ -341,6 +342,11 @@ end
 local function HideBoxTooltip(box)
     if GameTooltip:IsOwned(box) then GameTooltip:Hide() end
 end
+
+-- Features/Range.lua re-shows the tooltip when Blizzard's debuff tooltip
+-- button takes the hover from the box.
+Box.ShowTooltip = ShowBoxTooltip
+Box.HideTooltip = HideBoxTooltip
 
 local function CreateVisuals(box, registerCooldown)
     -- Dim plate behind everything: what you see when the unit is clean. Use
@@ -442,6 +448,7 @@ function Box.Create(index, parent)
     -- Salve action and its unit token; it never asks the secret aura carrier
     -- why the cell was visible.
     box:HookScript("OnClick", function(self, button)
+        if ns.Probe then ns.Probe:NoteBoxClick() end
         if ns.ClickLog then ns.ClickLog:Record(self, button) end
         if ns.Lockouts then ns.Lockouts:NoteClick(self, button) end
     end)

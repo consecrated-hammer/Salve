@@ -99,6 +99,10 @@ local function buildReport()
         lines[#lines + 1] = "Last sound failure: " .. tostring(ns.Sound.lastFailure)
     end
 
+    if ns.Range then
+        for _, line in ipairs(ns.Range:DiagnosticLines()) do lines[#lines + 1] = line end
+    end
+
     lines[#lines + 1] = "Bindings:"
     for _, entry in ipairs(ns.Bindings:List()) do
         local what = ns.Bindings:Describe(entry)
@@ -137,8 +141,10 @@ local function showCopyClickLog()
 end
 
 function O.TroubleshootingExtras(panel, y)
+    -- Line up under HammerCore's "Copy report" button.
+    local left = O.PAD or 16
     local probe = O.Button(panel, 150, 22)
-    probe:SetPoint("TOPLEFT", 16, y)
+    probe:SetPoint("TOPLEFT", left, y)
     probe:SetText("Run diagnostics")
     O.AttachHint(probe, "Run diagnostics",
         "Check the aura engine, clicks, spell data and sound registrations, and print the result.")
@@ -148,12 +154,21 @@ function O.TroubleshootingExtras(panel, y)
         ns.Sound:Report()
         panel.hcRefreshAll()
     end)
-    local forever = O.Button(panel, 165, 22)
-    forever:SetPoint("LEFT", probe, "RIGHT", 8, 0)
-    forever:SetText("Copy Forever spells")
-    O.AttachHint(forever, "Copy Forever spells",
-        "Copy the detected Forever cure families and observed spellbook IDs for a missing-ability report. This never enables manually entered spells.")
-    forever:SetScript("OnClick", O.ShowForeverSpellReport)
+    if ns.isCamelot then
+        local forever = O.Button(panel, 165, 22)
+        forever:SetPoint("LEFT", probe, "RIGHT", 8, 0)
+        forever:SetText("Copy Forever spells")
+        O.AttachHint(forever, "Copy Forever spells",
+            "Copy the detected Forever cure families and observed spellbook IDs for a missing-ability report. This never enables manually entered spells.")
+        forever:SetScript("OnClick", O.ShowForeverSpellReport)
+    end
+    y = y - 30
+    local probeWindow = O.Button(panel, 150, 22)
+    probeWindow:SetPoint("TOPLEFT", left, y)
+    probeWindow:SetText("Open probe")
+    O.AttachHint(probeWindow, "Open probe",
+        "A small window that snapshots range and debuff checks, in combat too, and copies the results.")
+    probeWindow:SetScript("OnClick", function() ns.Probe:Show(true) end)
     y = y - 38
 
     _, y = O.Header(panel, "Aura learning", y)
@@ -164,9 +179,9 @@ function O.TroubleshootingExtras(panel, y)
     _, y = O.Check(panel, "Record armed Salve-cell clicks",
         "Off by default. Saves timestamp, unit token, mouse binding and the selected Salve action to SalveClickLog. It cannot record a private aura's name.",
         y, function() return ns.db.clickAuditEnabled end,
-        function(value) ns.Set("clickAuditEnabled", value) end)
+        function(value) ns.Set("clickAuditEnabled", value) end, 264)
     local clear = O.Button(panel, 120, 22)
-    clear:SetPoint("TOPLEFT", 16, y)
+    clear:SetPoint("TOPLEFT", left, y)
     clear:SetText("Clear click log")
     O.AttachHint(clear, "Clear click log", "Remove saved Salve-cell click history.")
     clear:SetScript("OnClick", function()

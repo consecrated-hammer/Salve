@@ -440,9 +440,14 @@ local function initializeFrame(box)
     return function(b)
         -- The engine's buttons default to mouse-enabled, which would steal the
         -- clicks from the secure button underneath and make the box dead.
+        -- "Show Blizzard debuff tooltip" keeps mouse motion on (clicks stay off) so
+        -- Blizzard shows its own tooltip for the debuff. Salve can't read the
+        -- aura in combat, but the engine can. Takes effect on new buttons,
+        -- so changing it asks for a reload.
+        local keepMotion = ns.db and ns.db.tooltipDebuff ~= false
         pcall(function()
             if b.SetMouseClickEnabled then b:SetMouseClickEnabled(false) end
-            if b.SetMouseMotionEnabled then b:SetMouseMotionEnabled(false) end
+            if b.SetMouseMotionEnabled then b:SetMouseMotionEnabled(keepMotion == true) end
         end)
 
         pcall(b.SetSize, b, box:GetWidth(), box:GetHeight())

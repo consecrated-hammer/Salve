@@ -6,6 +6,12 @@ local addonName, ns = ...
 -- the lines short and player-facing; details stay in CHANGELOG.md. A `page`
 -- adds a button that opens that settings page.
 ns.WHATS_NEW = {
+    { version = "1.12.0", date = "2026-11-11", items = {
+        { title = "Debuff tooltips", text = "Hover a lit cell to see what the debuff is, straight from Blizzard. Switch it off on Tooltips.",
+            page = "Tooltips" },
+        { title = "Out of range fading", text = "Cells fade when someone's out of dispel range, so you don't waste a click. Change how faded a cell is on the Panel page, under Cells.",
+            page = "Salve", tab = "Cells" },
+    } },
     { version = "1.11.0", date = "2026-11-10", items = {
         { title = "Hide on flights", text = "The panel and movement text hide on a flight path and come back when you land. Switch it off on Visibility.",
             page = "Visibility" },

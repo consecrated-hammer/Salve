@@ -144,6 +144,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
         ns.Escape:Update()
         if ns.Options.RefreshDispel then ns.Options.RefreshDispel() end
         ns.Panel:Create()
+        if ns.Range then ns.Range:Start() end
         -- Broker first: it is a no-op without LibStub, and it never affects the
         -- minimap button, which Salve always owns. See UI/Broker.lua.
         ns.Broker:Create()

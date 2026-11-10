@@ -48,7 +48,7 @@ local TAB_KEYS = {
     Layout = { "orientation", "horizontalGrowth", "verticalGrowth", "columns",
         "spacing", "scale", "boxWidth", "boxHeight", "previewUnits" },
     Cells = { "showBorders", "showStacks", "showDispelTypeIcon", "dispelTypeIconSize",
-        "dispelTypeIconPosition", "showWhenClean", "useClassColours", "cleanAlpha" },
+        "dispelTypeIconPosition", "showWhenClean", "useClassColours", "cleanAlpha", "outOfRangeAlpha" },
     Text = { "showNames", "nameJustifyH", "nameJustifyV", "nameFontSize",
         "cooldownJustifyH", "cooldownJustifyV", "cooldownFontSize" },
 }
@@ -263,6 +263,18 @@ HC.Settings:NewPage({
                 function(value) return string.format("%d%%", math.floor(value * 100 + 0.5)) end)
             iy = O.Flush(idleDetails, iy)
             add(idleDetails, -iy + 4, function() return db.showWhenClean end)
+
+            local range = section(panel, 2)
+            local ry = -8
+            _, ry = O.Header(range, "Range", ry)
+            _, ry = O.Slider(range, "Out of range opacity",
+                "Cells fade for group members out of dispel range. 100% turns it off.", ry,
+                0, 1, 0.05,
+                function() return db.outOfRangeAlpha end,
+                function(value) ns.Set("outOfRangeAlpha", value) end,
+                function(value) return string.format("%d%%", math.floor(value * 100 + 0.5)) end)
+            ry = O.Flush(range, ry)
+            add(range, -ry + 4)
 
         end) },
         { name = "Text", build = tab("Text", function(panel, add, db)

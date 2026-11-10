@@ -43,6 +43,9 @@ ns.defaults = {
     tooltipActions = true,
     tooltipSpellDescriptions = false,
     tooltipAnchor = "RIGHT",
+    -- Blizzard's own debuff tooltip from the cell's aura button. Salve never
+    -- reads the aura; the engine draws it.
+    tooltipDebuff = true,
     -- Blizzard draws this itself from private aura data. It is not an aura
     -- inspection by Salve, and defaults on for the familiar DF-style marker.
     showDispelTypeIcon = true,
@@ -70,6 +73,8 @@ ns.defaults = {
     useClassColours = false,
     showWhenClean = true,
     cleanAlpha    = 0.25,
+    -- Cells for group members out of dispel range fade to this. 1 turns it off.
+    outOfRangeAlpha = 0.4,
     showHandle    = true,   -- the persistent drag grip, like Decursive's
     handlePosition = "TOPLEFT",  -- an edge or corner, or CORNER = the grid's start corner
     -- Right-clicking the drag handle opens the minimap button's menu or
@@ -227,7 +232,7 @@ local function normalizePreferences(db)
         resetIfWrongType(db, key, "table")
     end
     for _, key in ipairs({ "showNames", "showBorders", "showTooltip", "tooltipUnitInfo", "tooltipActions",
-        "tooltipSpellDescriptions", "showDispelTypeIcon", "showStacks", "useClassColours",
+        "tooltipSpellDescriptions", "tooltipDebuff", "showDispelTypeIcon", "showStacks", "useClassColours",
         "showWhenClean", "showHandle", "bindingsCustom", "clickAuditEnabled",
         "soundEnabled", "dispelSoundEnabled", "movementSoundEnabled", "movementTextNotification",
         "movementAlertsEnabled", "inferredSlowAlertsEnabled",
@@ -235,7 +240,9 @@ local function normalizePreferences(db)
         "cooldownBarMatchPanel", "lockoutIcons", "hideOnFlights" }) do
         resetIfWrongType(db, key, "boolean")
     end
-    for _, key in ipairs({ "scale", "cleanAlpha" }) do numberInRange(db, key, 0, key == "scale" and 3 or 1) end
+    for _, key in ipairs({ "scale", "cleanAlpha", "outOfRangeAlpha" }) do numberInRange(db, key, 0, key == "scale" and 3 or 1) end
+    -- Leftovers from the 1.12 development probe, which saved its open state.
+    db.probeHover, db.probeOpen = nil, nil
     numberInRange(db, "columns", 1, 40, true)
     numberInRange(db, "boxWidth", 8, 200, true)
     numberInRange(db, "boxHeight", 8, 200, true)
@@ -535,6 +542,16 @@ local COOLDOWNS = {
 function ns.Set(key, value)
     if ns.db[key] == value then return end
     ns.db[key] = value
+    if key == "tooltipDebuff" then
+        if ns.HammerCore and ns.HammerCore.Settings then
+            ns.HammerCore.Settings:RequestReload("The debuff tooltip changes after a reload.")
+        end
+        return
+    end
+    if key == "outOfRangeAlpha" then
+        if ns.Range then ns.Range:UpdateAll() end
+        return
+    end
     if key == "learningScopeMessages" or key == "learningDiscoveryMessages" then return end
 
     if key == "movementAlertsEnabled" or key == "inferredSlowAlertsEnabled" then

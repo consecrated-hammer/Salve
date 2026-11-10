@@ -30,6 +30,10 @@ HC.Settings:NewPage({
         "Include Blizzard's normal unit tooltip: name, class, level and other standard unit details.", y,
         function() return db.tooltipUnitInfo end,
         function(value) ns.Set("tooltipUnitInfo", value) end, 264)
+    _, y = O.Check(controls, "Show Blizzard debuff tooltip",
+        "Blizzard's tooltip for the debuff on a lit cell, shown above the cell. Needs a reload.", y,
+        function() return db.tooltipDebuff end,
+        function(value) ns.Set("tooltipDebuff", value) end, 264)
 
     _, y = O.Header(controls, "Content", y)
     _, y = O.Check(controls, "Show Salve actions",
@@ -53,6 +57,7 @@ HC.Settings:NewPage({
     _, y = O.PageReset(controls, y - 4, function()
         ns.Set("showTooltip", ns.defaults.showTooltip)
         ns.Set("tooltipUnitInfo", ns.defaults.tooltipUnitInfo)
+        ns.Set("tooltipDebuff", ns.defaults.tooltipDebuff)
         ns.Set("tooltipActions", ns.defaults.tooltipActions)
         ns.Set("tooltipSpellDescriptions", ns.defaults.tooltipSpellDescriptions)
         ns.Set("tooltipAnchor", ns.defaults.tooltipAnchor)
