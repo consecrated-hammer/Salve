@@ -113,6 +113,8 @@ local function show(message)
         MovementAlert:PrintChat(message)
         if destination == "CHAT" then return true end
     end
+    -- Hide on flights: nothing on screen between takeoff and landing.
+    if ns.Visibility and ns.Visibility:HiddenForFlight() then return true end
     MovementAlert:StopPreview()
     MovementAlert:Position()
     MovementAlert.remaining = 4

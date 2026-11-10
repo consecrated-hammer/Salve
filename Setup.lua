@@ -2,7 +2,7 @@ local addonName, ns = ...
 local HC = ns.HammerCore
 
 -- Declares Salve to HammerCore: commands, the shared verbs, the minimap
--- right-click, status, diagnostics, Troubleshooting extras and About.
+-- menu, status, diagnostics, Troubleshooting extras and About.
 -- Salve's own settings helpers live on ns.Options, which falls back to
 -- HammerCore's controls, so pages call O.Check, O.Header and so on.
 
@@ -68,32 +68,23 @@ local function setLocked(locked)
     HC.Print(locked and "drag handle hidden" or "drag handle shown - grab the small square above the panel")
 end
 
--- The quick profile menu, from the minimap button, broker or drag handle.
--- One menu for the minimap button and the drag handle: actions, a line, then
--- the profiles. `source` says which opened it, for any future difference.
-function ns.OpenProfileMenu(source)
-    -- Actions first, so they stay put however many profiles follow the line.
-    -- The handle and minimap menus match; right-click used to open settings,
-    -- so they stay one click away.
-    local items = { { text = "Salve settings", func = function() HC.Settings:Show() end } }
-    items[#items + 1] = { text = "Profile settings", func = function() HC.Settings:Show("Profiles") end }
-    items[#items + 1] = { text = ns.IsLocked() and "Show drag handle" or "Hide drag handle",
-        func = function() setLocked(not ns.IsLocked()) end }
+-- Salve's part of HammerCore's minimap menu, which already starts with
+-- "Salve settings" and "Profiles": the drag handle toggle, a line, then the
+-- profiles. The drag handle and the LDB launcher open the same menu.
+function ns.MenuItems()
+    local items = { { text = ns.IsLocked() and "Show drag handle" or "Hide drag handle",
+        func = function() setLocked(not ns.IsLocked()) end } }
     items[#items + 1] = { separator = true }
-    for _, item in ipairs(HC.Profiles:MenuItems()) do items[#items + 1] = item end
-    HC.Menu:Open(items)
-end
-
-function ns.MinimapRightClick()
-    if ns.db and ns.db.minimapRightClick == "HANDLE" then
-        setLocked(not ns.IsLocked())
-    else
-        ns.OpenProfileMenu("MINIMAP")
+    -- HC's own "Profiles" item already sits above, so skip the list's title.
+    for _, item in ipairs(HC.Profiles:MenuItems()) do
+        if not item.title then items[#items + 1] = item end
     end
+    return items
 end
 
-function ns.MinimapRightClickLabel()
-    return ns.db and ns.db.minimapRightClick == "HANDLE" and "show or hide the drag handle" or "profiles"
+-- anchor: the frame to open beneath (the drag handle), or nil for the cursor.
+function ns.OpenMenu(anchor)
+    return HC.Minimap:OpenMenu(anchor)
 end
 
 HC:Init({
@@ -112,10 +103,7 @@ HC:Init({
     clientLabel = function() return ns.isCamelot and "WoW Forever" or "Retail" end,
     minimap = {
         icon = "Interface\\AddOns\\Salve\\Textures\\SalveClean",
-        rightClick = function() ns.MinimapRightClick() end,
-        -- HammerCore prints the label with tostring(), so a table with
-        -- __tostring follows the Minimap right-click setting.
-        rightClickLabel = setmetatable({}, { __tostring = function() return ns.MinimapRightClickLabel() end }),
+        menu = function() return ns.MenuItems() end,
     },
     onSettingsShown = function()
         if ns.Preview and ns.db.previewWindowOpen then ns.Preview:ShowWindow() end
@@ -127,6 +115,8 @@ HC:Init({
         end
     end,
     whatsNew = ns.WHATS_NEW,
+    -- Takeoff and landing only, for Hide on flights. See Features/Flights.lua.
+    flights = { estimates = false },
     toggle = { help = "Show or hide the panel", run = function()
         ns.db.visibilityMode = ns.db.visibilityMode == "NEVER" and "ALWAYS" or "NEVER"
         ns.RequestRebuildSoon(0.05)
@@ -152,7 +142,7 @@ HC:Init({
 })
 
 HC.Commands:AddAction({ section = "Panel", usage = "Click a lit cell", help = "Use the action bound to that mouse button" })
-HC.Commands:AddAction({ section = "Panel", usage = "Drag the gold handle", help = "Move the panel; right-click it for settings" })
+HC.Commands:AddAction({ section = "Panel", usage = "Drag the gold handle", help = "Move the panel; right-click it for the menu" })
 HC.Commands:Add({ name = "forever", section = "Diagnostics", help = "Copy a Forever cure and spellbook report",
     run = function() ns.Options.ShowForeverSpellReport() end })
 HC.Commands:Add({ name = "cooldowns", section = "Diagnostics", help = "Show how cooldown icons read each spell; works in combat",

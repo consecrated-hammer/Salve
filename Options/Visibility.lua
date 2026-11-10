@@ -2,8 +2,9 @@ local addonName, ns = ...
 local HC = ns.HammerCore
 local O = ns.Options
 
--- HammerCore's Visibility page supplies "Other" (minimap button, startup
--- message); this adds when the panel shows and where its handle sits.
+-- HammerCore's Visibility page supplies "Other" (minimap button and its
+-- right-click, startup message); this adds when the panel shows and where its
+-- handle sits.
 
 local HANDLE_VALUES = { "CORNER", "LEFT", "TOPLEFT", "TOP", "TOPRIGHT", "RIGHT", "BOTTOMRIGHT", "BOTTOM", "BOTTOMLEFT" }
 local HANDLE_LABELS = { "Start corner", "Left", "Top left", "Top centre", "Top right", "Right", "Bottom right", "Bottom centre", "Bottom left" }
@@ -11,18 +12,6 @@ local HANDLE_LABELS = { "Start corner", "Left", "Top left", "Top centre", "Top r
 HC.Settings:AddVisibility()
 -- Handle position shows in the live preview.
 HC.Pages.visibility.headerAction = ns.Options.LivePreviewAction
-
--- Right-click on the minimap button sits under Show minimap button.
-HC.spec.visibilityMinimap = function(panel, y)
-    local db = ns.db
-    _, y = O.Dropdown(panel, "Minimap right-click",
-        "Profile menu lists your profiles and can show or hide the drag handle. Drag handle toggles it straight away.", y,
-        { "PROFILES", "HANDLE" }, { "Profile menu", "Drag handle" },
-        function() return db.minimapRightClick end,
-        function(value) ns.Set("minimapRightClick", value) end,
-        nil, 150, 130)
-    return y
-end
 
 HC.spec.visibility = function(panel, y)
     local db = ns.db
@@ -64,6 +53,9 @@ HC.spec.visibility = function(panel, y)
     _, y = O.MultiSelect(panel, "Show",
         "Choose Always or Never, or tick several rules; any matching rule will show Salve.",
         y, { items = items, summary = function() return ns.Visibility:Summary() end }, 264)
+    _, y = O.Check(panel, "Hide on flights", "Hide the panel and movement text on a flight path.", y,
+        function() return db.hideOnFlights end,
+        function(value) ns.Set("hideOnFlights", value) end)
 
     _, y = O.Header(panel, "Position", y)
     _, y = O.Check(panel, "Show drag handle", "Drag the gold handle to move Salve.", y,
@@ -75,8 +67,8 @@ HC.spec.visibility = function(panel, y)
         function() return db.handlePosition end,
         function(value) ns.Set("handlePosition", value) end)
     _, y = O.Dropdown(panel, "Handle right-click",
-        "Profile menu lists your profiles and links to settings. Open settings goes straight there.", y,
-        { "PROFILES", "SETTINGS" }, { "Profile menu", "Open settings" },
+        "Menu matches the minimap button's: settings, the drag handle and your profiles. Open settings goes straight there.", y,
+        { "PROFILES", "SETTINGS" }, { "Menu", "Open settings" },
         function() return db.handleRightClick end,
         function(value) ns.Set("handleRightClick", value) end,
         nil, 150, 130)
@@ -90,10 +82,11 @@ HC.spec.visibility = function(panel, y)
         ns.Set("showHandle", ns.defaults.showHandle)
         ns.Set("handlePosition", ns.defaults.handlePosition)
         ns.Set("handleRightClick", ns.defaults.handleRightClick)
-        ns.Set("minimapRightClick", ns.defaults.minimapRightClick)
+        ns.Set("hideOnFlights", ns.defaults.hideOnFlights)
         db.point = { ns.defaults.point[1], ns.defaults.point[2], ns.defaults.point[3], ns.defaults.point[4] }
         local state = HC.State()
         state.minimap, state.startupMessage, state.minimapAngle = true, true, 225
+        state.minimapRightClick = nil
         HC.Minimap:Update()
         ns.Panel:ApplyPosition()
         ns.RequestRebuildSoon(0.05)

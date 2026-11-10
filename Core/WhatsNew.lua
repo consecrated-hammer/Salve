@@ -6,6 +6,13 @@ local addonName, ns = ...
 -- the lines short and player-facing; details stay in CHANGELOG.md. A `page`
 -- adds a button that opens that settings page.
 ns.WHATS_NEW = {
+    { version = "1.11.0", date = "2026-11-10", items = {
+        { title = "Hide on flights", text = "The panel and movement text hide on a flight path and come back when you land. Switch it off on Visibility.",
+            page = "Visibility" },
+        { title = "Find a setting", text = "Type in the search box at the top of settings to jump straight to any setting." },
+        { title = "One right-click menu", text = "The minimap button and drag handle open the same menu: settings, Profiles, the drag handle toggle and your profiles. Minimap right-click on Visibility can open settings instead.",
+            kind = "improved", page = "Visibility" },
+    } },
     { version = "1.10.1", date = "2026-11-10", items = {
         { title = "Simpler profiles", text = "A profile saves your whole layout. No more picking which bits count. The top of each settings page just shows the profile you're on.",
             kind = "improved", page = "Profiles" },

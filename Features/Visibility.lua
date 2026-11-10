@@ -35,7 +35,7 @@ ns.VIS_CONDITIONS = {
 function Visibility:Rule()
     local db = ns.db
 
-    if db.visibilityMode == "NEVER" then return "hide" end
+    if db.visibilityMode == "NEVER" or self:HiddenForFlight() then return "hide" end
 
     local parts = {}
     for _, c in ipairs(ns.VIS_CONDITIONS) do
@@ -49,9 +49,12 @@ function Visibility:Rule()
 end
 
 -- ☠ Registering a driver is itself a protected operation, so this is called
---   only from Panel:Rebuild, which is already gated on InCombatLockdown.
+--   only from Panel:Rebuild, which is already gated on InCombatLockdown, and
+--   Refresh below, which checks it first.
 function Visibility:Apply(frame, hasBoxes)
     if not frame or InCombatLockdown() then return end
+    -- Remembered so Refresh can swap the rule without a full rebuild.
+    self.frame, self.hasBoxes = frame, hasBoxes
 
     UnregisterStateDriver(frame, "visibility")
 
@@ -80,4 +83,45 @@ function Visibility:Summary()
     if #names == 0 then return "Always" end
     if #names > 2 then return #names .. " conditions" end
     return table.concat(names, ", ")
+end
+
+-- ── Hide on flights ───────────────────────────────────────────────────────
+-- HammerCore's flight tracking (flights = { estimates = false } in Setup.lua)
+-- says when a flight path takes off and lands, including a reload mid-flight.
+-- While flying, the rule above is "hide": the panel, its handle and cooldown
+-- bar go, and the on-screen movement text stays quiet.
+--
+-- ☠ Swapping the rule re-registers the state driver, which is protected. Out
+--   of combat that happens straight away. In combat (a landing into a fight)
+--   it waits for RequestRebuild's PLAYER_REGEN_ENABLED replay; a panel can't
+--   be shown from Lua mid-fight any other way.
+
+Visibility.onFlight = false
+
+function Visibility:HiddenForFlight()
+    return self.onFlight and ns.db ~= nil and ns.db.hideOnFlights ~= false
+end
+
+-- Re-applies the current rule to the panel, or queues a rebuild that does.
+function Visibility:Refresh()
+    if not self.frame then return end
+    if InCombatLockdown() then
+        ns.RequestRebuild()
+        return
+    end
+    self:Apply(self.frame, self.hasBoxes)
+end
+
+function Visibility:SetFlying(flying)
+    flying = flying and true or false
+    if self.onFlight == flying then return end
+    self.onFlight = flying
+    if self:HiddenForFlight() and ns.MovementAlert then ns.MovementAlert:Clear() end
+    self:Refresh()
+end
+
+local HC = ns.HammerCore
+if HC and HC.Flights then
+    HC.Flights:OnTakeoff(function() Visibility:SetFlying(true) end)
+    HC.Flights:OnLanding(function() Visibility:SetFlying(false) end)
 end

@@ -110,7 +110,7 @@ function Handle:Create(parent)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText("Salve")
         GameTooltip:AddLine("Drag: move the panel", 0.85, 0.85, 0.85)
-        GameTooltip:AddLine(ns.db.handleRightClick == "PROFILES" and "Right-click: profiles"
+        GameTooltip:AddLine(ns.db.handleRightClick == "PROFILES" and "Right-click: menu"
             or "Right-click: options", 0.85, 0.85, 0.85)
         GameTooltip:Show()
     end)
@@ -121,9 +121,11 @@ function Handle:Create(parent)
     end)
 
     h:RegisterForClicks("RightButtonUp")
-    h:SetScript("OnClick", function()
-        if ns.db.handleRightClick == "PROFILES" and ns.OpenProfileMenu then
-            ns.OpenProfileMenu("HANDLE")
+    -- PROFILES is the minimap button's menu, opened under the handle, so the
+    -- two right-click menus always match.
+    h:SetScript("OnClick", function(self)
+        if ns.db.handleRightClick == "PROFILES" and ns.OpenMenu then
+            ns.OpenMenu(self)
         else
             ns.HammerCore.Settings:Toggle()
         end

@@ -52,7 +52,8 @@ function Broker:Create()
         OnClick = function(_, button)
             -- ☠ IsLocked(), not a `locked` key: the handle's visibility is the lock.
             if button == "RightButton" then
-                if ns.MinimapRightClick then ns.MinimapRightClick() else ns.SetLocked(not ns.IsLocked()) end
+                -- Same as the minimap button: its menu, or settings by choice.
+                ns.HammerCore.Minimap:RightClick()
             else
                 ns.HammerCore.Settings:Toggle()
             end
@@ -64,8 +65,7 @@ function Broker:Create()
             tooltip:AddLine(ns.spellName or "no dispel on this spec", 0.7, 0.7, 0.7)
             tooltip:AddLine(" ")
             tooltip:AddLine("Click: open options", 0.85, 0.85, 0.85)
-            tooltip:AddLine("Right-click: " .. (ns.MinimapRightClickLabel and ns.MinimapRightClickLabel()
-                or "show or hide the drag handle"), 0.85, 0.85, 0.85)
+            tooltip:AddLine("Right-click: " .. ns.HammerCore.Minimap.RightClickLabel(), 0.85, 0.85, 0.85)
         end,
     })
 

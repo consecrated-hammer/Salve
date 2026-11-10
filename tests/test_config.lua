@@ -31,7 +31,7 @@ local chunk = assert(loadfile("Core/Config.lua"))
 chunk("Salve", ns)
 ns.InitConfig()
 
-equal(ns.db.schemaVersion, 11, "schema migrated")
+equal(ns.db.schemaVersion, 12, "schema migrated")
 equal(ns.db.learnMode, true, "learning normalized on")
 equal(ns.db.soundEnabled, false, "alert sound defaults off")
 equal(ns.db.dispelSoundEnabled, false, "dispel alert sound defaults off")
@@ -111,7 +111,7 @@ ns.InitConfig()
 -- data source, not a diagnostic, so resetting it meant that category never
 -- accumulated anything.
 equal(ns.db.learnMode, true, "learning survives UI reload")
-equal(ns.db.schemaVersion, 11, "duplicate-binding migration applied")
+equal(ns.db.schemaVersion, 12, "duplicate-binding migration applied")
 equal(#ns.db.bindings, 1, "duplicate mouse bindings collapsed")
 equal(ns.db.bindingsCustom, true, "legacy explicit bindings remain custom")
 equal(ns.db.visibility.mounted, nil, "removed mounted condition cleared")
@@ -175,7 +175,18 @@ SalveDB = { previewUnits = 99, minimapRightClick = "SIDEWAYS", handleRightClick 
 SalveLearnedDB = nil
 ns.InitConfig()
 equal(ns.db.previewUnits, 40, "preview units are clamped")
-equal(ns.db.minimapRightClick, "PROFILES", "minimap right-click defaults to the profile menu")
+equal(ns.db.minimapRightClick, nil, "Salve's old minimap right-click is retired")
+equal(ns.db.hideOnFlights, true, "Hide on flights is on by default")
+for _, choice in ipairs({ "PROFILES", "HANDLE" }) do
+    SalveDB = { schemaVersion = 11, minimapRightClick = choice }
+    SalveLearnedDB = nil
+    ns.InitConfig()
+    equal(ns.db.minimapRightClick, nil, choice .. " moves to HammerCore's Menu")
+end
+SalveDB = { hideOnFlights = "yes" }
+SalveLearnedDB = nil
+ns.InitConfig()
+equal(ns.db.hideOnFlights, true, "a broken Hide on flights value is reset")
 equal(ns.db.handleRightClick, "PROFILES", "handle right-click defaults to the profile menu")
 
 -- SavedVariables are persisted input, not trusted Lua. A bad or partly
@@ -199,7 +210,7 @@ SalveDB = {
 }
 SalveLearnedDB = nil
 ns.InitConfig()
-equal(ns.db.schemaVersion, 11, "invalid schema is normalized")
+equal(ns.db.schemaVersion, 12, "invalid schema is normalized")
 equal(type(ns.db.bindings), "table", "invalid bindings are repaired")
 equal(type(ns.db.visibility), "table", "invalid visibility is repaired")
 equal(type(ns.db.escapes), "table", "invalid escapes are repaired")

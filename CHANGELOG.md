@@ -5,6 +5,29 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-11-10
+
+### Added
+
+- **Hide on flights.** Salve gets out of the way on a flight path: the
+  panel, its handle and cooldown bar, and the on-screen movement text all
+  hide at takeoff and come back when you land. Nobody needs a dispel grid
+  over the scenery. It's on by default; switch it off on Visibility. If you
+  land in the middle of a fight, the panel turns up the moment combat ends,
+  since the game won't let addons show it sooner.
+- **Find a setting.** A search box at the top of settings finds any setting
+  and takes you straight to it.
+
+### Changed
+
+- **One menu for both right-clicks.** The minimap button now opens the same
+  menu as every Consecrated Hammer addon: Salve settings, Profiles, the drag
+  handle toggle, then your profiles. The drag handle opens the same menu,
+  right where you clicked.
+- **Minimap right-click** is now Menu or Settings. If you'd picked Drag
+  handle, you'll find **Hide drag handle** at the top of Salve's part of the
+  menu, one extra click away, and `/salve lock` still works.
+
 ## [1.10.1] - 2026-11-10
 
 ### Changed

@@ -112,12 +112,38 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
 
     -- Page content carried over from the old settings shell.
     for _, text in ipairs({ "Show dispel-type icon", "Show Salve actions", "Show self-dispel combat text",
-        "Show personal Freedom movement text", "Show minimap button", "Show startup message" }) do
+        "Show personal Freedom movement text", "Show minimap button", "Show startup message",
+        "Hide on flights", "Minimap right-click", "Handle right-click" }) do
         equal(wow.FindText(text) ~= nil, true, toc .. ": settings offer '" .. text .. "'")
     end
     for _, text in ipairs({ "Show spell IDs", "Show privacy note", "Show actions heading" }) do
         equal(wow.FindText(text), nil, toc .. ": settings omit '" .. text .. "'")
     end
+
+    local minimapRows = 0
+    for _, region in ipairs(wow.regions) do
+        if region.text == "Minimap right-click" then minimapRows = minimapRows + 1 end
+    end
+    equal(minimapRows, 1, toc .. ": one Minimap right-click row, HammerCore's")
+
+    -- Hide on flights rides HammerCore's takeoff and landing, without
+    -- LibTaxiData's estimates.
+    equal(HC.Flights.enabled, true, toc .. ": flight tracking is on")
+    equal(HC.Flights.Estimates(), false, toc .. ": no flight time estimates")
+    UnitOnTaxi = function() return true end
+    HC.Flights.frame.scripts.OnEvent(HC.Flights.frame, "PLAYER_ENTERING_WORLD")
+    equal(ns.Visibility:HiddenForFlight(), true, toc .. ": a flight hides Salve")
+    UnitOnTaxi = function() return false end
+    HC.Flights:Tick()
+    equal(ns.Visibility:HiddenForFlight(), false, toc .. ": landing brings Salve back")
+    -- A dialogue flight has no flight-map click: control loss plus taxi state.
+    UnitOnTaxi = function() return true end
+    HC.Flights.frame.scripts.OnEvent(HC.Flights.frame, "PLAYER_CONTROL_LOST")
+    equal(ns.Visibility:HiddenForFlight(), true, toc .. ": a dialogue flight hides Salve")
+    UnitOnTaxi = function() return false end
+    HC.Flights:Tick()
+    equal(ns.Visibility:HiddenForFlight(), false, toc .. ": and landing brings it back")
+    UnitOnTaxi = nil
 
     -- The live preview opens from the header in its own window.
     HC.Settings:Show("Salve")
@@ -445,30 +471,53 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     equal(ns.db.columns .. ":" .. ns.db.verticalGrowth, "10:UP", toc .. ": Raid 40 comes back as left")
     equal(wow.LastPrint(), "Salve: switched to the Raid 40 profile", toc .. ": the command confirms")
 
-    -- Minimap right-click: the profile menu by default, the handle toggle by choice.
-    equal(tostring(HC.spec.minimap.rightClickLabel), "profiles", toc .. ": minimap tooltip names the menu")
-    ns.MinimapRightClick()
-    equal(HC.Menu:IsShown(), true, toc .. ": minimap right-click opens the profile menu")
-    assert(wow.FindText("Hide drag handle"), toc .. ": the menu keeps the handle toggle")
-    equal(HC.Menu.items[1].spec.text, "Salve settings", toc .. ": the minimap menu matches the handle's")
+    -- Minimap right-click: HammerCore's menu, with Salve's handle toggle and profiles.
+    equal(HC.spec.minimap.rightClick, nil, toc .. ": Salve uses HammerCore's right-click")
+    equal(HC.Minimap.RightClickMode(), "menu", toc .. ": the minimap opens the menu by default")
+    equal(HC.Minimap.RightClickLabel(), "menu", toc .. ": minimap tooltip names the menu")
+    HC.Minimap:RightClick()
+    equal(HC.Menu:IsShown(), true, toc .. ": minimap right-click opens the menu")
+    local function menuOrder()
+        local order = {}
+        for index, item in ipairs(HC.Minimap:MenuItems()) do
+            order[index] = item.separator and "-" or tostring(item.text)
+        end
+        return table.concat(order, ",")
+    end
+    -- What the open menu shows, lines included.
+    local function shownOrder()
+        local order = {}
+        for _, item in ipairs(HC.Menu.items) do
+            if item.shown then order[#order + 1] = tostring(item.spec.text) end
+        end
+        local rules = 0
+        for _, rule in ipairs(HC.Menu.rules) do if rule.shown then rules = rules + 1 end end
+        return table.concat(order, ",") .. " (" .. rules .. " lines)"
+    end
+    equal(menuOrder(), "Salve settings,Profiles,-,Hide drag handle,-,Party,Raid 20,Raid 40",
+        toc .. ": settings and Profiles, a line, the handle toggle, a line, then the profiles")
+    equal(shownOrder(), "Salve settings,Profiles,Hide drag handle,Party,Raid 20,Raid 40 (2 lines)",
+        toc .. ": the minimap menu shows every item and both lines")
+    local minimapOrder = shownOrder()
     HC.Menu:Close()
-    ns.Set("minimapRightClick", "HANDLE")
     local locked = ns.IsLocked()
-    ns.MinimapRightClick()
-    equal(ns.IsLocked(), not locked, toc .. ": Drag handle toggles straight away")
-    equal(tostring(HC.spec.minimap.rightClickLabel), "show or hide the drag handle",
-        toc .. ": minimap tooltip follows the setting")
+    for _, item in ipairs(HC.Minimap:MenuItems()) do
+        if item.text == "Hide drag handle" then item.func() end
+    end
+    equal(ns.IsLocked(), not locked, toc .. ": the menu toggles the drag handle")
+    equal(HC.Minimap:MenuItems()[4].text, "Show drag handle", toc .. ": the toggle follows the handle")
+    HC.State().minimapRightClick = "settings"
+    HC.Minimap:RightClick()
+    equal(HC.Settings:IsShown(), true, toc .. ": Minimap right-click on Settings opens settings")
+    HC.Settings:Hide()
+    HC.State().minimapRightClick = nil
     ns.SetLocked(false)
-    equal(ns.db.handleRightClick, "PROFILES", toc .. ": handle right-click opens profiles by default")
+    equal(ns.db.handleRightClick, "PROFILES", toc .. ": handle right-click opens the menu by default")
     wow.Click(ns.Handle.frame, "RightButton")
-    equal(HC.Menu:IsShown(), true, toc .. ": the handle opens the profile menu")
-    assert(wow.FindText("Raid 20"), toc .. ": the handle menu lists profiles")
-    assert(wow.FindText("Salve settings"), toc .. ": the handle menu still reaches settings")
-    local order = {}
-    for index = 1, 5 do order[index] = HC.Menu.items[index].spec.text end
-    equal(table.concat(order, ","), "Salve settings,Profile settings,Hide drag handle,Profiles,Party",
-        toc .. ": actions first, then a line, then the profiles")
-    equal(HC.Menu.rules[1].shown, true, toc .. ": a line divides actions from profiles")
+    equal(HC.Menu:IsShown(), true, toc .. ": the handle opens the menu")
+    equal(shownOrder(), minimapOrder, toc .. ": the handle menu matches the minimap's")
+    local _, anchor = HC.Menu.frame:GetPoint()
+    equal(anchor, ns.Handle.frame, toc .. ": the handle menu opens under the handle")
     HC.Menu:Close()
 
     -- The page builds, with Salve's quick-switch rows.
@@ -498,7 +547,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     equal(wow.FindText("Salve 1.8.0"), nil, toc .. ": releases already seen stay hidden")
     assert(wow.FindButton("Open Profiles"), toc .. ": a button opens the Profiles page")
     assert(wow.FindButton("Open Panel"), toc .. ": a button opens the Panel page")
-    equal(saved.hammerCore.whatsNewSeen, "1.10.1", toc .. ": showing records 1.10.1")
+    equal(saved.hammerCore.whatsNewSeen, "1.11.0", toc .. ": showing records the newest entry")
     wow.Click(wow.FindButton("Open Profiles"))
     equal(HC.Settings.selected, "Profiles", toc .. ": the button opens Profiles")
 

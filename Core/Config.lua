@@ -72,11 +72,13 @@ ns.defaults = {
     cleanAlpha    = 0.25,
     showHandle    = true,   -- the persistent drag grip, like Decursive's
     handlePosition = "TOPLEFT",  -- an edge or corner, or CORNER = the grid's start corner
-    -- Right-clicking the minimap button opens a profile menu (which also
-    -- shows or hides the handle) or toggles the handle straight away.
-    minimapRightClick = "PROFILES",  -- PROFILES | HANDLE
-    -- Right-clicking the drag handle opens settings or the profile menu.
-    handleRightClick = "PROFILES",   -- PROFILES | SETTINGS
+    -- Right-clicking the drag handle opens the minimap button's menu or
+    -- settings. The minimap button's own right-click is HammerCore's
+    -- "Minimap right-click" (state.minimapRightClick).
+    handleRightClick = "PROFILES",   -- PROFILES (the menu) | SETTINGS
+    -- Hide the panel and on-screen movement text between takeoff and
+    -- landing on a flight path. See Features/Flights.lua.
+    hideOnFlights = true,
 
     -- Behaviour
     -- Click bindings. Fresh/restored profiles use automatic defaults (left =
@@ -230,7 +232,7 @@ local function normalizePreferences(db)
         "soundEnabled", "dispelSoundEnabled", "movementSoundEnabled", "movementTextNotification",
         "movementAlertsEnabled", "inferredSlowAlertsEnabled",
         "selfDispelNotification", "sortReverse", "cooldownBar", "cooldownBarShowReady",
-        "cooldownBarMatchPanel", "lockoutIcons" }) do
+        "cooldownBarMatchPanel", "lockoutIcons", "hideOnFlights" }) do
         resetIfWrongType(db, key, "boolean")
     end
     for _, key in ipairs({ "scale", "cleanAlpha" }) do numberInRange(db, key, 0, key == "scale" and 3 or 1) end
@@ -290,7 +292,6 @@ local function normalizePreferences(db)
         LEFT = true, TOPLEFT = true, TOP = true, TOPRIGHT = true, RIGHT = true,
         BOTTOMRIGHT = true, BOTTOM = true, BOTTOMLEFT = true, CORNER = true,
     })
-    enumOrDefault(db, "minimapRightClick", { PROFILES = true, HANDLE = true })
     enumOrDefault(db, "handleRightClick", { SETTINGS = true, PROFILES = true })
     if db.soundFile ~= nil and type(db.soundFile) ~= "string" and type(db.soundFile) ~= "number" then
         db.soundFile = ns.defaults.soundFile
@@ -410,9 +411,17 @@ function ns.InitConfig()
         if SalveDB.handleRightClick == "SETTINGS" then SalveDB.handleRightClick = "PROFILES" end
         SalveDB.schemaVersion = 11
     end
+    if oldSchema < 12 then
+        -- 1.11.0: the minimap button uses HammerCore's menu and its
+        -- "Minimap right-click" setting (Menu or Settings). Salve's old
+        -- Profile menu and Drag handle choices both become Menu, HammerCore's
+        -- default, whose first Salve item is the drag handle toggle.
+        SalveDB.minimapRightClick = nil
+        SalveDB.schemaVersion = 12
+    end
     -- A profile from a newer build can otherwise retain a fictional future
-    -- schema forever after a partial sync. This build owns schema 11.
-    SalveDB.schemaVersion = 11
+    -- schema forever after a partial sync. This build owns schema 12.
+    SalveDB.schemaVersion = 12
 
     -- Learning supplies the coverage that encounter-journal data cannot,
     -- especially for trash roots and snares. It is always active in 1.4.0;
@@ -543,6 +552,14 @@ function ns.Set(key, value)
     if key == "soundEnabled" or key == "dispelSoundEnabled"
         or key == "movementSoundEnabled" or key == "soundChannel" or key == "soundFile" then
         if ns.Sound then ns.Sound:OnSettingChanged(key) end
+        return
+    end
+
+    if key == "hideOnFlights" then
+        if ns.Visibility then ns.Visibility:Refresh() end
+        if value and ns.Visibility and ns.Visibility:HiddenForFlight() and ns.MovementAlert then
+            ns.MovementAlert:Clear()
+        end
         return
     end
 
