@@ -1,8 +1,6 @@
 # Salve
 
-**Decursive-style dispelling, one click per party member.**
-
-_One click to cleanse them all, and in the options bind them._
+**Decursive-style dispelling, one click per party member.**<br>_One click to cleanse them all, and in the options bind them._
 
 [![Retail](https://img.shields.io/badge/retail-supported-4c9a7a?style=flat-square)](https://www.curseforge.com/wow/addons/salve) [![WoW Forever](https://img.shields.io/badge/wow%20forever-supported-4c9a7a?style=flat-square)](https://www.curseforge.com/wow/addons/salve) [![Release](https://img.shields.io/github/v/release/consecrated-hammer/Salve?style=flat-square&color=4c9a7a&label=release)](https://github.com/consecrated-hammer/Salve/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-4c9a7a?style=flat-square)](https://github.com/consecrated-hammer/Salve/blob/main/LICENSE.txt)
 
