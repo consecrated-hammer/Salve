@@ -92,7 +92,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
         assert(indexed[row], "standard settings row was never registered for search")
     end
     for query, expected in pairs({ preset = "Salve", target = "Salve", ["mouseover dispel"] = "Key Bindings",
-        ["reset frame position"] = "Position", ["sort by"] = "Salve", ["clear all bindings"] = "Key Bindings", ["your spells"] = "Key Bindings", ["attach to"] = "Position", anchor = "Tooltips" }) do
+        ["re-centre panel"] = "Position", ["sort by"] = "Salve", ["clear all bindings"] = "Key Bindings", ["your spells"] = "Key Bindings", ["attach to"] = "Position", anchor = "Tooltips" }) do
         local found = false
         for _, result in ipairs(settings:Search(query, 10000)) do
             if result.page == expected then found = true end
@@ -104,6 +104,10 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     local body = settings.pages.Salve.bodies["Names and icons"]
     assert(role == body.hcRows["Role and marker icon"], "hidden role size focuses its enabling row")
     ns.Set("showTooltip", false)
+    local tooltipBody = settings.pages.Tooltips.bodies.Tooltips
+    local debuff = tooltipBody.hcRows["Show Blizzard debuff tooltip"]
+    assert(settings:Focus("Tooltips", "Show Blizzard debuff tooltip") == debuff,
+        "native debuff tooltip stays accessible with cell tooltips off")
     assert(settings:Focus("Tooltips", "Anchor") == settings.pages.Tooltips.bodies.Tooltips.hcRows["Show cell tooltips"],
         "hidden tooltip anchor focuses its master")
 end

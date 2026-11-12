@@ -61,9 +61,9 @@ function ns.Options.Tab(name, fill, resetFn)
     end
 end
 
-function ns.Options.ProfileScope(panel, y)
+function ns.Options.ProfileScope(panel, y, shared)
     local label
-    label, y = HC.UI.Text(panel, "Saved per profile", y)
+    label, y = HC.UI.Text(panel, shared and "Shared across profiles" or "Saved per profile", y)
     label:SetTextColor(unpack(HC.Theme.Colour("muted")))
     return y
 end

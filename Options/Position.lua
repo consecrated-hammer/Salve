@@ -22,7 +22,7 @@ HC.Settings:NewPage({
     name = "Position",
     title = "Position",
     group = "main",
-    profileScope = true,
+    profileScope = false,
     description = "Move the panel or line it up with your group frames.",
     headerAction = O.LivePreviewAction,
 }, O.Tab("Position", function(panel, add, db)
@@ -30,6 +30,7 @@ HC.Settings:NewPage({
     local handle = O.Section(panel, 2)
     local y = -8
     _, y = O.Header(handle, "Drag handle", y)
+    y = O.ProfileScope(handle, y, true)
     local handleToggle
     handleToggle, y = O.Check(handle, "Show drag handle", "Drag the gold handle to move Salve.", y,
         function() return db.showHandle end,
@@ -39,6 +40,7 @@ HC.Settings:NewPage({
 
     local position = O.Section(panel, 2, handleToggle)
     y = -4
+    y = O.ProfileScope(position, y)
     _, y = O.Dropdown(position, "Handle position",
         "Saved per profile. Which edge of the grid holds the handle. Start corner follows the grid's fixed corner (Panel > Layout).", y,
         HANDLE_VALUES, HANDLE_LABELS,
@@ -52,18 +54,25 @@ HC.Settings:NewPage({
 
     local handleActions = O.Section(panel, 2)
     y = -4
+    y = O.ProfileScope(handleActions, y, true)
     _, y = O.Dropdown(handleActions, "Handle right-click",
         "Menu matches the minimap button's: settings, the drag handle and your profiles. Open settings goes straight there.", y,
         { "PROFILES", "SETTINGS" }, { "Menu", "Open settings" },
         function() return db.handleRightClick end,
         function(value) ns.Set("handleRightClick", value) end,
         nil, 150, 130)
+    y = O.Flush(handleActions, y)
+    add(handleActions, -y + 4)
+    local panelPosition = O.Section(panel, 1)
+    y = -4
+    _, y = O.Header(panelPosition, "Panel position", y)
+    y = O.ProfileScope(panelPosition, y)
     local resetPosition
-    resetPosition, y = O.ActionButton(handleActions, y, "Reset frame position",
+    resetPosition, y = O.ActionButton(panelPosition, y, "Re-centre panel",
         function() HC.Commands:Dispatch("reset position") end,
         "Move Salve back to the centre of the screen. Saved per profile.")
-    O.RegisterRow(handleActions, resetPosition, "Reset frame position")
-    add(handleActions, -y + 4)
+    O.RegisterRow(panelPosition, resetPosition, "Re-centre panel")
+    add(panelPosition, -y + 4)
 
     local attach = O.Section(panel, 2)
     y = -8

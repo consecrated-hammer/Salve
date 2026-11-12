@@ -56,7 +56,7 @@ end
 HC.Settings:NewPage({
     name = "Salve",
     -- Names, grid and member order are profile-owned; cell styling is shared.
-    profileScope = function(tabName) return tabName ~= "Cells" end,
+    profileScope = function(tabName) return tabName == "Layout" end,
     title = "Panel",
     group = "main",
     headerAction = O.LivePreviewAction,
@@ -268,6 +268,7 @@ HC.Settings:NewPage({
             local roleIcon = section(panel, 2)
             local riy = -8
             _, riy = O.Header(roleIcon, "Role icon", riy)
+            riy = O.ProfileScope(roleIcon, riy, true)
             local roleToggle
             roleToggle, riy = O.Dropdown(roleIcon, "Role and marker icon",
                 "Role, raid marker, or the marker when set and the role otherwise.", riy,
@@ -355,6 +356,7 @@ HC.Settings:NewPage({
             local extra = section(panel, 2)
             local ey = -8
             _, ey = O.Header(extra, "Extra cell", ey)
+            ey = O.ProfileScope(extra, ey, true)
             local extraToggle
             extraToggle, ey = O.Dropdown(extra, "Extra cell",
                 "One more cell after your group for a friendly target or focus outside it.", ey,

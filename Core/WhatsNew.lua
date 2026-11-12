@@ -25,9 +25,9 @@ ns.WHATS_NEW = {
             kind = "improved", page = "Visibility" },
     } },
     { version = "1.10.1", date = "2026-11-10", items = {
-        { title = "Simpler profiles", text = "A profile saves your whole layout. No more picking which bits count. The top of each settings page just shows the profile you're on.",
+        { title = "Simpler profiles", text = "A profile saves your whole layout. No more picking which bits count. Sections marked Saved per profile follow the profile you're on; shared settings apply across profiles.",
             kind = "improved", page = "Profiles" },
-        { title = "Right-click options moved", text = "What right-clicking the minimap button or drag handle does now lives on Visibility, next to those buttons.",
+        { title = "Right-click options moved", text = "Minimap right-click is on Visibility. Drag handle right-click is on Position.",
             kind = "improved", page = "Visibility" },
         { title = "Poison first", text = "When you're rooted and poisoned, the rooted badge stays a small corner marker so the poison is what you see. The live preview shows both on your own cell when Rooted and Dispellable debuff are on.",
             kind = "improved", page = "Salve" },

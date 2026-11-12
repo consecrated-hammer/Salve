@@ -23,13 +23,16 @@ HC.Settings:NewPage({
             function(value) ns.Set("showTooltip", value) end)
         return y, row
     end)
+    section("Blizzard debuff tooltip", function(frame, y)
+        _, y = O.Check(frame, "Show Blizzard debuff tooltip", "Show Blizzard's tooltip for the debuff on a lit cell. Needs a reload.", y,
+            function() return db.tooltipDebuff end,
+            function(value) ns.Set("tooltipDebuff", value) end)
+        return y
+    end)
     local actions = section("Content", function(frame, y)
         _, y = O.Check(frame, "Show default tooltips", "Include Blizzard's normal unit details.", y,
             function() return db.tooltipUnitInfo end,
             function(value) ns.Set("tooltipUnitInfo", value) end)
-        _, y = O.Check(frame, "Show Blizzard debuff tooltip", "Show Blizzard's tooltip for the debuff on a lit cell. Needs a reload.", y,
-            function() return db.tooltipDebuff end,
-            function(value) ns.Set("tooltipDebuff", value) end)
         local row
         row, y = O.Check(frame, "Show Salve actions", "List the currently bound clicks and what each one casts.", y,
             function() return db.tooltipActions end,
