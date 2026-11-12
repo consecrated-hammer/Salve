@@ -9,6 +9,65 @@ local HC = ns.HammerCore
 ns.Print = HC.Print
 ns.Options = setmetatable({}, { __index = HC.UI })
 
+-- Sections share their page's refresh list and search index.
+function ns.Options.Section(parent, columns, parentRow)
+    local frame = CreateFrame("Frame", nil, parent)
+    frame:SetSize(HC.UI.CONTENT_WIDTH + HC.UI.PAD * 2, 1)
+    frame.hcColumns = columns or 2
+    frame.hcRefresh, frame.hcRefreshAll = parent.hcRefresh, parent.hcRefreshAll
+    frame.hcHeaderOwner = parent.hcHeaderOwner or parent
+    frame.hcParentRow = parentRow
+    return frame
+end
+
+-- Hidden dependent sections leave no gap and keep a searchable parent.
+function ns.Options.Flow(panel)
+    local flow = { entries = {}, y = -8 }
+    function flow:Add(frame, height, visible, parentRow)
+        if parentRow then frame.hcParentRow = parentRow end
+        self.entries[#self.entries + 1] = { frame = frame, height = height, visible = visible }
+    end
+    function flow:Layout()
+        local y = -8
+        for _, entry in ipairs(self.entries) do
+            local shown = not entry.visible or entry.visible()
+            entry.frame:SetShown(shown)
+            if shown then
+                entry.frame:ClearAllPoints()
+                entry.frame:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, y)
+                local height = type(entry.height) == "function" and entry.height() or entry.height
+                entry.frame:SetHeight(height)
+                y = y - height
+            end
+        end
+        self.y = y - 8
+        if panel.hcSetBottom then panel.hcSetBottom(self.y) end
+        return self.y
+    end
+    panel.hcRefresh[#panel.hcRefresh + 1] = function() flow:Layout() end
+    return flow
+end
+
+function ns.Options.Tab(name, fill, resetFn)
+    return function(panel)
+        local flow = ns.Options.Flow(panel)
+        fill(panel, function(...) flow:Add(...) end, ns.db)
+        if resetFn then
+            local reset = ns.Options.Section(panel)
+            local _, y = ns.Options.PageReset(reset, -4, resetFn, "Reset " .. name)
+            flow:Add(reset, -y)
+        end
+        return flow:Layout()
+    end
+end
+
+function ns.Options.ProfileScope(panel, y)
+    local label
+    label, y = HC.UI.Text(panel, "Saved per profile", y)
+    label:SetTextColor(unpack(HC.Theme.Colour("muted")))
+    return y
+end
+
 -- The header button on every page whose settings change how the grid looks.
 ns.Options.LivePreviewAction = {
     text = function()

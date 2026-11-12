@@ -2,15 +2,7 @@ local addonName, ns = ...
 local HC = ns.HammerCore
 local O, T = ns.Options, HC.Theme
 
-local function section(parent, columns)
-    local frame = CreateFrame("Frame", nil, parent)
-    frame:SetSize(HC.UI.CONTENT_WIDTH + HC.UI.PAD * 2, 1)
-    frame.hcColumns = columns
-    frame.hcRefresh = parent.hcRefresh
-    frame.hcRefreshAll = parent.hcRefreshAll
-    frame.hcHeaderOwner = parent.hcHeaderOwner or parent
-    return frame
-end
+local section = O.Section
 
 local TEXT_POSITIONS = {
     "LEFT:TOP", "CENTER:TOP", "RIGHT:TOP",
@@ -46,60 +38,25 @@ end
 -- Each tab's reset restores only the settings on that tab.
 local TAB_KEYS = {
     Layout = { "orientation", "horizontalGrowth", "verticalGrowth", "columns",
-        "spacing", "scale", "boxWidth", "boxHeight", "previewUnits",
-        "extraCell", "extraCellSkipGroup" },
+        "spacing", "scale", "boxWidth", "boxHeight", "previewUnits" },
     Cells = { "showBorders", "showStacks", "showDispelTypeIcon", "dispelTypeIconSize",
         "dispelTypeIconPosition", "showWhenClean", "useClassColours", "cleanAlpha", "outOfRangeAlpha" },
-    ["Role icons"] = { "roleIcon", "roleIconRoles", "roleIconPosition", "roleIconPlacement", "roleIconSize" },
-    Text = { "showNames", "nameJustifyH", "nameJustifyV", "nameFontSize",
-        "cooldownJustifyH", "cooldownJustifyV", "cooldownFontSize" },
+    ["Names and icons"] = { "showNames", "nameJustifyH", "nameJustifyV", "nameFontSize",
+        "roleIcon", "roleIconRoles", "roleIconPosition", "roleIconPlacement", "roleIconSize" },
+    Members = { "sortMode", "sortRoleOrder", "sortReverse", "sortSelf", "extraCell", "extraCellSkipGroup" },
 }
 
-local function resetTab(panel, name)
-    local reset = section(panel)
-    local _, ry = O.PageReset(reset, -4, function()
+local function tab(name, fill)
+    return O.Tab(name, fill, function()
         for _, key in ipairs(TAB_KEYS[name]) do ns.Set(key, ns.defaults[key]) end
         refreshPreview()
-    end, "Reset " .. name)
-    return reset, -ry
-end
-
--- One tab: its sections stack in order, hidden ones close up, and the
--- tab's own reset button closes it.
-local function tab(name, fill)
-    return function(panel)
-        local db = ns.db
-        local sections = {}
-        local function add(frame, height, visible)
-            sections[#sections + 1] = { frame = frame, height = height, visible = visible }
-        end
-        fill(panel, add, db)
-        add(resetTab(panel, name))
-        local pageBottom
-        local function reflow()
-            local y = -8
-            for _, entry in ipairs(sections) do
-                local shown = not entry.visible or entry.visible()
-                entry.frame:SetShown(shown)
-                if shown then
-                    entry.frame:ClearAllPoints()
-                    entry.frame:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, y)
-                    entry.frame:SetHeight(entry.height)
-                    y = y - entry.height
-                end
-            end
-            pageBottom = y - 8
-            panel.hcSetBottom(pageBottom)
-        end
-        panel.hcRefresh[#panel.hcRefresh + 1] = reflow
-        reflow()
-        return pageBottom
-    end
+    end)
 end
 
 HC.Settings:NewPage({
     name = "Salve",
-    -- Cells and most Text settings are shared by all profiles.
+    -- Names, grid and member order are profile-owned; cell styling is shared.
+    profileScope = function(tabName) return tabName ~= "Cells" end,
     title = "Panel",
     group = "main",
     headerAction = O.LivePreviewAction,
@@ -132,7 +89,8 @@ HC.Settings:NewPage({
                 note:SetPoint("TOPLEFT", button.Text, "BOTTOMLEFT", 0, -2)
                 note:SetText(spec.note)
                 note:SetTextColor(unpack(T.Colour("muted")))
-                O.AttachHint(button, spec.label, "Sets cell width, height, wrapping, spacing and names. Keeps grid direction and panel scale.")
+                O.AttachHint(button, spec.label, "Layout preset: sets cell width, height, wrapping, spacing and names. Keeps grid direction and panel scale.")
+                O.RegisterRow(presets, button, spec.label .. " layout preset")
                 button:SetScript("OnClick", function()
                     ns.Set("boxWidth", spec.width)
                     ns.Set("boxHeight", spec.height)
@@ -151,6 +109,7 @@ HC.Settings:NewPage({
             local grid = section(panel, 2)
             local gy = -8
             _, gy = O.Header(grid, "Grid", gy)
+            gy = O.ProfileScope(grid, gy)
             _, gy = O.Dropdown(grid, "Fill",
                 "Rows fill a whole row before starting the next. Columns fill a whole column first.", gy,
                 { "HORIZONTAL", "VERTICAL" }, { "Rows", "Columns" },
@@ -182,6 +141,7 @@ HC.Settings:NewPage({
             local size = section(panel, 2)
             local sy = -8
             _, sy = O.Header(size, "Cell size", sy)
+            sy = O.ProfileScope(size, sy)
             _, sy = O.Slider(size, "Width",
                 "Use 95 or more to show the twelve-character preview names.", sy,
                 10, 200, 1,
@@ -200,31 +160,13 @@ HC.Settings:NewPage({
             sy = O.Flush(size, sy)
             add(size, -sy + 4)
 
-            local extra = section(panel, 2)
-            local ey = -8
-            _, ey = O.Header(extra, "Extra cell", ey)
-            _, ey = O.Dropdown(extra, "Extra cell",
-                "One more cell after your group for a friendly player outside it.", ey,
-                { "OFF", "TARGET", "FOCUS" }, { "Off", "Target", "Focus" },
-                function() return db.extraCell end,
-                function(value) ns.Set("extraCell", value) end, 560, 150, 200)
-            ey = O.Flush(extra, ey)
-            add(extra, -ey + 4)
-            local extraDetails = section(panel, 2)
-            ey = -4
-            _, ey = O.Check(extraDetails, "Hide for group members",
-                "Your group already has cells.", ey,
-                function() return db.extraCellSkipGroup end,
-                function(value) ns.Set("extraCellSkipGroup", value) end)
-            ey = O.Flush(extraDetails, ey)
-            add(extraDetails, -ey + 4, function() return db.extraCell ~= "OFF" end)
 
         end) },
         { name = "Cells", build = tab("Cells", function(panel, add, db)
             local contents = section(panel, 2)
             local cy = -8
             _, cy = O.Header(contents, "Cell contents", cy)
-            _, cy = O.Check(contents, "Show box borders",
+            _, cy = O.Check(contents, "Show cell borders",
                 "Show an outline around every cell, independently of idle backgrounds and names.", cy,
                 function() return db.showBorders end,
                 function(value) ns.Set("showBorders", value) end)
@@ -238,20 +180,21 @@ HC.Settings:NewPage({
             local dispelIcon = section(panel, 2)
             local diy = -8
             _, diy = O.Header(dispelIcon, "Dispel icon", diy)
-            _, diy = O.Check(dispelIcon, "Show dispel-type icon",
+            local dispelToggle
+            dispelToggle, diy = O.Check(dispelIcon, "Show dispel-type icon",
                 "Show Blizzard's Magic, Curse, Disease or Poison icon on a dispellable cell.", diy,
                 function() return db.showDispelTypeIcon end,
                 function(value) ns.Set("showDispelTypeIcon", value) end)
             diy = O.Flush(dispelIcon, diy)
             add(dispelIcon, -diy + 4)
-            local iconDetails = section(panel, 2)
+            local iconDetails = section(panel, 2, dispelToggle)
             diy = -4
-            _, diy = O.Slider(iconDetails, "Icon size",
+            _, diy = O.Slider(iconDetails, "Dispel icon size",
                 "Size in pixels before UI scale. Large icons can cover names or cooldown numbers.", diy,
                 8, 64, 1,
                 function() return db.dispelTypeIconSize end,
                 function(value) ns.Set("dispelTypeIconSize", value) end)
-            _, diy = O.Dropdown(iconDetails, "Icon position",
+            _, diy = O.Dropdown(iconDetails, "Dispel icon position",
                 "Choose which part of the cell holds the Blizzard dispel-type icon.", diy,
                 { "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT", "CENTER" },
                 { "Top left", "Top right", "Bottom left", "Bottom right", "Centre" },
@@ -264,13 +207,14 @@ HC.Settings:NewPage({
             local inactive = section(panel, 2)
             local iy = -8
             _, iy = O.Header(inactive, "Idle backgrounds", iy)
-            _, iy = O.Check(inactive, "Show idle backgrounds",
+            local idleToggle
+            idleToggle, iy = O.Check(inactive, "Show idle backgrounds",
                 "Off hides idle backgrounds. Borders and unit names have separate settings; click areas stay in place during combat.", iy,
                 function() return db.showWhenClean end,
                 function(value) ns.Set("showWhenClean", value) end)
             iy = O.Flush(inactive, iy)
             add(inactive, -iy + 4)
-            local idleDetails = section(panel, 2)
+            local idleDetails = section(panel, 2, idleToggle)
             iy = -4
             _, iy = O.Check(idleDetails, "Class-coloured backgrounds",
                 "Colour idle backgrounds by class. Names always use class colours; debuff colours are chosen by the game.", iy,
@@ -298,11 +242,34 @@ HC.Settings:NewPage({
             add(range, -ry + 4)
 
         end) },
-        { name = "Role icons", build = tab("Role icons", function(panel, add, db)
+        { name = "Names and icons", build = tab("Names and icons", function(panel, add, db)
+            local names = section(panel, 2)
+            local ny = -8
+            _, ny = O.Header(names, "Unit names", ny)
+            ny = O.ProfileScope(names, ny)
+            local namesToggle
+            namesToggle, ny = O.Check(names, "Show unit names",
+                "Use cells at least 95 pixels wide for the twelve-character preview names.", ny,
+                function() return db.showNames end,
+                function(value) ns.Set("showNames", value) end)
+            ny = O.Flush(names, ny)
+            add(names, -ny + 4)
+            local nameDetails = section(panel, 2, namesToggle)
+            ny = -4
+            _, ny = textPosition(nameDetails, "Name position", "Place names within each cell.", ny, "name")
+            _, ny = O.Slider(nameDetails, "Name text size", "Size before UI scale is applied.", ny,
+                6, 32, 1,
+                function() return db.nameFontSize end,
+                function(value) ns.Set("nameFontSize", value) end)
+            ny = O.Flush(nameDetails, ny)
+            add(nameDetails, -ny + 4, function() return db.showNames end)
+
+
             local roleIcon = section(panel, 2)
             local riy = -8
             _, riy = O.Header(roleIcon, "Role icon", riy)
-            _, riy = O.Dropdown(roleIcon, "Show",
+            local roleToggle
+            roleToggle, riy = O.Dropdown(roleIcon, "Role and marker icon",
                 "Role, raid marker, or the marker when set and the role otherwise.", riy,
                 { "OFF", "ROLE", "MARKER", "BOTH" },
                 { "Off", "Role", "Raid marker", "Marker, else role" },
@@ -311,13 +278,17 @@ HC.Settings:NewPage({
                 560, 150, 180)
             riy = O.Flush(roleIcon, riy)
             add(roleIcon, -riy + 4)
-            local roleDetails = section(panel, 2)
+            local roleFilter = section(panel, 2, roleToggle)
             riy = -4
-            _, riy = O.Dropdown(roleDetails, "Roles shown", nil, riy,
+            _, riy = O.Dropdown(roleFilter, "Roles shown", nil, riy,
                 { "TANKHEALER", "ALL" }, { "Tank and healer", "All" },
                 function() return db.roleIconRoles end,
                 function(value) ns.Set("roleIconRoles", value) end,
                 560, 150, 180)
+            riy = O.Flush(roleFilter, riy)
+            add(roleFilter, -riy + 4, function() return db.roleIcon == "ROLE" or db.roleIcon == "BOTH" end)
+            local roleDetails = section(panel, 2, roleToggle)
+            riy = -4
             _, riy = O.Dropdown(roleDetails, "Role icon corner", nil, riy,
                 { "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" },
                 { "Top left", "Top right", "Bottom left", "Bottom right" },
@@ -338,36 +309,68 @@ HC.Settings:NewPage({
             add(roleDetails, -riy + 4, function() return db.roleIcon ~= "OFF" end)
 
         end) },
-        { name = "Text", build = tab("Text", function(panel, add, db)
-            local names = section(panel, 2)
-            local ny = -8
-            _, ny = O.Header(names, "Unit names", ny)
-            _, ny = O.Check(names, "Show unit names",
-                "Use cells at least 95 pixels wide for the twelve-character preview names.", ny,
-                function() return db.showNames end,
-                function(value) ns.Set("showNames", value) end)
-            ny = O.Flush(names, ny)
-            add(names, -ny + 4)
-            local nameDetails = section(panel, 2)
-            ny = -4
-            _, ny = textPosition(nameDetails, "Name position", "Place names within each cell.", ny, "name")
-            _, ny = O.Slider(nameDetails, "Text size", "Size before UI scale is applied.", ny,
-                6, 32, 1,
-                function() return db.nameFontSize end,
-                function(value) ns.Set("nameFontSize", value) end)
-            ny = O.Flush(nameDetails, ny)
-            add(nameDetails, -ny + 4, function() return db.showNames end)
+        { name = "Members", build = tab("Members", function(panel, add, db)
+            local roleNames = { TANK = "Tank", HEALER = "Healer", DAMAGER = "DPS" }
+            local roleLabels = {}
+            for index, value in ipairs(ns.SORT_ROLE_ORDERS) do
+                local names = {}
+                for role in value:gmatch("[^,]+") do names[#names + 1] = roleNames[role] end
+                roleLabels[index] = table.concat(names, ", ")
+            end
+            local order = section(panel, 2)
+            local y = -8
+            _, y = O.Header(order, "Order", y)
+            y = O.ProfileScope(order, y)
+            local sortToggle
+            sortToggle, y = O.Dropdown(order, "Sort by",
+                "Group order matches the game. Cells re-sort out of combat; a roster change mid-fight waits until combat ends. Attached left or right, the host's order wins.", y,
+                { "GROUP", "ROLE", "NAME" }, { "Group order", "Role", "Name" },
+                function() return db.sortMode end,
+                function(value) ns.Set("sortMode", value) end, 560, 150, 180)
+            y = O.Flush(order, y)
+            add(order, -y + 4)
+            local roleOrder = section(panel, 2, sortToggle)
+            y = -4
+            _, y = O.Dropdown(roleOrder, "Role order",
+                "Used when sorting by role. Members with no role go last.", y,
+                ns.SORT_ROLE_ORDERS, roleLabels,
+                function() return db.sortRoleOrder end,
+                function(value) ns.Set("sortRoleOrder", value) end, 560, 150, 180)
+            y = O.Flush(roleOrder, y)
+            add(roleOrder, -y + 4, function() return db.sortMode == "ROLE" end)
+            local memberOrder = section(panel, 2)
+            y = -4
+            _, y = O.Check(memberOrder, "Reverse order",
+                "Flip the sorted order. A pinned cell stays where it is.", y,
+                function() return db.sortReverse end,
+                function(value) ns.Set("sortReverse", value) end)
+            _, y = O.Dropdown(memberOrder, "Your cell",
+                "Pin your own cell first or last, or sort it with everyone else.", y,
+                { "SORTED", "FIRST", "LAST" }, { "Sorted", "First", "Last" },
+                function() return db.sortSelf end,
+                function(value) ns.Set("sortSelf", value) end, 560, 150, 180)
+            y = O.Flush(memberOrder, y)
+            add(memberOrder, -y + 4)
 
-            local cooldown = section(panel, 2)
-            local dy = -8
-            _, dy = O.Header(cooldown, "Cooldown numbers", dy)
-            _, dy = textPosition(cooldown, "Number position", "Place cooldown numbers within each cell.", dy, "cooldown")
-            _, dy = O.Slider(cooldown, "Text size", "Size before UI scale is applied.", dy,
-                6, 40, 1,
-                function() return db.cooldownFontSize end,
-                function(value) ns.Set("cooldownFontSize", value) end)
-            dy = O.Flush(cooldown, dy)
-            add(cooldown, -dy + 4)
+            local extra = section(panel, 2)
+            local ey = -8
+            _, ey = O.Header(extra, "Extra cell", ey)
+            local extraToggle
+            extraToggle, ey = O.Dropdown(extra, "Extra cell",
+                "One more cell after your group for a friendly target or focus outside it.", ey,
+                { "OFF", "TARGET", "FOCUS" }, { "Off", "Target", "Focus" },
+                function() return db.extraCell end,
+                function(value) ns.Set("extraCell", value) end, 560, 150, 200)
+            ey = O.Flush(extra, ey)
+            add(extra, -ey + 4)
+            local extraDetails = section(panel, 2, extraToggle)
+            ey = -4
+            _, ey = O.Check(extraDetails, "Hide for group members",
+                "Your group already has cells.", ey,
+                function() return db.extraCellSkipGroup end,
+                function(value) ns.Set("extraCellSkipGroup", value) end)
+            ey = O.Flush(extraDetails, ey)
+            add(extraDetails, -ey + 4, function() return db.extraCell ~= "OFF" end)
 
         end) },
     },

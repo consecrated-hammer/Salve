@@ -88,7 +88,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     local names = {}
     for _, spec in ipairs(HC.Settings.order) do names[#names + 1] = spec.name end
     equal(table.concat(names, ","),
-        "Salve,Profiles,Sorting,Attach,Cooldowns,Tooltips,Key Bindings,Visibility,Alerts,Movement,Learned Spells,What's new,Commands,Troubleshooting,About",
+        "Salve,Key Bindings,Cooldowns,Alerts,Tooltips,Position,Visibility,Profiles,Learned Spells,What's new,Commands,Troubleshooting,About",
         toc .. ": rail order")
     local failures = {}
     for name, err in pairs(HC.Settings.errors) do failures[#failures + 1] = name .. ": " .. err end
@@ -105,6 +105,9 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
         for _, item in ipairs(release.items) do
             if item.page then
                 equal(pages[item.page], true, toc .. ": What's new page " .. item.page .. " exists")
+                if item.tab then
+                    assert(HC.Settings.pages[item.page].bodies[item.tab], toc .. ": What's new tab " .. item.tab .. " exists")
+                end
             end
         end
     end
@@ -112,7 +115,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
 
     -- Page content carried over from the old settings shell.
     for _, text in ipairs({ "Show dispel-type icon", "Show Salve actions", "Show self-dispel combat text",
-        "Show personal Freedom movement text", "Show minimap button", "Show startup message",
+        "Show movement text", "Show minimap button", "Show startup message",
         "Hide on flights", "Minimap right-click", "Handle right-click" }) do
         equal(wow.FindText(text) ~= nil, true, toc .. ": settings offer '" .. text .. "'")
     end
@@ -157,9 +160,9 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     ns.Preview:RefreshSettingsPreview()
     equal(drawnScale, ns.Panel:Layout(ns.db.previewUnits).scale, toc .. ": the preview draws at the panel's own scale")
     ns.Set("scale", ns.defaults.scale)
-    HC.Settings:Show("Sorting")
+    HC.Settings:Show("Position")
     equal(ns.Preview:IsWindowShown(), true, toc .. ": it stays open across pages")
-    assert(wow.FindButton("Hide live preview"), toc .. ": Sorting offers it too")
+    assert(wow.FindButton("Hide live preview"), toc .. ": Position offers it too")
     HC.Settings:Show("Commands")
     equal(wow.Visible(wow.FindButton("Hide live preview")), false, toc .. ": reference pages don't")
     HC.Settings:Show("Salve")
@@ -180,7 +183,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     local box = ns.Panel.boxes[1]
     box.unit = "player"
     local previewBox = ns.Box.CreatePreview(UIParent)
-    clickText("Show box borders")
+    clickText("Show cell borders")
     equal(ns.db.showBorders, false, toc .. ": border checkbox saves false")
     equal(box.border.alpha, 0, toc .. ": border checkbox hides live border")
     ns.Box.RestylePreview(previewBox, "Tester", "PALADIN")
@@ -258,9 +261,9 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     equal(ns.db.boxWidth, 70, toc .. ": Reset Cells leaves Layout alone")
     equal(ns.db.nameFontSize, 18, toc .. ": and Text")
     equal(ns.Preview.movementSweepState, true, toc .. ": and the preview window's own switches")
-    HC.Settings:Show("Salve", "Text")
-    wow.Click(wow.FindButton("Reset Text"))
-    equal(ns.db.nameFontSize, ns.defaults.nameFontSize, toc .. ": Reset Text restores text size")
+    HC.Settings:Show("Salve", "Names and icons")
+    wow.Click(wow.FindButton("Reset Names and icons"))
+    equal(ns.db.nameFontSize, ns.defaults.nameFontSize, toc .. ": Reset Names and icons restores text size")
     equal(ns.db.boxWidth, 70, toc .. ": and leaves Layout alone")
     HC.Settings:Show("Salve", "Layout")
     wow.Click(wow.FindButton("Reset Layout"))
@@ -281,6 +284,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     equal(ns.db.orientation .. ":" .. ns.db.verticalGrowth .. ":" .. ns.db.horizontalGrowth,
         "HORIZONTAL:UP:RIGHT", toc .. ": rows from the bottom left")
     equal(ns.Panel:GrowthAnchor(), "BOTTOMLEFT", toc .. ": anchored at the bottom left")
+    HC.Settings:Show("Salve", "Names and icons")
     clickText("Show unit names")
     local positions = {
         { "Top left", "LEFT", "TOP" }, { "Top centre", "CENTER", "TOP" }, { "Top right", "RIGHT", "TOP" },
@@ -289,12 +293,13 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     }
     for _, position in ipairs(positions) do
         for _, spec in ipairs({ { "Name position", "name" }, { "Number position", "cooldown" } }) do
+            HC.Settings:Show(spec[2] == "name" and "Salve" or "Cooldowns", spec[2] == "name" and "Names and icons" or "Cells")
             choose(spec[1], position[1])
             equal(ns.db[spec[2] .. "JustifyH"], position[2], toc .. ": horizontal " .. spec[1])
             equal(ns.db[spec[2] .. "JustifyV"], position[3], toc .. ": vertical " .. spec[1])
         end
     end
-    HC.Settings:Show("Salve", "Text")
+    HC.Settings:Show("Salve", "Names and icons")
     equal(wow.Visible(wow.FindText("Name position")), true, toc .. ": name details show on the Text tab")
     clickText("Show unit names")
     equal(wow.Visible(wow.FindText("Name position")), false, toc .. ": name details collapse")
@@ -332,7 +337,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     C_Texture = previousTextureAPI
     HC.Settings:Show("Salve", "Cells")
     clickText("Show dispel-type icon")
-    equal(wow.Visible(wow.FindText("Icon size")), false, toc .. ": icon details collapse")
+    equal(wow.Visible(wow.FindText("Dispel icon size")), false, toc .. ": icon details collapse")
     ns.Set("showStacks", false)
     ns.Preview:RefreshSettingsPreview()
     for _, sample in ipairs({ ns.Preview.boxes[1], ns.Preview.settingsPreview.boxes[1] }) do
@@ -361,11 +366,12 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     equal(ns.Preview:IsWindowShown(), true, toc .. ": Open with settings reopens it")
     ns.db.previewWindowOpen = false
 
-    -- Movement page owns every automatic movement control.
-    HC.Settings:Show("Movement")
-    assert(wow.FindText("MOVEMENT SWEEPS"), toc .. ": sweep settings live on Movement")
+    -- Sweeps live with cooldowns; automatic movement cues live on Alerts.
+    HC.Settings:Show("Cooldowns", "Cells")
+    assert(wow.FindText("MOVEMENT SWEEPS"), toc .. ": sweep settings live on Cooldowns")
     assert(wow.FindText("No movement spells bound yet.") or wow.FindText("Show sweep"),
         toc .. ": the sweep section lists bound movement spells or says none")
+    HC.Settings:Show("Alerts")
     equal(ns.db.movementAlertsEnabled, true, toc .. ": movement alerts preserve previous default")
     equal(ns.db.inferredSlowAlertsEnabled, false, toc .. ": inferred slows start opted out")
     clickText("Enable movement alerts (beta)")
@@ -382,19 +388,19 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
         toc .. ": enabling inferred slows warns about beta")
     clickText("Enable movement alerts (beta)")
     ns.db.movementTextOutput, ns.db.movementSoundEnabled = "CHAT", true
-    wow.Click(wow.FindButton("Reset Movement"))
-    equal(ns.db.movementAlertsEnabled, true, toc .. ": Reset Movement restores the master switch")
-    equal(ns.db.inferredSlowAlertsEnabled, false, toc .. ": Reset Movement opts out of inferred slows")
-    equal(ns.db.movementSoundEnabled, false, toc .. ": Reset Movement restores the movement sound")
-    equal(ns.db.movementTextOutput, "SCREEN", toc .. ": Reset Movement restores the text destination")
+    wow.Click(wow.FindButton("Reset Alerts"))
+    equal(ns.db.movementAlertsEnabled, true, toc .. ": Reset Alerts restores the master switch")
+    equal(ns.db.inferredSlowAlertsEnabled, false, toc .. ": Reset Alerts opts out of inferred slows")
+    equal(ns.db.movementSoundEnabled, false, toc .. ": Reset Alerts restores the movement sound")
+    equal(ns.db.movementTextOutput, "SCREEN", toc .. ": Reset Alerts restores the text destination")
     clickText("Open Key Bindings")
-    equal(HC.Settings.selected, "Key Bindings", toc .. ": Movement links to Key Bindings")
+    equal(HC.Settings.selected, "Key Bindings", toc .. ": Alerts links to Key Bindings")
 
     -- Alerts reset.
     HC.Settings:Show("Alerts")
     for _, text in ipairs({ "Enable movement alerts (beta)", "Include inferred slows (beta)",
-        "Play snare-removal alert sound", "Show personal Freedom movement text" }) do
-        equal(wow.Visible(wow.FindText(text)), false, toc .. ": Alerts no longer shows '" .. text .. "'")
+        "Play movement alert sound", "Show movement text" }) do
+        equal(wow.Visible(wow.FindText(text)), true, toc .. ": Alerts shows '" .. text .. "'")
     end
     equal(ns.db.learningScopeMessages, true, toc .. ": scope messages start enabled")
     equal(ns.db.learningDiscoveryMessages, true, toc .. ": discovery messages start enabled")
@@ -530,6 +536,77 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     HC.Settings:Show("Salve")
     assert(wow.FindButton("Save as new..."), toc .. ": the Panel page offers Save as new")
     equal(wow.FindButton("Save as new..."):GetPoint(), "LEFT", toc .. ": Save as new follows the profile dropdown")
+    -- Restructured tabs and Position preserve neighbouring settings on reset.
+ HC.Settings:Show("Salve", "Names and icons")
+ for name, err in pairs(HC.Settings.errors) do error(name .. ": " .. err) end
+ assert(wow.FindText("Name text size"), "names build")
+ assert(wow.FindText("Role and marker icon"), "role build")
+ ns.db.roleIcon = "OFF"
+ HC.Settings:Show("Salve", "Names and icons")
+ local namesBody = HC.Settings.pages.Salve.bodies["Names and icons"]
+ equal(wow.Visible(namesBody.hcRows["Role icon size"]), false, "role details hidden")
+ local focused = HC.Settings:Focus("Salve", "Role icon size", "Names and icons")
+ equal(focused, namesBody.hcRows["Role and marker icon"], "hidden role size focuses master")
+ ns.db.roleIcon = "MARKER"
+ HC.Settings:Show("Salve", "Names and icons")
+ equal(wow.Visible(namesBody.hcRows["Roles shown"]), false, "marker hides roles filter")
+ equal(wow.Visible(namesBody.hcRows["Role icon size"]), true, "marker keeps geometry")
+ ns.Set("nameFontSize", 30)
+ ns.Set("cooldownFontSize", 31)
+ ns.Set("extraCell", "FOCUS")
+ clickText("Reset Names and icons")
+ equal(ns.db.nameFontSize, ns.defaults.nameFontSize, "names reset")
+ equal(ns.db.cooldownFontSize, 31, "names preserves cooldown numbers")
+ equal(ns.db.extraCell, "FOCUS", "names preserves member choices")
+ HC.Settings:Show("Salve", "Layout")
+ ns.Set("boxWidth", 111)
+ clickText("Reset Layout")
+ equal(ns.db.boxWidth, ns.defaults.boxWidth, "layout reset")
+ equal(ns.db.extraCell, "FOCUS", "layout preserves members")
+ HC.Settings:Show("Salve", "Members")
+ assert(wow.FindText("Sort by"), "sorting moved")
+ ns.db.sortMode = "GROUP"
+ HC.Settings:Show("Salve", "Members")
+ local membersBody = HC.Settings.pages.Salve.bodies.Members
+ equal(wow.Visible(membersBody.hcRows["Role order"]), false, "group sorting hides role order")
+ ns.db.sortMode = "ROLE"
+ HC.Settings:Show("Salve", "Members")
+ equal(wow.Visible(membersBody.hcRows["Role order"]), true, "role sorting shows role order")
+ clickText("Reset Members")
+ equal(ns.db.extraCell, ns.defaults.extraCell, "members reset")
+ HC.Settings:Show("Position")
+ assert(wow.FindText("Attach to"), "attach moved")
+ local positionBody = HC.Settings.pages.Position.bodies.Position
+ ns.db.attachTo = "NONE"
+ HC.Settings:Show("Position")
+ equal(wow.Visible(positionBody.hcRows["Attach side"]), false, "no attachment hides geometry")
+ ns.db.attachTo, ns.db.attachSide = "DANDERS", "TOP"
+ HC.Settings:Show("Position")
+ equal(wow.Visible(positionBody.hcRows["Align"]), false, "top attachment hides alignment")
+ equal(wow.Visible(positionBody.hcRows["Handle position"]), false, "attachment hides handle position")
+ equal(HC.Settings:Focus("Position", "Handle position"), positionBody.hcRows["Attach to"], "attached handle position focuses attachment")
+ ns.db.attachSide = "LEFT"
+ HC.Settings:Show("Position")
+ equal(wow.Visible(positionBody.hcRows["Align"]), true, "side attachment shows alignment")
+ ns.Set("showHandle", false)
+ ns.Set("handlePosition", "RIGHT")
+ ns.Set("point", { "CENTER", "CENTER", 22, 33 })
+ ns.Set("attachTo", "DANDERS")
+ ns.Set("hideOnFlights", false)
+ clickText("Reset Position")
+ equal(ns.db.showHandle, ns.defaults.showHandle, "position handle reset")
+ equal(ns.db.attachTo, ns.defaults.attachTo, "position attach reset")
+ equal(ns.db.point[3], ns.defaults.point[3], "position point reset")
+ equal(ns.db.hideOnFlights, false, "position preserves visibility")
+ HC.Settings:Show("Visibility")
+ ns.Set("showHandle", false)
+ ns.Set("handlePosition", "RIGHT")
+ ns.Set("point", { "CENTER", "CENTER", 22, 33 })
+ clickText("Reset visibility")
+ equal(ns.db.showHandle, false, "visibility preserves handle")
+ equal(ns.db.handlePosition, "RIGHT", "visibility preserves handle position")
+ equal(ns.db.point[3], 22, "visibility preserves point")
+
 end
 
 -- What's new fires once for a dev build of the next release, and not again.
@@ -581,3 +658,52 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
 end
 
 io.write("addon tests passed\n")
+
+-- Welcome is fresh-install only; choosing defaults never changes saved settings.
+for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
+    local ns = loadAddon(toc, nil, "1.13.0")
+    local welcome = ns.HammerCore.Welcome
+    assert(welcome.queued and welcome.queued.mode == "intro", toc .. ": fresh install queues setup")
+    assert(#welcome:Rows() == 2, toc .. ": missing frame hosts omit attach setup")
+    local soundRow = welcome:Rows()[2]
+    soundRow.set(true)
+    equal(ns.db.dispelSoundEnabled, true, toc .. ": welcome sound uses the current dispel key")
+    soundRow.set(false)
+    equal(ns.db.dispelSoundEnabled, false, toc .. ": welcome sound can be disabled")
+    local saved = ns.db
+    welcome:MarkSeen()
+    ns = loadAddon(toc, saved, "1.14.0")
+    equal(ns.HammerCore.Welcome.queued, nil, toc .. ": update never queues welcome")
+end
+
+-- Opening every page and tab preserves a current-release settings snapshot.
+local function copy(value)
+    if type(value) ~= "table" then return value end
+    local result = {}
+    for key, item in pairs(value) do result[key] = copy(item) end
+    return result
+end
+local function same(a, b)
+    if type(a) ~= type(b) then return false end
+    if type(a) ~= "table" then return a == b end
+    for key, value in pairs(a) do if not same(value, b[key]) then return false end end
+    for key in pairs(b) do if a[key] == nil then return false end end
+    return true
+end
+for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
+    local saved = { schemaVersion = 12, hammerCore = {}, boxWidth = 113, nameFontSize = 17,
+        cooldownFontSize = 21, extraCell = "FOCUS", roleIcon = "MARKER", tooltipActions = false,
+        movementTextOutput = "CHAT", cooldownBarGap = 19, attachTo = "DANDERS", attachGap = 13 }
+    local ns = loadAddon(toc, saved, "1.13.0")
+    local snapshot = {}
+    for key in pairs(ns.defaults) do snapshot[key] = copy(ns.db[key]) end
+    local settings = ns.HammerCore.Settings
+    settings:Show("Salve")
+    for _, spec in ipairs(settings.order) do
+        for _, tab in ipairs(settings.pages[spec.name].tabs) do settings:Show(spec.name, tab) end
+    end
+    for key in pairs(ns.defaults) do
+        assert(same(snapshot[key], ns.db[key]), toc .. ": building pages changed saved key " .. key)
+    end
+    equal(ns.db.schemaVersion, 12, toc .. ": UX changes keep the current schema")
+end

@@ -93,16 +93,15 @@ UI\Broker.lua
 # Options. The first page becomes the root AddOns category; the rest are
 # player-facing tasks rather than internal frame objects.
 # ☠ Shared.lua first: every page below calls its widget helpers at file scope.
+Options\Welcome.lua
 Options\Salve.lua
-Options\Profiles.lua
-Options\Sorting.lua
-Options\Attach.lua
-Options\Cooldowns.lua
-Options\Tooltips.lua
 Options\Dispel.lua
-Options\Visibility.lua
+Options\Cooldowns.lua
 Options\Alerts.lua
-Options\Movement.lua
+Options\Tooltips.lua
+Options\Position.lua
+Options\Visibility.lua
+Options\Profiles.lua
 Options\Troubleshooting.lua
 Options\LearnedSpells.lua
 

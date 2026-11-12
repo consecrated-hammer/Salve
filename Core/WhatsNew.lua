@@ -8,8 +8,8 @@ local addonName, ns = ...
 ns.WHATS_NEW = {
     { version = "1.13.0", date = "2026-11-12", items = {
         { title = "Mouseover dispels", text = "Bind a key to cleanse a friendly mouseover. Forever also has a combined key for both dispels.", page = "Key Bindings" },
-        { title = "Extra target cell", text = "A friendly target outside your group gets a cell beside the grid. Choose Target, Focus or Off on Panel > Layout.", page = "Salve", tab = "Layout" },
-        { title = "Role and marker icons", text = "Cells can show a raid marker, with the role when no marker is set. Configure them on Panel > Role icons.", page = "Salve", tab = "Role icons" },
+        { title = "Extra target cell", text = "A friendly target outside your group gets a cell beside the grid. Choose Target, Focus or Off on Panel > Members.", page = "Salve", tab = "Members" },
+        { title = "Role and marker icons", text = "Cells can show a raid marker, with the role when no marker is set. Configure them on Panel > Names and icons.", page = "Salve", tab = "Names and icons" },
     } },
     { version = "1.12.0", date = "2026-11-11", items = {
         { title = "Debuff tooltips", text = "Hover a lit cell to see what the debuff is, straight from Blizzard. Switch it off on Tooltips.",
@@ -54,7 +54,7 @@ ns.WHATS_NEW = {
     } },
     { version = "1.9.0", date = "2026-11-08", items = {
         { title = "Movement alerts", text = "When you're rooted or snared, your cell shows a small badge with the spell that frees you, such as Blessing of Freedom, instead of turning orange. Dispels and Freedom share the cell. Still in beta.",
-            page = "Movement" },
+            page = "Alerts" },
     } },
     { version = "1.8.2", date = "2026-11-01", items = {
         { title = "Lockouts", client = "forever", text = "Forbearance now lasts its full minute and follows every spell that causes it.",
@@ -72,15 +72,15 @@ ns.WHATS_NEW = {
     } },
     { version = "1.7.0", date = "2026-10-31", items = {
         { title = "Sorting", text = "Order cells by role or name, and pin your own cell first or last.",
-            page = "Sorting" },
+            page = "Salve", tab = "Members" },
         { title = "Attach", text = "Line Salve up with DandersFrames or EllesmereUI group frames.",
-            page = "Attach" },
+            page = "Position" },
     } },
     -- History: highlights written after the fact for releases from before
     -- What's new existed. Listed under Earlier releases on the What's new page.
     { version = "1.6.5", date = "2026-10-27", history = true, items = {
         { title = "Movement (beta)", text = "Root, snare and slow alerts got their own page, with one switch to turn them all off.",
-            page = "Movement" },
+            page = "Alerts" },
     } },
     { version = "1.6.4", date = "2026-10-18", history = true, items = {
         { text = "Learning chat messages can be muted without stopping learning.", page = "Alerts" },
@@ -95,7 +95,7 @@ ns.WHATS_NEW = {
     } },
     { version = "1.5.0", date = "2026-08-27", history = true, items = {
         { text = "Roots and snares got their own alert sound and colour, and a sweep shows when your Freedom-style spell is on cooldown.",
-            page = "Movement" },
+            page = "Alerts" },
     } },
     { version = "1.4.0", date = "2026-08-22", history = true, items = {
         "/salve debug copy builds a report you can paste into a bug report.",

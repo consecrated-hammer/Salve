@@ -7,6 +7,11 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Group settings into Panel, Key Bindings, Cooldowns, Alerts, Tooltips, Position, Visibility and Profiles. Related settings have tabs and independent resets.
+- Find every settings row through search, including controls hidden by a parent switch. Results name the tab and highlight the switch that reveals hidden controls.
+- Hide settings that have no effect until their parent option is enabled. Keep existing saved values and profiles.
+- Offer layout and sound setup on a fresh install.
+
 ## [1.13.0] - 2026-11-12
 
 ### Added

@@ -149,6 +149,7 @@ end
 
 HC.Settings:NewPage({
     name = "Key Bindings",
+    profileScope = false,
     title = "Key Bindings",
     group = "main",
     description = "Mouse buttons for cells, and keys for mouseover dispels.", columns = 1,
@@ -160,7 +161,7 @@ HC.Settings:NewPage({
     -- Where a mouseover key casts when nothing friendly is under the pointer.
     -- Above the bindings, whose height changes as they're added.
     _, y = O.Dropdown(panel, "Mouseover fallback",
-        "Mouseover keys cast on a friendly player under the pointer, or this when there isn't one.", y,
+        "Mouseover dispel keys cast on a friendly player under the pointer, or this when there isn't one. Bind individual or both dispels in the mouseover tiles below.", y,
         { "NONE", "TARGET", "PLAYER" }, { "Do nothing", "Use target", "Use yourself" },
         function() return ns.db.mouseoverFallback end,
         function(value) ns.Set("mouseoverFallback", value) end, 560, 150, 200)
@@ -175,7 +176,7 @@ HC.Settings:NewPage({
     local bottom = HC.Bindings.Page(panel, y, {
         inputs = { mouse = true },
         poolTitle = "Your spells",
-        poolHint = "Click a spell, then the mouse button that casts it.",
+        poolHint = "Click a spell, then the mouse button that casts it. Mouseover dispel keys and both dispels are included below.",
         empty = "Nothing bound yet. Pick a spell on the right, then click a mouse button.",
         label = function(key) return ns.Bindings:Label(key) end,
         tooltip = function(owner, entry)
@@ -240,7 +241,7 @@ HC.Settings:NewPage({
             if entry.kind == "ESCAPE" then ns.db.escapes[entry.id] = true end
             local function bound()
                 if entry.kind == "ESCAPE" and ns.db.movementAlertsEnabled ~= false then
-                    ns.Print("Movement alerts are in beta and may not work correctly. Disable them on Movement if needed.")
+                    ns.Print("Movement alerts are in beta and may not work correctly. Disable them on Alerts if needed.")
                 end
                 refreshAll()
                 return true
