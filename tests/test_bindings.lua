@@ -112,3 +112,56 @@ equal(ns.Bindings:IsDispelSpell(988), true,
     "current learned rank drives cooldown matching")
 
 print("binding tests passed")
+
+-- Both dispels on one click: a two-line macro aimed at the cell's slot.
+do
+    ns.db.bindings, ns.db.bindingsCustom = {}, nil
+    ns.spellName, ns.spellID = "Cure Poison", 8946
+    ns.secondaryName, ns.secondaryID = nil, nil
+    equal(ns.Bindings:BothSpells(), nil, "no Both without a second dispel")
+    equal(ns.Bindings:SetSpellBinding("BOTH", "BUTTON1", true), true, "unarmed Both still saves")
+    ns.Bindings:ClearSpellBinding("BOTH")
+
+    ns.secondaryName, ns.secondaryID = "Remove Curse", 2782
+    equal(ns.Bindings:BothSpells(), nil, "no Both on Retail")
+    ns.isCamelot = true
+    ns.db.bindings, ns.db.bindingsCustom = {}, nil
+    equal(ns.Bindings:SetSpellBinding("BOTH", "BUTTON1"), false, "Both asks before taking the dispel's click")
+    equal(ns.Bindings:SetSpellBinding("BOTH", "BUTTON1", true), true, "Replace binds Both")
+    local entry
+    for _, e in ipairs(ns.Bindings:List()) do if e.role == ns.ROLE_BOTH then entry = e end end
+    equal(entry and entry.key, "BUTTON1", "Both saved on left click")
+    equal(ns.Bindings:Describe(entry), "Cure Poison or Remove Curse (automatic)", "Both row describes itself")
+
+    local attrs = {}
+    local box = { unit = "raid5", SetAttribute = function(_, k, v) attrs[k] = v end }
+    ns.Bindings:Apply(box)
+    equal(attrs.type1, "macro", "left click runs a macro")
+    equal(attrs.macrotext1, "/cast [@raid5] Cure Poison\n/cast [@raid5] Remove Curse",
+        "macro aims both lines at the cell's slot")
+
+    ns.db.bothDispelsOrder = "SECONDARY"
+    ns.Bindings:Apply(box)
+    equal(attrs.macrotext1, "/cast [@raid5] Remove Curse\n/cast [@raid5] Cure Poison",
+        "order setting swaps the lines")
+    ns.Bindings:SetSpellBinding(8946, "BUTTON2")
+    ns.Bindings:Apply(box)
+    equal(attrs.type2, "spell", "a plain spell click sits beside Both")
+    equal(attrs.macrotext1 ~= nil, true, "Both kept on left click")
+
+    ns.Bindings:ClearSpellBinding("BOTH")
+    ns.Bindings:Apply(box)
+    equal(attrs.type1, nil, "clearing Both removes the macro click")
+    equal(attrs.macrotext1, nil, "and its text")
+    ns.db.bothDispelsOrder = nil
+    ns.spellName, ns.spellID = "Abolish Poison", 2893
+    local first, second = ns.Bindings:BothSpells()
+    equal(first[1], "Remove Curse", "Abolish never goes first: it casts with nothing to remove")
+    equal(second[1], "Abolish Poison", "Abolish goes last")
+    ns.db.bothDispelsOrder = "SECONDARY"
+    first = ns.Bindings:BothSpells()
+    equal(first[1], "Remove Curse", "the order setting can't put Abolish first")
+    ns.db.bothDispelsOrder = nil
+    ns.isCamelot = nil
+end
+print("test_bindings ok")

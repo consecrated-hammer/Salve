@@ -19,6 +19,8 @@ local CLASSES = { "PALADIN", "HUNTER", "SHAMAN", "ROGUE", "PRIEST" }
 -- Sample roles so the sort settings visibly reorder the test panel. The first
 -- cell stands in for the player.
 local ROLES = { "TANK", "DAMAGER", "DAMAGER", "DAMAGER", "HEALER" }
+-- A skull on the tank only, so "Marker, else role" shows both kinds.
+local MARKERS = { 8 }
 local FALLBACK_DISPEL_COLOURS = {
     Magic = { r = 0.20, g = 0.60, b = 1.00 },
     Curse = { r = 0.72, g = 0.28, b = 1.00 },
@@ -107,7 +109,7 @@ function Preview:Roster(count)
         local sample = ((i - 1) % #NAMES) + 1
         entries[i] = {
             index = i, isPlayer = i == 1, name = NAMES[sample],
-            class = CLASSES[sample], role = ROLES[sample],
+            class = CLASSES[sample], role = ROLES[sample], marker = MARKERS[sample],
         }
     end
     if ns.Panel and ns.Panel.SortEntries then return ns.Panel:SortEntries(entries) end
@@ -133,7 +135,7 @@ local function renderBoxes(boxes, frame, count, layout, state, cooldownState,
             else
                 ns.Panel:PlaceBox(box, i, layout)
             end
-            ns.Box.RestylePreview(box, roster[i].name, roster[i].class)
+            ns.Box.RestylePreview(box, roster[i].name, roster[i].class, roster[i].role, roster[i].marker)
 
             if state == "DISPELLABLE" and Preview:NeedsDispel(i, count) then
                 local dispelType = types[((i - 1) % #types) + 1]

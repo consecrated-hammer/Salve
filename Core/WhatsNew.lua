@@ -6,6 +6,11 @@ local addonName, ns = ...
 -- the lines short and player-facing; details stay in CHANGELOG.md. A `page`
 -- adds a button that opens that settings page.
 ns.WHATS_NEW = {
+    { version = "1.13.0", date = "2026-11-12", items = {
+        { title = "Mouseover dispels", text = "Bind a key to cleanse a friendly mouseover. Forever also has a combined key for both dispels.", page = "Key Bindings" },
+        { title = "Extra target cell", text = "A friendly target outside your group gets a cell beside the grid. Choose Target, Focus or Off on Panel > Layout.", page = "Salve", tab = "Layout" },
+        { title = "Role and marker icons", text = "Cells can show a raid marker, with the role when no marker is set. Configure them on Panel > Role icons.", page = "Salve", tab = "Role icons" },
+    } },
     { version = "1.12.0", date = "2026-11-11", items = {
         { title = "Debuff tooltips", text = "Hover a lit cell to see what the debuff is, straight from Blizzard. Switch it off on Tooltips.",
             page = "Tooltips" },

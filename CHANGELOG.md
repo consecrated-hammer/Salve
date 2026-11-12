@@ -5,6 +5,55 @@ All notable changes to Salve are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.13.0] - 2026-11-12
+
+### Added
+
+- New profiles enable the extra Target cell and default role icons to
+  Marker, else role. Existing saved choices are preserved.
+
+- The Forever combined dispel also has a mouseover key binding, using the
+  same spell order and mouseover fallback as the other dispel keys.
+
+- **Both dispels on one click (Forever).** Got two dispels that cure different
+  things, like a Forever druid's Remove Curse and Cure Poison? Bind "Remove
+  Curse or Cure Poison" (or whatever your pair is) on the Key Bindings page
+  and one click casts whichever one the player actually needs. The game
+  tries one, and when there's nothing for it to remove, casts the other in
+  the same click, so it works in combat and follows raid reshuffles like
+  any other click. Someone carrying both gets one per click. "Both dispels:
+  try first" picks which goes first.
+- **Role and marker icons.** Cells can show a little role icon, the raid
+  marker someone's wearing, or the marker when there is one and the role
+  otherwise. Markers come from the game, so it doesn't matter whether
+  CheckMark, the tank or your raid lead put them there. By default it sits
+  on the top border of the top-right corner, half in and half out, so it
+  stays out of the way of the debuff colour. "Role icon" on the Panel page,
+  under Cells, picks what shows, which roles, the corner, the placement and
+  the size. New profiles show the marker, or the role when no marker is set.
+- **Extra cell for your target or focus.** Click a friendly player outside
+  your group and they get a cell in the next spot on your grid, lighting up
+  like everyone else's when they've got something you can remove. Clicking
+  it cleanses them, in combat too. It hides itself for enemies, the dead and
+  (by default) your own group. If the game ever refuses to update it after a
+  target change, it goes blank rather than show the last person's debuff.
+  "Extra cell" on the Panel page, under Layout. Enabled as Target for new profiles.
+- **Mouseover dispel keys.** On the Key Bindings page, under Mouseover
+  keys, give your dispel a key (or a mouse side button), hover anyone
+  friendly (a raid frame from any addon, a nameplate or the player
+  themselves) and press it to cleanse them, in combat too. Your second
+  dispel gets its own. "Mouseover fallback" can make the key use your
+  target or yourself when nothing's under the mouse. The keys also show
+  under Options > Keybindings > AddOns > Salve.
+- **Hidden unit details log.** Salve quietly counts which unit details the
+  game hides from addons (raid markers, roles, names and so on) in dungeons,
+  keys, raids and boss fights, so we know what new features can rely on.
+  `/salve secrecy` shows the counts and the debug report includes them. It
+  stores counts only, never who. "Record hidden unit details" on
+  Troubleshooting turns it off.
+
 ## [1.12.0] - 2026-11-11
 
 ### Added

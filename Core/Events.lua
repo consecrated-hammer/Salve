@@ -182,6 +182,10 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
         -- Salve's role sort depends on roles, and so may the host's order.
         if ns.db and ns.db.sortMode == "ROLE" then ns.RequestRebuild() end
         if ns.Attach then ns.Attach:HostChanged() end
+        if ns.Panel and ns.Panel.RefreshRoleBadges then ns.Panel:RefreshRoleBadges() end
+
+    elseif event == "RAID_TARGET_UPDATE" then
+        if ns.Panel and ns.Panel.RefreshRoleBadges then ns.Panel:RefreshRoleBadges() end
 
     elseif event == "PLAYER_SPECIALIZATION_CHANGED"
         or event == "SPELLS_CHANGED"
@@ -198,6 +202,10 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
             ns.RequestRebuild()
         end
         if ns.SelfAlert and ns.SelfAlert.Update then ns.SelfAlert:Update() end
+        -- Your own role icon follows your spec.
+        if event == "PLAYER_SPECIALIZATION_CHANGED" and ns.Panel and ns.Panel.RefreshRoleBadges then
+            ns.Panel:RefreshRoleBadges()
+        end
 
     elseif event == "UNIT_SPELLCAST_SENT" then
         if ns.Lockouts then ns.Lockouts:NoteSent(arg1, arg2, arg3, arg4) end
@@ -307,6 +315,8 @@ end
 -- Not every client is guaranteed to know this event; registering an unknown
 -- one is an error. Without it, roles still apply on the next roster change.
 pcall(frame.RegisterEvent, frame, "PLAYER_ROLES_ASSIGNED")
+-- Raid markers, for the role and marker icon.
+pcall(frame.RegisterEvent, frame, "RAID_TARGET_UPDATE")
 
 -- Filter at registration so group members' casts never enter Lua. The handler
 -- then narrows this further to Salve's known dispel spell IDs.

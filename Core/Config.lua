@@ -51,6 +51,14 @@ ns.defaults = {
     showDispelTypeIcon = true,
     dispelTypeIconSize = 20,
     dispelTypeIconPosition = "BOTTOMLEFT",
+    -- A role or raid-marker icon in one corner. OFF | ROLE | MARKER | BOTH,
+    -- where BOTH is the marker when there is one and the role otherwise.
+    -- EDGE straddles the top or bottom border so it covers less of the cell.
+    roleIcon = "BOTH",
+    roleIconRoles = "TANKHEALER",   -- TANKHEALER | ALL
+    roleIconPosition = "TOPRIGHT",
+    roleIconPlacement = "EDGE",     -- INSIDE | EDGE | CORNER
+    roleIconSize = 10,
     nameJustifyH  = "LEFT",
     nameJustifyV  = "MIDDLE",
     nameFontSize  = 11,
@@ -96,6 +104,9 @@ ns.defaults = {
     -- Optional timestamp-only history of clicks on armed Salve cells. The
     -- entries themselves live in SalveClickLog, separate from preferences.
     clickAuditEnabled = false,
+    -- Counts of which unit facts (markers, roles, names...) the client hides,
+    -- per situation, in SalveClickLog. See Features/Secrecy.lua.
+    unitSecrecyLog = true,
 
     -- HORIZONTAL fills a row then wraps to the next; VERTICAL fills a column
     -- then wraps to the next. `columns` is the wrap point either way.
@@ -109,6 +120,15 @@ ns.defaults = {
     sortRoleOrder = "TANK,HEALER,DAMAGER",
     sortReverse   = false,
     sortSelf      = "SORTED",  -- SORTED | FIRST | LAST
+    -- One more cell after the group for your target or focus, shown only
+    -- when it's a living friendly player. See Features/ExtraCell.lua.
+    extraCell     = "TARGET",     -- OFF | TARGET | FOCUS
+    extraCellSkipGroup = true, -- fade it out when that player is in your group
+    -- Mouseover dispel keys (Blizzard Key Bindings > AddOns > Salve): what
+    -- they cast on when nothing friendly is under the pointer.
+    mouseoverFallback = "NONE",   -- NONE | TARGET | PLAYER
+    -- The "Both dispels" click: which spell its macro tries first.
+    bothDispelsOrder = "PRIMARY", -- PRIMARY | SECONDARY
 
     -- Attach the panel to another addon's group frames. LEFT and RIGHT line
     -- each cell up with its member's frame; TOP and BOTTOM keep Salve's grid
@@ -233,7 +253,7 @@ local function normalizePreferences(db)
     end
     for _, key in ipairs({ "showNames", "showBorders", "showTooltip", "tooltipUnitInfo", "tooltipActions",
         "tooltipSpellDescriptions", "tooltipDebuff", "showDispelTypeIcon", "showStacks", "useClassColours",
-        "showWhenClean", "showHandle", "bindingsCustom", "clickAuditEnabled",
+        "showWhenClean", "showHandle", "bindingsCustom", "clickAuditEnabled", "unitSecrecyLog", "extraCellSkipGroup",
         "soundEnabled", "dispelSoundEnabled", "movementSoundEnabled", "movementTextNotification",
         "movementAlertsEnabled", "inferredSlowAlertsEnabled",
         "selfDispelNotification", "sortReverse", "cooldownBar", "cooldownBarShowReady",
@@ -254,6 +274,13 @@ local function normalizePreferences(db)
     numberInRange(db, "movementChatWindow", 0, 20, true)
     numberInRange(db, "cooldownIconSize", 8, 64, true)
     numberInRange(db, "lockoutIconSize", 8, 48, true)
+    numberInRange(db, "roleIconSize", 6, 32, true)
+    enumOrDefault(db, "roleIcon", { OFF = true, ROLE = true, MARKER = true, BOTH = true })
+    enumOrDefault(db, "roleIconRoles", { TANKHEALER = true, ALL = true })
+    enumOrDefault(db, "roleIconPosition", {
+        TOPLEFT = true, TOPRIGHT = true, BOTTOMLEFT = true, BOTTOMRIGHT = true,
+    })
+    enumOrDefault(db, "roleIconPlacement", { INSIDE = true, EDGE = true, CORNER = true })
     enumOrDefault(db, "lockoutPlacement", { BAR = true, CELL = true, BOTH = true })
     enumOrDefault(db, "lockoutIconPosition", {
         LEFT = true, RIGHT = true, CENTER = true,
@@ -279,6 +306,9 @@ local function normalizePreferences(db)
     enumOrDefault(db, "verticalGrowth", { UP = true, DOWN = true })
     enumOrDefault(db, "sortMode", { GROUP = true, ROLE = true, NAME = true })
     enumOrDefault(db, "sortSelf", { SORTED = true, FIRST = true, LAST = true })
+    enumOrDefault(db, "extraCell", { OFF = true, TARGET = true, FOCUS = true })
+    enumOrDefault(db, "mouseoverFallback", { NONE = true, TARGET = true, PLAYER = true })
+    enumOrDefault(db, "bothDispelsOrder", { PRIMARY = true, SECONDARY = true })
     local roleOrders = {}
     for _, order in ipairs(ns.SORT_ROLE_ORDERS) do roleOrders[order] = true end
     enumOrDefault(db, "sortRoleOrder", roleOrders)
@@ -518,6 +548,7 @@ local GEOMETRY = {
     scale = true, showNames = true, showStacks = true, orientation = true,
     horizontalGrowth = true, verticalGrowth = true,
     sortMode = true, sortRoleOrder = true, sortReverse = true, sortSelf = true,
+    extraCell = true, mouseoverFallback = true, bothDispelsOrder = true,
     attachTo = true, attachSide = true, attachGap = true,
     attachAlign = true, attachOffsetY = true,
     bindings = true, escapes = true,
@@ -552,7 +583,12 @@ function ns.Set(key, value)
         if ns.Range then ns.Range:UpdateAll() end
         return
     end
-    if key == "learningScopeMessages" or key == "learningDiscoveryMessages" then return end
+    if key == "learningScopeMessages" or key == "learningDiscoveryMessages"
+        or key == "unitSecrecyLog" then return end
+    if key == "extraCellSkipGroup" then
+        if ns.ExtraCell then ns.ExtraCell:ApplyFade() end
+        return
+    end
 
     if key == "movementAlertsEnabled" or key == "inferredSlowAlertsEnabled" then
         if ns.MovementDetection then ns.MovementDetection:Reset() end

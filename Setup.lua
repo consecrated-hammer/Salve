@@ -152,6 +152,12 @@ HC.Commands:Add({ name = "cooldowns", section = "Diagnostics", help = "Show how 
     end })
 HC.Commands:Add({ name = "snares", section = "Diagnostics", help = "List captured root and snare spell IDs",
     run = function() ns.Escape:DumpCaptured() end })
+HC.Commands:Add({ name = "trace", section = "Diagnostics", help = "Print your casts and error messages until you run it again",
+    run = function() ns.CastTrace:Toggle() end })
+HC.Commands:Add({ name = "secrecy", section = "Diagnostics", help = "Show which unit details the game has hidden, by situation",
+    run = function() for _, line in ipairs(ns.Secrecy:DiagnosticLines()) do ns.Print(line) end end })
+HC.Commands:Add({ name = "secrecy clear", section = "Diagnostics", help = "Clear the unit secrecy log",
+    run = function() ns.Secrecy:Clear(); ns.Print("unit secrecy log cleared") end })
 HC.Commands:Add({ name = "learned", section = "Learning", help = "List recorded auras",
     run = function() ns.Sound:DumpLearned() end })
 HC.Commands:Add({ name = "learned clear", section = "Learning", help = "Clear recorded auras",

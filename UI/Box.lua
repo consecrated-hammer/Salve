@@ -491,7 +491,8 @@ function Box.CreatePreview(parent)
     return box
 end
 
-function Box.RestylePreview(box, name, classKey)
+function Box.RestylePreview(box, name, classKey, role, marker)
+    Box.ShowRoleBadge(box, role, marker)
     local db = ns.db
     box.border:SetAlpha(db.showBorders == false and 0 or 1)
 
@@ -525,6 +526,7 @@ end
 -- Secure attributes. Out of combat only -- callers guard.
 function Box.Bind(box, unit)
     box.unit = unit
+    box.roleBadgeRole, box.roleBadgeMarker = nil, nil
     Box.SetMovementPrompt(box, false)
 
     box:SetAttribute("unit", unit)
@@ -605,6 +607,151 @@ function Box.SetMovementPrompt(box, active, spellID)
         end
         if box.border then box.border:SetBackdropBorderColor(0.55, 0.55, 0.55, 0.72) end
     end
+    -- The badge comes and goes; the role icon is always there. When they
+    -- want the same corner the badge wins until it clears.
+    if box.roleBadgeShown ~= nil then Box.ShowRoleBadge(box, box.roleBadgeRole, box.roleBadgeMarker) end
+end
+
+-- ── Role and marker icon ───────────────────────────────────────────────────
+--
+-- A small icon in one corner: the member's role, their raid marker, or the
+-- marker when there is one and the role otherwise. Markers are game state,
+-- so whoever set them (CheckMark, the tank, a raid lead) they show the same.
+-- It's a plain texture on Salve's own frame: safe in combat, never secure,
+-- and mouse-dead so clicks land on whichever box is underneath.
+
+local function readable(value)
+    return value ~= nil and not (issecretvalue and issecretvalue(value))
+end
+
+-- Blizzard's tiny role art, made for icons this size.
+local ROLE_ATLAS = {
+    TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps",
+}
+-- Fallback for a client without those atlases: the LFG portrait roles sheet,
+-- with GetTexCoordsForRoleSmallCircle's coordinates.
+local ROLE_SHEET = "Interface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES"
+local ROLE_COORDS = {
+    TANK = { 0, 19 / 64, 22 / 64, 41 / 64 },
+    HEALER = { 20 / 64, 39 / 64, 1 / 64, 20 / 64 },
+    DAMAGER = { 20 / 64, 39 / 64, 22 / 64, 41 / 64 },
+}
+local MARKER_TEXTURE = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_"
+
+-- TANK, HEALER, DAMAGER or nil. Your own role comes from your spec when the
+-- group hasn't assigned one, which is also how it works solo.
+function Box.UnitRole(unit)
+    if not unit then return nil end
+    local role = UnitGroupRolesAssigned and UnitGroupRolesAssigned(unit)
+    if readable(role) and ROLE_ATLAS[role] then return role end
+    local isPlayer = unit == "player"
+        or (ns.Escape and ns.Escape.IsPlayerUnit and ns.Escape:IsPlayerUnit(unit))
+    if isPlayer and ns.Panel and ns.Panel.PlayerSpecRole then
+        role = ns.Panel.PlayerSpecRole()
+        if ROLE_ATLAS[role] then return role end
+    end
+    return nil
+end
+
+-- 1-8 or nil. An unreadable marker in restricted content just shows nothing.
+function Box.UnitMarker(unit)
+    if not (unit and GetRaidTargetIndex) then return nil end
+    local ok, index = pcall(GetRaidTargetIndex, unit)
+    if not ok or not readable(index) or type(index) ~= "number" then return nil end
+    if index < 1 or index > 8 then return nil end
+    return index
+end
+
+-- Where the icon's own point goes against the cell. INSIDE tucks it into the
+-- corner. EDGE centres it on the top or bottom border but keeps it inside
+-- horizontally, so it never reaches a side neighbour. CORNER centres it on
+-- the corner point itself, best with wider spacing.
+function Box.RoleBadgeAnchor(corner, placement)
+    if placement == "INSIDE" then return corner, corner end
+    if placement == "CORNER" then return "CENTER", corner end
+    return corner:find("LEFT", 1, true) and "LEFT" or "RIGHT", corner
+end
+
+-- "MARKER", "ROLE" or nil, and the marker index or role to draw.
+function Box.RoleBadgeContent(role, marker)
+    local db = ns.db or {}
+    local mode = db.roleIcon or "OFF"
+    if (mode == "MARKER" or mode == "BOTH") and marker then return "MARKER", marker end
+    if (mode == "ROLE" or mode == "BOTH") and role
+        and (role ~= "DAMAGER" or db.roleIconRoles == "ALL") then
+        return "ROLE", role
+    end
+    return nil
+end
+
+local function RoleBadge(box)
+    local badge = box.roleBadge
+    if badge then return badge end
+    badge = CreateFrame("Frame", nil, box)
+    if badge.EnableMouse then badge:EnableMouse(false) end
+    badge.texture = badge:CreateTexture(nil, "ARTWORK")
+    badge.texture:SetAllPoints(badge)
+    badge:Hide()
+    box.roleBadge = badge
+    return badge
+end
+
+-- Live boxes pass the unit's role and marker; preview boxes pass samples.
+function Box.ShowRoleBadge(box, role, marker)
+    box.roleBadgeRole, box.roleBadgeMarker = role, marker
+    local db = ns.db or {}
+    local kind, value = Box.RoleBadgeContent(role, marker)
+    local corner = db.roleIconPosition or "TOPRIGHT"
+    if kind and box.movementBadge and box.movementBadge:IsShown()
+        and Box.MovementBadgePosition() == corner then
+        kind = nil
+    end
+    box.roleBadgeShown = kind ~= nil
+    if not kind then
+        if box.roleBadge then box.roleBadge:Hide() end
+        return
+    end
+
+    local badge = RoleBadge(box)
+    local size = math.max(6, math.min(32, tonumber(db.roleIconSize) or 10))
+    local point, relative = Box.RoleBadgeAnchor(corner, db.roleIconPlacement or "EDGE")
+    badge:SetSize(size, size)
+    badge:ClearAllPoints()
+    badge:SetPoint(point, box, relative, 0, 0)
+    -- Above the debuff fill and this box's sweeps, and above the neighbours'
+    -- fills it may overhang. Under the lockout icon and movement badge.
+    badge:SetFrameLevel((box.movementFrameLevel or (box:GetFrameLevel() + 13)) + 7)
+
+    local texture = badge.texture
+    badge.kind, badge.value = kind, value
+    if kind == "MARKER" then
+        texture:SetTexture(MARKER_TEXTURE .. value)
+        if texture.SetTexCoord then texture:SetTexCoord(0, 1, 0, 1) end
+    else
+        local atlas = ROLE_ATLAS[value]
+        local available = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(atlas)
+        if available and texture.SetAtlas then
+            texture:SetAtlas(atlas)
+        else
+            texture:SetTexture(ROLE_SHEET)
+            local c = ROLE_COORDS[value]
+            if texture.SetTexCoord then texture:SetTexCoord(c[1], c[2], c[3], c[4]) end
+        end
+    end
+    badge:Show()
+end
+
+function Box.UpdateRoleBadge(box)
+    if not box.unit then
+        Box.ShowRoleBadge(box, nil, nil)
+        return
+    end
+    local mode = ns.db and ns.db.roleIcon or "OFF"
+    if mode == "OFF" then
+        Box.ShowRoleBadge(box, nil, nil)
+        return
+    end
+    Box.ShowRoleBadge(box, Box.UnitRole(box.unit), Box.UnitMarker(box.unit))
 end
 
 -- A class token that is safe to use as a table key. Restyle also runs in
@@ -657,4 +804,5 @@ function Box.Restyle(box)
     -- "dim when clean" without anything of ours knowing whether it is.
     box.plate:SetAlpha(db.showWhenClean and db.cleanAlpha or 0)
     StyleCooldownText(box)
+    Box.UpdateRoleBadge(box)
 end

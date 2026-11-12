@@ -1,8 +1,8 @@
 ## Interface: 120105
 ## Title: Salve
 ## Author: consecrated-hammer
-## Version: 1.12.0
-## X-ReleaseDate: 2026-11-11
+## Version: 1.13.0
+## X-ReleaseDate: 2026-11-12
 ## Notes: Compact clickable group-dispel panel built for Midnight's private aura rules.
 ## SavedVariables: SalveDB, SalveLearnedDB, SalveClickLog
 ## LoadSavedVariablesFirst: 1
@@ -63,6 +63,10 @@ Features\Lockouts.lua
 Features\Sound.lua
 Features\Range.lua
 Features\Probe.lua
+Features\Secrecy.lua
+Features\ExtraCell.lua
+Features\Mouseover.lua
+Features\CastTrace.lua
 
 # Generated from data/. This is one small catalogue inside Salve, not a second
 # or third AddOns-list entry. Edit the CSVs and manifest, never this file.

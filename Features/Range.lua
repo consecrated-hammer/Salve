@@ -92,6 +92,7 @@ function Range:Apply(box)
 end
 
 local function liveBoxes()
+    if ns.Panel and ns.Panel.AllBoxes then return ns.Panel:AllBoxes() end
     return ns.Panel and ns.Panel.boxes or {}
 end
 

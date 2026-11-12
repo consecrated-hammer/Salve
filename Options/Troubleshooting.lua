@@ -102,6 +102,15 @@ local function buildReport()
     if ns.Range then
         for _, line in ipairs(ns.Range:DiagnosticLines()) do lines[#lines + 1] = line end
     end
+    if ns.Secrecy then
+        for _, line in ipairs(ns.Secrecy:DiagnosticLines()) do lines[#lines + 1] = line end
+    end
+    if ns.ExtraCell then
+        for _, line in ipairs(ns.ExtraCell:DiagnosticLines()) do lines[#lines + 1] = line end
+    end
+    if ns.Mouseover then
+        for _, line in ipairs(ns.Mouseover:DiagnosticLines()) do lines[#lines + 1] = line end
+    end
 
     lines[#lines + 1] = "Bindings:"
     for _, entry in ipairs(ns.Bindings:List()) do
@@ -176,6 +185,10 @@ function O.TroubleshootingExtras(panel, y)
     y = y - 8
 
     _, y = O.Header(panel, "Debug logging", y)
+    _, y = O.Check(panel, "Record hidden unit details",
+        "Counts which unit details the game hides, by situation. /salve secrecy shows them.",
+        y, function() return ns.db.unitSecrecyLog end,
+        function(value) ns.Set("unitSecrecyLog", value) end, 264)
     _, y = O.Check(panel, "Record armed Salve-cell clicks",
         "Off by default. Saves timestamp, unit token, mouse binding and the selected Salve action to SalveClickLog. It cannot record a private aura's name.",
         y, function() return ns.db.clickAuditEnabled end,

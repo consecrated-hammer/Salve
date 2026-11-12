@@ -46,9 +46,11 @@ end
 -- Each tab's reset restores only the settings on that tab.
 local TAB_KEYS = {
     Layout = { "orientation", "horizontalGrowth", "verticalGrowth", "columns",
-        "spacing", "scale", "boxWidth", "boxHeight", "previewUnits" },
+        "spacing", "scale", "boxWidth", "boxHeight", "previewUnits",
+        "extraCell", "extraCellSkipGroup" },
     Cells = { "showBorders", "showStacks", "showDispelTypeIcon", "dispelTypeIconSize",
         "dispelTypeIconPosition", "showWhenClean", "useClassColours", "cleanAlpha", "outOfRangeAlpha" },
+    ["Role icons"] = { "roleIcon", "roleIconRoles", "roleIconPosition", "roleIconPlacement", "roleIconSize" },
     Text = { "showNames", "nameJustifyH", "nameJustifyV", "nameFontSize",
         "cooldownJustifyH", "cooldownJustifyV", "cooldownFontSize" },
 }
@@ -198,6 +200,25 @@ HC.Settings:NewPage({
             sy = O.Flush(size, sy)
             add(size, -sy + 4)
 
+            local extra = section(panel, 2)
+            local ey = -8
+            _, ey = O.Header(extra, "Extra cell", ey)
+            _, ey = O.Dropdown(extra, "Extra cell",
+                "One more cell after your group for a friendly player outside it.", ey,
+                { "OFF", "TARGET", "FOCUS" }, { "Off", "Target", "Focus" },
+                function() return db.extraCell end,
+                function(value) ns.Set("extraCell", value) end, 560, 150, 200)
+            ey = O.Flush(extra, ey)
+            add(extra, -ey + 4)
+            local extraDetails = section(panel, 2)
+            ey = -4
+            _, ey = O.Check(extraDetails, "Hide for group members",
+                "Your group already has cells.", ey,
+                function() return db.extraCellSkipGroup end,
+                function(value) ns.Set("extraCellSkipGroup", value) end)
+            ey = O.Flush(extraDetails, ey)
+            add(extraDetails, -ey + 4, function() return db.extraCell ~= "OFF" end)
+
         end) },
         { name = "Cells", build = tab("Cells", function(panel, add, db)
             local contents = section(panel, 2)
@@ -275,6 +296,46 @@ HC.Settings:NewPage({
                 function(value) return string.format("%d%%", math.floor(value * 100 + 0.5)) end)
             ry = O.Flush(range, ry)
             add(range, -ry + 4)
+
+        end) },
+        { name = "Role icons", build = tab("Role icons", function(panel, add, db)
+            local roleIcon = section(panel, 2)
+            local riy = -8
+            _, riy = O.Header(roleIcon, "Role icon", riy)
+            _, riy = O.Dropdown(roleIcon, "Show",
+                "Role, raid marker, or the marker when set and the role otherwise.", riy,
+                { "OFF", "ROLE", "MARKER", "BOTH" },
+                { "Off", "Role", "Raid marker", "Marker, else role" },
+                function() return db.roleIcon end,
+                function(value) ns.Set("roleIcon", value) end,
+                560, 150, 180)
+            riy = O.Flush(roleIcon, riy)
+            add(roleIcon, -riy + 4)
+            local roleDetails = section(panel, 2)
+            riy = -4
+            _, riy = O.Dropdown(roleDetails, "Roles shown", nil, riy,
+                { "TANKHEALER", "ALL" }, { "Tank and healer", "All" },
+                function() return db.roleIconRoles end,
+                function(value) ns.Set("roleIconRoles", value) end,
+                560, 150, 180)
+            _, riy = O.Dropdown(roleDetails, "Role icon corner", nil, riy,
+                { "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" },
+                { "Top left", "Top right", "Bottom left", "Bottom right" },
+                function() return db.roleIconPosition end,
+                function(value) ns.Set("roleIconPosition", value) end,
+                560, 150, 180)
+            _, riy = O.Dropdown(roleDetails, "Role icon placement",
+                "On edge straddles the border; on corner centres on the corner point.", riy,
+                { "INSIDE", "EDGE", "CORNER" }, { "Inside", "On edge", "On corner" },
+                function() return db.roleIconPlacement end,
+                function(value) ns.Set("roleIconPlacement", value) end,
+                560, 150, 180)
+            _, riy = O.Slider(roleDetails, "Role icon size", nil, riy,
+                6, 32, 1,
+                function() return db.roleIconSize end,
+                function(value) ns.Set("roleIconSize", value) end)
+            riy = O.Flush(roleDetails, riy)
+            add(roleDetails, -riy + 4, function() return db.roleIcon ~= "OFF" end)
 
         end) },
         { name = "Text", build = tab("Text", function(panel, add, db)

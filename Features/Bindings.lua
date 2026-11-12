@@ -150,7 +150,72 @@ local function spellFor(entry)
     end
 end
 
+-- ── Both dispels on one click ──────────────────────────────────────────────
+-- For a spec with two dispels that cure different things (a Forever druid's
+-- Remove Curse and Cure Poison). Lua can't pick at click time: debuff types
+-- are hidden in combat and a secure click runs nothing of ours. So the cell
+-- gets a two-line macro, written when the grid is built:
+--
+--   /cast [@raid5] Remove Curse
+--   /cast [@raid5] Cure Poison
+--
+-- and the game chooses. A dispel with nothing to remove is refused before it
+-- costs a global cooldown, so the next line casts in the same click (checked
+-- with /salve trace on Forever, 1.12.0-dev6: the refusal reads "Spell is not
+-- ready yet"). One click casts one spell; a player with both debuffs needs a
+-- second click.
+--
+-- The macro names the cell's group slot, like the spell clicks' unit, so a
+-- mid-fight reshuffle leaves every cell aiming at its own slot.
+--
+-- ☠ FOREVER ONLY. Retail dispels go on cooldown when they work, and a dispel
+--   on cooldown falls through too. The only Retail pair is an Evoker's
+--   Naturalize and Cauterizing Flame, so a poison landing while Naturalize
+--   cools down would spend Cauterizing Flame's long cooldown.
+
+-- ☠ ABOLISH GOES LAST. Abolish Poison and Abolish Disease are a buff that
+--   cures over time, so they cast even with nothing to remove (warcraft.wiki.gg:
+--   2.1.2 "no longer plays sounds when there is nothing to dispel"; priests
+--   put it up before diseases land). First in the macro, they'd take every
+--   click and the other line would never run.
+local CASTS_ANYWAY = { [2893] = true, [552] = true }  -- Abolish Poison, Abolish Disease
+
+ns.ROLE_BOTH = "BOTH"
+Bindings.BOTH_ID = "BOTH"
+
+-- The two spells in casting order as {name, id} pairs, or nil without a
+-- distinct second dispel or off Forever.
+function Bindings:BothSpells()
+    if not ns.isCamelot then return nil end
+    local primary, secondary = ns.spellName, ns.secondaryName
+    if not (primary and secondary) or primary == secondary then return nil end
+    local a, b = { primary, ns.spellID }, { secondary, ns.secondaryID }
+    if CASTS_ANYWAY[a[2]] and CASTS_ANYWAY[b[2]] then return nil end
+    if ns.db and ns.db.bothDispelsOrder == "SECONDARY" then a, b = b, a end
+    if CASTS_ANYWAY[a[2]] then a, b = b, a end
+    return a, b
+end
+
+function Bindings.BothMacro(unit, first, second)
+    if type(unit) ~= "string" or not (first and second) then return nil end
+    return "/cast [@" .. unit .. "] " .. first .. "\n/cast [@" .. unit .. "] " .. second
+end
+
+-- Whether an entry does anything right now. One that does nothing doesn't
+-- hold on to its chord.
+local function armed(entry)
+    if entry.role == ns.ROLE_BOTH then return Bindings:BothSpells() ~= nil end
+    return spellFor(entry) ~= nil
+end
+
+-- One id per action, so the Both row shares the spells' conflict logic.
+function Bindings:ActionID(entry)
+    if entry.role == ns.ROLE_BOTH then return self.BOTH_ID end
+    return self:SpellID(entry)
+end
+
 function Bindings:SpellID(entry)
+    if entry.role == ns.ROLE_BOTH then return nil end
     if entry.role == ns.ROLE_PRIMARY then return ns.spellID end
     if entry.role == ns.ROLE_SECONDARY then return ns.secondaryID or ns.spellID end
     local spell = knownSpell(entry.spell)
@@ -178,19 +243,19 @@ end
 -- armed spell owns is refused (third return "conflict"), so nothing moves
 -- without the player saying so.
 function Bindings:SetSpellBinding(spellID, key, replace)
-    if type(spellID) ~= "number" or not attributeParts(key or "") then
+    local both = spellID == self.BOTH_ID
+    if (type(spellID) ~= "number" and not both) or not attributeParts(key or "") then
         return false, "invalid mouse binding"
     end
 
     local list = self:Materialise()
     for _, entry in ipairs(list) do
-        if entry.key == key and self:SpellID(entry) ~= spellID then
+        if entry.key == key and self:ActionID(entry) ~= spellID then
             -- A disabled escape or stale spell entry deliberately resolves to
             -- no action. It must not reserve a mouse chord: otherwise a
             -- player cannot bind an enabled movement removal to (for example)
             -- right click while an old, disabled escape still owns that key.
-            local name = spellFor(entry)
-            if name and not replace then
+            if armed(entry) and not replace then
                 local what = self:Describe(entry)
                 return false, self:Label(key) .. " is already assigned to " .. what, "conflict"
             end
@@ -199,13 +264,16 @@ function Bindings:SetSpellBinding(spellID, key, replace)
 
     local kept = {}
     for _, entry in ipairs(list) do
-        local replacesThisSpell = self:SpellID(entry) == spellID
-        local takesChord = entry.key == key and (replace or not spellFor(entry))
+        local replacesThisSpell = self:ActionID(entry) == spellID
+        local takesChord = entry.key == key and (replace or not armed(entry))
         if not replacesThisSpell and not takesChord then kept[#kept + 1] = entry end
     end
 
     local replacement = { key = key, spell = spellID }
-    if spellID == ns.spellID then
+    if both then
+        replacement.spell = nil
+        replacement.role = ns.ROLE_BOTH
+    elseif spellID == ns.spellID then
         replacement.spell = nil
         replacement.role = ns.ROLE_PRIMARY
     elseif spellID == ns.secondaryID then
@@ -221,7 +289,7 @@ end
 function Bindings:ClearSpellBinding(spellID)
     local found = false
     for _, entry in ipairs(self:List()) do
-        if self:SpellID(entry) == spellID then
+        if self:ActionID(entry) == spellID then
             found = true
             break
         end
@@ -232,7 +300,7 @@ function Bindings:ClearSpellBinding(spellID)
 
     local kept = {}
     for _, entry in ipairs(self:Materialise()) do
-        if self:SpellID(entry) ~= spellID then kept[#kept + 1] = entry end
+        if self:ActionID(entry) ~= spellID then kept[#kept + 1] = entry end
     end
     ns.db.bindings = kept
     ns.db.bindingsCustom = true
@@ -313,7 +381,16 @@ function Bindings:Apply(box)
             local typeAttr  = prefix .. "type" .. button
             local spellAttr = prefix .. "spell" .. button
 
-            if entry.action == "TARGET" then
+            if entry.role == ns.ROLE_BOTH then
+                local first, second = self:BothSpells()
+                local text = first and self.BothMacro(box.unit, first[1], second[1])
+                if text then
+                    set(typeAttr, "macro")
+                    set(prefix .. "macrotext" .. button, text)
+                    box.clickAuditActions[entry.key] = { kind = "DISPEL",
+                        spellName = first[1] .. " or " .. second[1] }
+                end
+            elseif entry.action == "TARGET" then
                 set(typeAttr, "target")
                 set(spellAttr, nil)
             elseif entry.action == "NONE" then
@@ -340,6 +417,12 @@ end
 function Bindings:Describe(entry, unit)
     if entry.action == "TARGET" then return "Target the unit", nil end
     if entry.action == "NONE"   then return "Do nothing", nil end
+    if entry.role == ns.ROLE_BOTH then
+        local first, second = self:BothSpells()
+        if not first then return "no second dispel", nil end
+        local icon = C_Spell and C_Spell.GetSpellTexture and C_Spell.GetSpellTexture(first[2])
+        return first[1] .. " or " .. second[1] .. " (automatic)", icon
+    end
 
     local name, spellID, kind = spellFor(entry)
     if kind == "PERSONAL" and unit and not ns.PersonalDispel:IsPlayer(unit) then return nil end

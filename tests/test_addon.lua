@@ -547,7 +547,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     equal(wow.FindText("Salve 1.8.0"), nil, toc .. ": releases already seen stay hidden")
     assert(wow.FindButton("Open Profiles"), toc .. ": a button opens the Profiles page")
     assert(wow.FindButton("Open Panel"), toc .. ": a button opens the Panel page")
-    equal(saved.hammerCore.whatsNewSeen, "1.12.0", toc .. ": showing records the newest entry")
+    equal(saved.hammerCore.whatsNewSeen, "1.13.0", toc .. ": showing records the newest entry")
     wow.Click(wow.FindButton("Open Profiles"))
     equal(HC.Settings.selected, "Profiles", toc .. ": the button opens Profiles")
 

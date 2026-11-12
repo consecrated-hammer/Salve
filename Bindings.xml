@@ -1,0 +1,7 @@
+<Bindings>
+	<!-- Mouseover dispel keys. The buttons and their macros live in
+	     Features/Mouseover.lua; the game runs the macro, so they work in combat. -->
+	<Binding name="CLICK SalveMouseoverPrimary:LeftButton" header="SALVE" category="ADDONS"/>
+	<Binding name="CLICK SalveMouseoverSecondary:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK SalveMouseoverBoth:LeftButton" category="ADDONS"/>
+</Bindings>

@@ -91,15 +91,86 @@ local function item(spell, kind)
         spell = spell, kind = kind }
 end
 
+-- Mouseover keys: game key bindings rather than cell clicks. They cast on
+-- whoever is under the pointer anywhere, so they take keys as well as mouse
+-- buttons and the wheel. See Features/Mouseover.lua.
+local MOUSEOVER_INPUTS = { keys = true, mouse = true, wheel = true }
+
+local function mouseoverItems()
+    local items = {}
+    local primary, secondary = ns.Mouseover:Spells()
+    local function add(role, name, spellID)
+        if not name then return end
+        items[#items + 1] = {
+            id = "MOUSEOVER_" .. role, role = role, kind = "MOUSEOVER",
+            name = "Mouseover " .. name, icon = spellIcon(spellID),
+            inputs = MOUSEOVER_INPUTS, spellID = spellID,
+            command = ns.Mouseover.BINDINGS[role],
+        }
+    end
+    if ns.CanDispel and ns.CanDispel() then
+        add("PRIMARY", primary, ns.spellID)
+        add("SECONDARY", secondary, ns.secondaryID)
+        local first, second = ns.Bindings:BothSpells()
+        if first then add("BOTH", first[1] .. " or " .. second[1], first[2]) end
+    end
+    return items
+end
+
+-- Both dispels on one click: the game tries one, then the other.
+-- See Features/Bindings.lua.
+local function bothItem()
+    local first, second = ns.Bindings:BothSpells()
+    if not first then return nil end
+    return { id = ns.Bindings.BOTH_ID, kind = "BOTH", name = first[1] .. " or " .. second[1],
+        icon = spellIcon(first[2]), detail = "Whichever the player needs" }
+end
+
+local function bothTooltip(owner, entry)
+    local first, second = ns.Bindings:BothSpells()
+    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    GameTooltip:SetText(entry.name)
+    if first then
+        GameTooltip:AddLine("Tries " .. first[1] .. ", then " .. second[1]
+            .. " when there's nothing for it to remove. Works in combat.", 1, 1, 1, true)
+        GameTooltip:AddLine("One click casts one spell. Someone with both needs a second click.",
+            0.7, 0.7, 0.7, true)
+    end
+    GameTooltip:Show()
+end
+
+local function mouseoverTooltip(owner, entry)
+    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    GameTooltip:SetText(entry.name)
+    GameTooltip:AddLine("Casts on a friendly player under the mouse: any raid frame, a nameplate or the player. Works in combat.",
+        1, 1, 1, true)
+    GameTooltip:Show()
+end
+
 HC.Settings:NewPage({
     name = "Key Bindings",
     title = "Key Bindings",
     group = "main",
-    description = "The mouse buttons that cast your spells on a lit cell.", columns = 1,
+    description = "Mouse buttons for cells, and keys for mouseover dispels.", columns = 1,
 }, function(panel, y)
     local function refreshAll()
         ns.RequestRebuildSoon(0.05)
         if ns.Options.RefreshMovementSweeps then ns.Options.RefreshMovementSweeps() end
+    end
+    -- Where a mouseover key casts when nothing friendly is under the pointer.
+    -- Above the bindings, whose height changes as they're added.
+    _, y = O.Dropdown(panel, "Mouseover fallback",
+        "Mouseover keys cast on a friendly player under the pointer, or this when there isn't one.", y,
+        { "NONE", "TARGET", "PLAYER" }, { "Do nothing", "Use target", "Use yourself" },
+        function() return ns.db.mouseoverFallback end,
+        function(value) ns.Set("mouseoverFallback", value) end, 560, 150, 200)
+    -- Forever only: see Bindings:BothSpells.
+    if ns.isCamelot then
+    _, y = O.Dropdown(panel, "Both dispels: try first",
+        "With two dispels on one click, the spell tried first. Abolish spells always go last.", y,
+        { "PRIMARY", "SECONDARY" }, { "Main dispel", "Second dispel" },
+        function() return ns.db.bothDispelsOrder end,
+        function(value) ns.Set("bothDispelsOrder", value) end, 560, 150, 200)
     end
     local bottom = HC.Bindings.Page(panel, y, {
         inputs = { mouse = true },
@@ -107,11 +178,16 @@ HC.Settings:NewPage({
         poolHint = "Click a spell, then the mouse button that casts it.",
         empty = "Nothing bound yet. Pick a spell on the right, then click a mouse button.",
         label = function(key) return ns.Bindings:Label(key) end,
-        tooltip = function(owner, entry) spellTooltip(owner, entry.spell) end,
+        tooltip = function(owner, entry)
+            if entry.kind == "MOUSEOVER" then return mouseoverTooltip(owner, entry) end
+            if entry.kind == "BOTH" then return bothTooltip(owner, entry) end
+            spellTooltip(owner, entry.spell)
+        end,
         pool = function()
             local sections = {}
             local dispels = {}
             for _, spell in ipairs(ns.knownDispels or {}) do dispels[#dispels + 1] = item(spell, "DISPEL") end
+            dispels[#dispels + 1] = bothItem()
             sections[#sections + 1] = { title = "Dispels", items = dispels, empty = "No dispels for this character." }
             local personal = ns.PersonalDispel and ns.PersonalDispel.spells or {}
             if #personal > 0 then
@@ -127,6 +203,8 @@ HC.Settings:NewPage({
             sections[#sections + 1] = { title = "Frees movement", items = ally, empty = "No spells detected." }
             sections[#sections + 1] = { title = "Area movement", items = area, empty = "No spells detected." }
             sections[#sections + 1] = { title = "Self only", items = self, empty = "No spells detected." }
+            sections[#sections + 1] = { title = "Mouseover keys", items = mouseoverItems(),
+                empty = "No dispels for this character." }
             return sections
         end,
         bound = function()
@@ -136,9 +214,28 @@ HC.Settings:NewPage({
                 entry.key = bound.entry.key
                 list[#list + 1] = entry
             end
+            for _, bound in ipairs(ns.Bindings:List()) do
+                local entry = bound.role == ns.ROLE_BOTH and bothItem()
+                if entry then
+                    entry.key = bound.key
+                    list[#list + 1] = entry
+                end
+            end
+            for _, entry in ipairs(mouseoverItems()) do
+                entry.key = HC.Bindings.CommandKey(entry.command)
+                if entry.key then list[#list + 1] = entry end
+            end
             return list
         end,
         bind = function(entry, key)
+            if entry.kind == "MOUSEOVER" then
+                local ok, message, conflict = HC.Bindings.BindCommand(entry.command, key)
+                if ok then return true end
+                if conflict ~= "conflict" then return false, message end
+                return false, message .. ".", function()
+                    return HC.Bindings.BindCommand(entry.command, key, true)
+                end
+            end
             -- Choosing a movement spell is its opt-in.  Cancelling leaves it inert.
             if entry.kind == "ESCAPE" then ns.db.escapes[entry.id] = true end
             local function bound()
@@ -160,12 +257,23 @@ HC.Settings:NewPage({
             end
         end,
         unbind = function(spellID)
+            for _, entry in ipairs(mouseoverItems()) do
+                if entry.id == spellID then
+                    HC.Bindings.ClearCommand(entry.command)
+                    return
+                end
+            end
             ns.Bindings:ClearSpellBinding(spellID)
             local _, kind = findSpell(spellID)
             if kind == "ESCAPE" then disableEscape(spellID) end
             refreshAll()
         end,
         clearAll = function()
+            if InCombatLockdown and InCombatLockdown() then
+                ns.Print("Bindings cannot be cleared in combat.")
+                return
+            end
+            for _, command in pairs(ns.Mouseover.BINDINGS) do HC.Bindings.ClearCommand(command) end
             ns.db.bindings = {}
             ns.db.bindingsCustom = true
             ns.Set("escapes", {})
@@ -177,5 +285,6 @@ HC.Settings:NewPage({
         end,
     })
     ns.Options.RefreshDispel = panel.hcBindingsLayout
+
     return bottom
 end)

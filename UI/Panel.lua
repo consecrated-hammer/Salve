@@ -7,6 +7,17 @@ local MAX_BOXES = 40
 
 Panel.boxes = {}
 
+-- The group's boxes plus the extra target/focus cell, for anything that
+-- styles or fades cells rather than assigning units.
+function Panel:AllBoxes()
+    local extra = ns.ExtraCell and ns.ExtraCell.box
+    if not extra then return self.boxes end
+    local all = {}
+    for i, box in ipairs(self.boxes) do all[i] = box end
+    all[#all + 1] = extra
+    return all
+end
+
 function Panel:SetMovementPrompt(spell, active)
     local spellID = spell and spell.id
     local key = spellID and ns.Bindings and ns.Bindings:FirstKeyForSpell(spellID)
@@ -156,6 +167,7 @@ local function playerSpecRole()
     local okRole, role = pcall(getRole, spec)
     return okRole and readable(role) and role or nil
 end
+Panel.PlayerSpecRole = playerSpecRole
 
 -- ☠ Compare nothing that might be secret. UnitName can be secret in
 --   restricted content and comparing one is a hard error, so an unreadable
@@ -263,6 +275,8 @@ function Panel:Create()
         self.boxes[i]:Hide()
     end
 
+    if ns.ExtraCell then ns.ExtraCell:Create(f) end
+
     ns.Handle:Create(f)
     ns.Handle:Update()
     if ns.CooldownBar then ns.CooldownBar:Create(f) end
@@ -282,7 +296,8 @@ function Panel:Rebuild()
     local failures = 0
     local units    = ns.CanDispel() and unitList()
         or (ns.PersonalDispel and ns.PersonalDispel:Enabled() and { "player" }) or {}
-    local layout = self:Layout(#units)
+    local extra = ns.CanDispel() and ns.ExtraCell and ns.ExtraCell.Unit and ns.ExtraCell:Unit()
+    local layout = self:Layout(#units + (extra and 1 or 0))
     -- Scale first: attaching measures in screen pixels, which depends on it.
     self.frame:SetScale(layout.scale)
 
@@ -290,6 +305,9 @@ function Panel:Rebuild()
     -- frames by unit. Otherwise Salve's own sort and grid apply.
     local plan = ns.Attach and ns.Attach:Plan(units, layout, self.frame:GetEffectiveScale())
     if not (plan and plan.cells) and ns.CanDispel() then units = self:SortUnits(units) end
+    if plan and extra and plan.cells and plan.cells[#units] then
+        plan.height = plan.height + layout.height + layout.spacing
+    end
     if plan then
         self.frame:ClearAllPoints()
         self.frame:SetPoint(plan.point, plan.anchor, plan.anchorPoint, plan.x, plan.y)
@@ -344,6 +362,10 @@ function Panel:Rebuild()
     end
 
     local n = #units
+    if ns.Mouseover then ns.Mouseover:Update() end
+    if ns.ExtraCell then
+        ns.ExtraCell:Rebuild(n + 1, layout, plan and plan.cells and plan.cells[n] or nil)
+    end
     if n > 0 then
         self.frame:SetSize(plan and plan.width or layout.frameWidth,
             plan and plan.height or layout.frameHeight)
@@ -381,11 +403,19 @@ end
 
 function Panel:Restyle()
     if not self.frame then return end
-    for i = 1, MAX_BOXES do
-        local box = self.boxes[i]
+    for _, box in ipairs(self:AllBoxes()) do
         if box.unit then ns.Box.Restyle(box) end
     end
     if ns.Cooldowns then ns.Cooldowns:Request() end
+end
+
+-- Markers and roles change without a roster rebuild. Plain textures, so
+-- this is fine in combat.
+function Panel:RefreshRoleBadges()
+    if not self.frame then return end
+    for _, box in ipairs(self:AllBoxes()) do
+        if box.unit then ns.Box.UpdateRoleBadge(box) end
+    end
 end
 
 -- ☠ Re-anchoring a frame full of protected buttons is a blocked action in

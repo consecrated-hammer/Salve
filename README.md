@@ -123,3 +123,15 @@ Waiting for that cooldown.
 ## Licence
 
 GPL v3, see [LICENSE.txt](https://github.com/consecrated-hammer/Salve/blob/main/LICENSE.txt). The alert sound `Sounds/AfflictionAlert.ogg` comes from Decursive by Archarodim and is used under GPL v3.
+
+## Mouseover keys and extra cells
+
+On Key Bindings, assign a mouseover key to each dispel. Forever also offers
+one key or cell click that tries both dispels in order. Set the order with
+Both dispels: try first; Abolish spells always go last. A target with both
+kinds of debuff needs another click for the second dispel.
+
+Panel > Layout controls the extra Target or Focus cell for friendly players
+outside your group. New profiles enable Target. Panel > Role icons controls
+role and raid-marker badges; new profiles show the marker, or the role when
+there is no marker. Existing saved choices are preserved.

@@ -188,7 +188,7 @@ function Cooldowns:Update(target)
     -- Cells first: switching back to Whole box has to restore them even when
     -- nothing is enabled any more.
     if ns.Panel and ns.Panel.boxes then
-        for _, box in ipairs(ns.Panel.boxes) do
+        for _, box in ipairs(ns.Panel.AllBoxes and ns.Panel:AllBoxes() or ns.Panel.boxes) do
             if box.unit and ns.Box.UpdateCooldownIcons then ns.Box.UpdateCooldownIcons(box, target) end
         end
     end
@@ -202,6 +202,14 @@ function Cooldowns:BoundSpells()
     if not (ns.Bindings and ns.Bindings.List) then return out end
     for _, entry in ipairs(ns.Bindings:List()) do
         local id = ns.Bindings:SpellID(entry)
+        if ns.ROLE_BOTH and entry.role == ns.ROLE_BOTH and ns.Bindings.BothSpells then
+            for _, pair in ipairs({ ns.Bindings:BothSpells() }) do
+                if type(pair[2]) == "number" and not seen[pair[2]] then
+                    seen[pair[2]] = true
+                    out[#out + 1] = pair[2]
+                end
+            end
+        end
         local wanted = entry.role == ns.ROLE_PRIMARY or entry.role == ns.ROLE_SECONDARY
             or (ns.Escape and ns.Escape:IsEnabledSpell(id))
             or (ns.Bindings.IsDispelSpell and ns.Bindings:IsDispelSpell(id))
