@@ -150,7 +150,7 @@ HC.Settings:NewPage({
                 ns.Set(key, ns.defaults[key])
             end
             if ns.MovementAlert then ns.MovementAlert:Position() end
-        end, "Reset Alerts")
+        end, "Reset alerts")
         return y
     end, nil, nil, 1)
     return flow:Layout()

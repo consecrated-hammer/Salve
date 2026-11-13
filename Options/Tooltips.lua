@@ -57,7 +57,7 @@ HC.Settings:NewPage({
             for _, key in ipairs({ "showTooltip", "tooltipUnitInfo", "tooltipDebuff", "tooltipActions", "tooltipSpellDescriptions", "tooltipAnchor" }) do
                 ns.Set(key, ns.defaults[key])
             end
-        end, "Reset Tooltips")
+        end, "Reset tooltips")
         return y
     end)
     return flow:Layout()

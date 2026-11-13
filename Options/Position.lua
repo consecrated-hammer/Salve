@@ -134,5 +134,4 @@ end, function()
     end
     ns.Set("point", { unpack(ns.defaults.point) })
     ns.Panel:ApplyPosition()
-    ns.RequestRebuildSoon(0.05)
-end))
+    ns.RequestRebuildSoon(0.05)end, "Reset handle and attach", "drag handle, panel position and frame attachment"))

@@ -48,13 +48,13 @@ function ns.Options.Flow(panel)
     return flow
 end
 
-function ns.Options.Tab(name, fill, resetFn)
+function ns.Options.Tab(name, fill, resetFn, resetLabel, resetScope)
     return function(panel)
         local flow = ns.Options.Flow(panel)
         fill(panel, function(...) flow:Add(...) end, ns.db)
         if resetFn then
             local reset = ns.Options.Section(panel)
-            local _, y = ns.Options.PageReset(reset, -4, resetFn, "Reset " .. name)
+            local _, y = ns.Options.PageReset(reset, -4, resetFn, resetLabel or "Reset " .. name:lower(), resetScope)
             flow:Add(reset, -y)
         end
         return flow:Layout()
@@ -236,7 +236,7 @@ HC.Profiles:Setup({
             hint = "Grid direction, start corner, cells per row, spacing, cell size, scale and preview units.",
             keys = { "orientation", "horizontalGrowth", "verticalGrowth", "columns", "spacing",
                 "scale", "boxWidth", "boxHeight", "previewUnits" } },
-        { key = "names", label = "Unit names",
+        { key = "names", label = "Player names",
             hint = "Show names, their position and text size.",
             keys = { "showNames", "nameJustifyH", "nameJustifyV", "nameFontSize" } },
         { key = "sorting", label = "Sorting",

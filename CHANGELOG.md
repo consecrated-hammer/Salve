@@ -7,6 +7,8 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Confirm each page reset before applying it, with consistent labels and an explicit handle, panel-position and attachment reset scope.
+
 - Use clearer alert tooltips, player names and movement-spell headings; find cell cooldown settings on On cells.
 
 - Group settings into Panel, Key Bindings, Cooldowns, Alerts, Tooltips, Position, Visibility and Profiles. Related settings have tabs and independent resets.
