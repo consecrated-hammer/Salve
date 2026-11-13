@@ -6,6 +6,12 @@ local addonName, ns = ...
 -- the lines short and player-facing; details stay in CHANGELOG.md. A `page`
 -- adds a button that opens that settings page.
 ns.WHATS_NEW = {
+    { version = "1.14.0", date = "2026-11-13", items = {
+        { title = "Clearer settings", text = "Related controls share tabs, search finds hidden options, and a larger profile icon shows which settings belong to this profile.", page = "Salve" },
+        { title = "One cure per binding", text = "The unreliable combined dispel is removed. Bind Cure Poison and Remove Curse separately; existing individual bindings stay.", page = "Key Bindings" },
+        { title = "Preview docking", text = "Drag the live preview near a settings edge to attach it, or away to let it float. Preview and real panel positions stay separate.", page = "Visibility" },
+        { title = "Welcome to Salve", text = "A clearer welcome window includes the Salve icon. Each page reset asks before changing its own settings.", page = "Salve" },
+    } },
     { version = "1.13.0", date = "2026-11-12", items = {
         { title = "Mouseover dispels", text = "Bind a key to cleanse a friendly mouseover. Forever also has a combined key for both dispels.", page = "Key Bindings" },
         { title = "Extra target cell", text = "A friendly target outside your group gets a cell beside the grid. Choose Target, Focus or Off on Panel > Members.", page = "Salve", tab = "Members" },
