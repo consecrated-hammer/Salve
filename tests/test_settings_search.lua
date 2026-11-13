@@ -99,6 +99,29 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
         end
         assert(found, "custom control/keyword missing from search: " .. query)
     end
+    -- Empty movement categories disappear; the options stay below the changing pool.
+    local function visibleText(text)
+        for _, region in ipairs(wow.regions) do
+            if region.text == text and wow.Visible(region) then return region end
+        end
+    end
+    settings:Show("Key Bindings")
+    ns.knownEscapes = {}
+    ns.Options.RefreshDispel()
+    assert(not visibleText("FREE AN ALLY") and not visibleText("FREE THE GROUP") and not visibleText("FREE YOURSELF"), "empty movement headings hidden")
+    assert(visibleText("No movement spells for this character."), "one empty movement explanation")
+    local fallback = settings.pages["Key Bindings"].bodies["Key Bindings"].hcRows["Mouseover fallback"]
+    local emptyY = select(5, fallback.parent:GetPoint())
+    ns.knownEscapes = {
+        { id = 1044, name = "Ally escape", scope = ns.ESCAPE_ALLY },
+        { id = 900001, name = "Area escape", scope = ns.ESCAPE_AREA },
+        { id = 900002, name = "Self escape", scope = ns.ESCAPE_SELF },
+    }
+    ns.Options.RefreshDispel()
+    assert(visibleText("FREE AN ALLY") and visibleText("FREE THE GROUP") and visibleText("FREE YOURSELF"), "only available categories shown")
+    assert(not visibleText("No movement spells for this character."), "empty explanation hides when spells available")
+    assert(select(5, fallback.parent:GetPoint()) < emptyY, "mouseover options follow pool growth")
+    assert(settings:Focus("Key Bindings", "Mouseover fallback"), "moved options remain searchable")
     ns.Set("roleIcon", "OFF")
     local role = assert(settings:Focus("Salve", "Role icon size", "Names and icons"))
     local body = settings.pages.Salve.bodies["Names and icons"]

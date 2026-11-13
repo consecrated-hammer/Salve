@@ -158,22 +158,9 @@ HC.Settings:NewPage({
         ns.RequestRebuildSoon(0.05)
         if ns.Options.RefreshMovementSweeps then ns.Options.RefreshMovementSweeps() end
     end
-    -- Where a mouseover key casts when nothing friendly is under the pointer.
-    -- Above the bindings, whose height changes as they're added.
-    _, y = O.Dropdown(panel, "Mouseover fallback",
-        "Mouseover dispel keys cast on a friendly player under the pointer, or this when there isn't one. Bind individual or both dispels in the mouseover tiles below.", y,
-        { "NONE", "TARGET", "PLAYER" }, { "Do nothing", "Use target", "Use yourself" },
-        function() return ns.db.mouseoverFallback end,
-        function(value) ns.Set("mouseoverFallback", value) end, 560, 150, 200)
-    -- Forever only: see Bindings:BothSpells.
-    if ns.isCamelot then
-    _, y = O.Dropdown(panel, "Both dispels: try first",
-        "With two dispels on one click, the spell tried first. Abolish spells always go last.", y,
-        { "PRIMARY", "SECONDARY" }, { "Main dispel", "Second dispel" },
-        function() return ns.db.bothDispelsOrder end,
-        function(value) ns.Set("bothDispelsOrder", value) end, 560, 150, 200)
-    end
-    local bottom = HC.Bindings.Page(panel, y, {
+    local flow = O.Flow(panel)
+    local editor = O.Section(panel, 1)
+    local bottom = HC.Bindings.Page(editor, -4, {
         inputs = { mouse = true },
         poolTitle = "Your spells",
         poolHint = "Click a spell, then the mouse button that casts it. Mouseover dispel keys and both dispels are included below.",
@@ -201,9 +188,13 @@ HC.Settings:NewPage({
                 local list = spell.scope == ns.ESCAPE_ALLY and ally or spell.scope == ns.ESCAPE_AREA and area or self
                 list[#list + 1] = item(spell, "ESCAPE")
             end
-            sections[#sections + 1] = { title = "Free an ally", items = ally, empty = "No spells detected." }
-            sections[#sections + 1] = { title = "Free the group", items = area, empty = "No spells detected." }
-            sections[#sections + 1] = { title = "Free yourself", items = self, empty = "No spells detected." }
+            for _, section in ipairs({ { title = "Free an ally", items = ally },
+                { title = "Free the group", items = area }, { title = "Free yourself", items = self } }) do
+                if #section.items > 0 then sections[#sections + 1] = section end
+            end
+            if #ally + #area + #self == 0 then
+                sections[#sections + 1] = { title = "Movement", items = {}, empty = "No movement spells for this character." }
+            end
             sections[#sections + 1] = { title = "Mouseover keys", items = mouseoverItems(),
                 empty = "No dispels for this character." }
             return sections
@@ -285,7 +276,28 @@ HC.Settings:NewPage({
             refreshAll()
         end,
     })
-    ns.Options.RefreshDispel = panel.hcBindingsLayout
-
-    return bottom
+    flow:Add(editor, function() return -bottom + 4 end)
+    local preferences = O.Section(panel, 1)
+    y = -4
+    -- Follow the pool so the available mouseover and Both tiles explain these choices.
+    _, y = O.Dropdown(preferences, "Mouseover fallback",
+        "Mouseover dispel keys cast on a friendly player under the pointer, or this when there isn't one. Bind individual or both dispels in the mouseover tiles below.", y,
+        { "NONE", "TARGET", "PLAYER" }, { "Do nothing", "Use target", "Use yourself" },
+        function() return ns.db.mouseoverFallback end,
+        function(value) ns.Set("mouseoverFallback", value) end, 560, 150, 200)
+    -- Forever only: see Bindings:BothSpells.
+    if ns.isCamelot then
+    _, y = O.Dropdown(preferences, "Both dispels: try first",
+        "With two dispels on one click, the spell tried first. Abolish spells always go last.", y,
+        { "PRIMARY", "SECONDARY" }, { "Main dispel", "Second dispel" },
+        function() return ns.db.bothDispelsOrder end,
+        function(value) ns.Set("bothDispelsOrder", value) end, 560, 150, 200)
+    end
+    flow:Add(preferences, -O.Flush(preferences, y) + 4)
+    editor.hcSetBottom = function(value)
+        bottom = value
+        flow:Layout()
+    end
+    ns.Options.RefreshDispel = editor.hcBindingsLayout
+    return flow:Layout()
 end)

@@ -47,7 +47,7 @@ Every Consecrated Hammer addon also has `help`, `version`, `about`, `debug`, `st
 
 ## Detected actions
 
-The **Key Bindings** page only lists spells your character knows. Click a spell on the right, then the mouse button you want, and it joins the bound list on the left; the x beside it removes it. Movement actions stay off until you bind them. "Free the group" is a ground-placed spell, so drop it where the affected players can reach it.
+The **Key Bindings** page only lists spells your character knows. Empty movement groups stay hidden; mouseover choices follow the spell pool. Click a spell on the right, then the mouse button you want, and it joins the bound list on the left; the x beside it removes it. Movement actions stay off until you bind them. "Free the group" is a ground-placed spell, so drop it where the affected players can reach it.
 
 | Class | Dispels | Free an ally | Free the group | Free yourself |
 | --- | --- | --- | --- | --- |

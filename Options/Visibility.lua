@@ -58,6 +58,5 @@ HC.spec.visibility = function(panel, y)
         ns.Set("hideOnFlights", ns.defaults.hideOnFlights)
         ns.RequestRebuildSoon(0.05)
     end, "Reset panel visibility")
-    y = O.ProfileScope(panel, y, true)
     return y
 end

@@ -7,6 +7,8 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Group position and visibility controls by profile scope. Hide empty movement-spell groups and put mouseover choices below the binding pool.
+
 - Confirm each page reset before applying it, with consistent labels and an explicit handle, panel-position and attachment reset scope.
 
 - Use clearer alert tooltips, player names and movement-spell headings; find cell cooldown settings on On cells.

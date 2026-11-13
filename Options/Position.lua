@@ -27,6 +27,9 @@ HC.Settings:NewPage({
     headerAction = O.LivePreviewAction,
 }, O.Tab("Position", function(panel, add, db)
     local attachToggle
+    local profileHeading = O.Section(panel, 1)
+    local headingY = O.ProfileScope(profileHeading, -4)
+    add(profileHeading, -headingY + 4)
     local handle = O.Section(panel, 2)
     local y = -8
     _, y = O.Header(handle, "Drag handle", y)
@@ -36,11 +39,10 @@ HC.Settings:NewPage({
         function() return db.showHandle end,
         function(value) ns.Set("showHandle", value) end)
     y = O.Flush(handle, y)
-    add(handle, -y + 4)
+    local handleHeight = -y + 4
 
     local position = O.Section(panel, 2, handleToggle)
     y = -4
-    y = O.ProfileScope(position, y)
     _, y = O.Dropdown(position, "Handle position",
         "Saved per profile. Which edge of the grid holds the handle. Start corner follows the grid's fixed corner (Panel > Layout).", y,
         HANDLE_VALUES, HANDLE_LABELS,
@@ -54,7 +56,6 @@ HC.Settings:NewPage({
 
     local handleActions = O.Section(panel, 2)
     y = -4
-    y = O.ProfileScope(handleActions, y, true)
     _, y = O.Dropdown(handleActions, "Handle right-click",
         "Menu matches the minimap button's: settings, the drag handle and your profiles. Open settings goes straight there.", y,
         { "PROFILES", "SETTINGS" }, { "Menu", "Open settings" },
@@ -62,11 +63,10 @@ HC.Settings:NewPage({
         function(value) ns.Set("handleRightClick", value) end,
         nil, 150, 130)
     y = O.Flush(handleActions, y)
-    add(handleActions, -y + 4)
+    local handleActionsHeight = -y + 4
     local panelPosition = O.Section(panel, 1)
     y = -4
     _, y = O.Header(panelPosition, "Panel position", y)
-    y = O.ProfileScope(panelPosition, y)
     local resetPosition
     resetPosition, y = O.ActionButton(panelPosition, y, "Re-centre panel",
         function() HC.Commands:Dispatch("reset position") end,
@@ -77,7 +77,6 @@ HC.Settings:NewPage({
     local attach = O.Section(panel, 2)
     y = -8
     _, y = O.Header(attach, "Attach to group frames", y)
-    y = O.ProfileScope(attach, y)
     attachToggle, y = O.Dropdown(attach, "Attach to",
         "Follow another addon's party and raid frames. Salve uses its saved position whenever those frames aren't on screen.", y,
         function() return (hostChoices()) end,
@@ -127,6 +126,8 @@ HC.Settings:NewPage({
     refreshStatus()
     _, y = O.Text(statusSection, "Moves with the host. A mid-fight reshuffle re-aligns after combat.", y)
     add(statusSection, -y + 4, function() return db.attachTo ~= "NONE" end)
+    add(handle, handleHeight)
+    add(handleActions, handleActionsHeight)
 end, function()
     for _, key in ipairs({ "showHandle", "handlePosition", "handleRightClick",
         "attachTo", "attachSide", "attachGap", "attachAlign", "attachOffsetY" }) do
@@ -134,4 +135,5 @@ end, function()
     end
     ns.Set("point", { unpack(ns.defaults.point) })
     ns.Panel:ApplyPosition()
-    ns.RequestRebuildSoon(0.05)end, "Reset handle and attach", "drag handle, panel position and frame attachment"))
+    ns.RequestRebuildSoon(0.05)
+end, "Reset handle and attach", "drag handle, panel position and frame attachment"))
