@@ -293,7 +293,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     }
     for _, position in ipairs(positions) do
         for _, spec in ipairs({ { "Name position", "name" }, { "Number position", "cooldown" } }) do
-            HC.Settings:Show(spec[2] == "name" and "Salve" or "Cooldowns", spec[2] == "name" and "Names and icons" or "Cells")
+            HC.Settings:Show(spec[2] == "name" and "Salve" or "Cooldowns", spec[2] == "name" and "Names and icons" or "On cells")
             choose(spec[1], position[1])
             equal(ns.db[spec[2] .. "JustifyH"], position[2], toc .. ": horizontal " .. spec[1])
             equal(ns.db[spec[2] .. "JustifyV"], position[3], toc .. ": vertical " .. spec[1])
@@ -367,26 +367,26 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     ns.db.previewWindowOpen = false
 
     -- Sweeps live with cooldowns; automatic movement cues live on Alerts.
-    HC.Settings:Show("Cooldowns", "Cells")
+    HC.Settings:Show("Cooldowns", "On cells")
     assert(wow.FindText("MOVEMENT SWEEPS"), toc .. ": sweep settings live on Cooldowns")
     assert(wow.FindText("No movement spells bound yet.") or wow.FindText("Show sweep"),
         toc .. ": the sweep section lists bound movement spells or says none")
     HC.Settings:Show("Alerts")
     equal(ns.db.movementAlertsEnabled, true, toc .. ": movement alerts preserve previous default")
     equal(ns.db.inferredSlowAlertsEnabled, false, toc .. ": inferred slows start opted out")
-    clickText("Enable movement alerts (beta)")
+    clickText("Enable movement alerts")
     equal(ns.db.movementAlertsEnabled, false, toc .. ": movement master switch saves false")
     local savedEscapes = ns.db.escapes
-    clickText("Enable movement alerts (beta)")
+    clickText("Enable movement alerts")
     equal(ns.db.movementAlertsEnabled, true, toc .. ": movement master switch can re-enable")
     equal(ns.db.escapes, savedEscapes, toc .. ": movement master switch preserves spell choices")
     equal(wow.LastPrint():find("in beta and may not work correctly", 1, true) ~= nil, true,
         toc .. ": enabling movement alerts warns about beta")
-    clickText("Include inferred slows (beta)")
+    clickText("Also alert on sudden slows")
     equal(ns.db.inferredSlowAlertsEnabled, true, toc .. ": inferred slow opt-in saves true")
     equal(wow.LastPrint():find("Inferred slows are in beta", 1, true) ~= nil, true,
         toc .. ": enabling inferred slows warns about beta")
-    clickText("Enable movement alerts (beta)")
+    clickText("Enable movement alerts")
     ns.db.movementTextOutput, ns.db.movementSoundEnabled = "CHAT", true
     wow.Click(wow.FindButton("Reset Alerts"))
     equal(ns.db.movementAlertsEnabled, true, toc .. ": Reset Alerts restores the master switch")
@@ -398,13 +398,13 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
 
     -- Alerts reset.
     HC.Settings:Show("Alerts")
-    for _, text in ipairs({ "Enable movement alerts (beta)", "Include inferred slows (beta)",
+    for _, text in ipairs({ "Enable movement alerts", "Also alert on sudden slows",
         "Play movement alert sound", "Show movement text" }) do
         equal(wow.Visible(wow.FindText(text)), true, toc .. ": Alerts shows '" .. text .. "'")
     end
     equal(ns.db.learningScopeMessages, true, toc .. ": scope messages start enabled")
     equal(ns.db.learningDiscoveryMessages, true, toc .. ": discovery messages start enabled")
-    clickText("Show learning scope changes")
+    clickText("Announce new learning zone")
     clickText("Show newly learned spells")
     equal(ns.db.learningScopeMessages, false, toc .. ": scope message checkbox saves false")
     equal(ns.db.learningDiscoveryMessages, false, toc .. ": discovery message checkbox saves false")

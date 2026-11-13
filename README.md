@@ -47,9 +47,9 @@ Every Consecrated Hammer addon also has `help`, `version`, `about`, `debug`, `st
 
 ## Detected actions
 
-The **Key Bindings** page only lists spells your character knows. Click a spell on the right, then the mouse button you want, and it joins the bound list on the left; the x beside it removes it. Movement actions stay off until you bind them. "Area movement" is a ground-placed spell, so drop it where the affected players can reach it.
+The **Key Bindings** page only lists spells your character knows. Click a spell on the right, then the mouse button you want, and it joins the bound list on the left; the x beside it removes it. Movement actions stay off until you bind them. "Free the group" is a ground-placed spell, so drop it where the affected players can reach it.
 
-| Class | Dispels | Frees movement (ally) | Area movement | Self only |
+| Class | Dispels | Free an ally | Free the group | Free yourself |
 | --- | --- | --- | --- | --- |
 | Paladin | Cleanse: Magic, Poison, Disease; Cleanse Toxins: Poison, Disease | Blessing of Freedom; Blessing of Protection | None | Divine Shield |
 | Priest | Purify: Magic, plus Disease with Improved Purify; Purify Disease: Disease | None | None | None |
@@ -78,7 +78,7 @@ an in-game check; see the [personal-dispel checks](https://github.com/consecrate
 
 ## Settings worth knowing
 
-The settings pages are **Panel** (Layout, Cells, Names and icons, Members), **Key Bindings**, **Cooldowns** (Cells, Bar, Lockouts), **Alerts**, **Tooltips**, **Position**, **Visibility** and **Profiles**, then **Learned Spells**, **What's new**, **Commands**, **Troubleshooting** and **About**. Search includes settings hidden by a parent switch; selecting one highlights the switch that reveals it.
+The settings pages are **Panel** (Layout, Cells, Names and icons, Members), **Key Bindings**, **Cooldowns** (On cells, Bar, Lockouts), **Alerts**, **Tooltips**, **Position**, **Visibility** and **Profiles**, then **Learned Spells**, **What's new**, **Commands**, **Troubleshooting** and **About**. Search includes settings hidden by a parent switch; selecting one highlights the switch that reveals it.
 
 - **Preview.** The Panel page can show a full-size test panel at the panel's saved position, with controls for group size, clear or dispellable boxes and cooldowns, so you can set it up without waiting for someone to get cursed. It closes with the settings window or when combat starts.
 - **Panel controls.** **Fill** picks rows or columns and **Start corner** picks where the first cell goes. Names and cooldown numbers each have one position selector. Name, icon and idle-background details appear when enabled; switching backgrounds off remembers their opacity. Tooltips have their own page and reset. Lit cells also show Blizzard's own debuff tooltip, since addons can't read debuffs in combat; **Show Blizzard debuff tooltip** turns it off.
@@ -94,7 +94,7 @@ The settings pages are **Panel** (Layout, Cells, Names and icons, Members), **Ke
 - **Cooldowns** holds the cooldown display. **Sweep style: Icon** moves the cooldown sweep off the whole cell onto a small spell icon that only shows while the spell is on cooldown. **Auto**, the default, does that only when names are on, and keeps the whole-cell sweep when they're off. The **cooldown bar** puts icons for the spells bound on Key Bindings beside the grid, showing each one while it's on cooldown, or dimmed when ready if you turn on **Show when ready**. Salve still never reads cooldown times; it asks the game whether a spell is on cooldown, and where the game won't say mid-fight, it lets the game fade the icon itself. If neither works, the icon stays visible rather than hide a cooldown you need to know about. **Show lockout debuffs** shows Forbearance on the cooldown bar, with the name of whoever you just cast Blessing of Protection (or similar) on, or on their cell if you prefer. The game won't let addons read that debuff on other players, so Salve times it from your own casts and can't see another paladin's.
 - **Show cell borders** controls the outlines around all boxes, including the preview. For a quieter panel, turn it off along with **Show idle backgrounds**, keep unit names off and use `/salve lock` to hide the grip. Dispel alerts and cooldowns still draw, and invisible boxes still take clicks because the game won't let addons change that on protected frames in combat.
 - **Alert sounds** are off by default. When on, Salve only listens for debuffs from its built-in list for the dungeon or raid you're in, and only ones you can remove. Roots and snares on you use a separate sound, switched on Alerts. Both sounds have a test button. Under **Chat messages**, switch off scope-change or newly learned-spell chat messages separately; Salve keeps recording spells.
-- **Movement alerts (beta)** on Alerts holds the automatic root and snare alerts. Turn off **Enable movement alerts (beta)** to stop all movement text, sounds and the movement badge while keeping your movement-spell bindings and dispel alerts. **Include inferred slows (beta)** is off by default. When it's on, a sharp drop in your run speed also shows movement text and the movement badge, pointing at the mouse button you bound for Freedom or similar. Salve can't tell whether an inferred slow is removable, so it may not work correctly, and it never plays a sound. Bindings stay on the Key Bindings page; each bound movement spell's sweep colour and **Show sweep** switch are under **Cooldowns > Cells > Movement sweeps**.
+- **Movement alerts (beta)** on Alerts holds the automatic root and snare alerts. Turn off **Enable movement alerts** to stop all movement text, sounds and the movement badge while keeping your movement-spell bindings and dispel alerts. **Also alert on sudden slows** is off by default. When it's on, a sharp drop in your run speed also shows movement text and the movement badge, pointing at the mouse button you bound for Freedom or similar. Salve can't tell whether an inferred slow is removable, so it may not work correctly, and it never plays a sound. Bindings stay on the Key Bindings page; each bound movement spell's sweep colour and **Show sweep** switch are under **Cooldowns > On cells > Movement sweeps**.
 - **Learned spells.** Salve records the readable dispellable debuffs and reported roots and snares it sees, grouped by location, which helps improve the built-in list. **Copy learned spells** on the Learned Spells page gets it ready to paste, and `/salve learned clear` empties it.
 
 ## Limits
@@ -102,7 +102,7 @@ The settings pages are **Panel** (Layout, Cells, Names and icons, Members), **Ke
 These aren't oversights. Midnight made debuff details private to addons, so Salve hands the game a filter for _harmful auras this character can remove_ and the game decides which boxes light up, and with which colour and icon. That keeps Salve working, but it means:
 
 - **It can't prioritise or hide individual debuffs.** That needs debuff details that addons can't use for this any more.
-- **Dispel colours and icons can't be changed.** The game owns them, and they follow your colourblind settings. The cooldown sweep colour for each movement action can be set on **Cooldowns > Cells**.
+- **Dispel colours and icons can't be changed.** The game owns them, and they follow your colourblind settings. The cooldown sweep colour for each movement action can be set on **Cooldowns > On cells**.
 - **Sound alerts only cover Salve's built-in list.** They can miss a debuff the box still lights up for, and they can't play for private auras.
 - **Movement alerts are for you only.** Roots and snares on other players aren't reported.
 

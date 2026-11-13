@@ -92,7 +92,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
         assert(indexed[row], "standard settings row was never registered for search")
     end
     for query, expected in pairs({ preset = "Salve", target = "Salve", ["mouseover dispel"] = "Key Bindings",
-        ["re-centre panel"] = "Position", ["sort by"] = "Salve", ["clear all bindings"] = "Key Bindings", ["your spells"] = "Key Bindings", ["attach to"] = "Position", anchor = "Tooltips" }) do
+        ["re-centre panel"] = "Position", ["sort by"] = "Salve", ["clear all bindings"] = "Key Bindings", ["your spells"] = "Key Bindings", ["attach to"] = "Position", anchor = "Tooltips", ["Also alert on sudden slows"] = "Alerts", ["Move movement text"] = "Alerts", ["Announce new learning zone"] = "Alerts" }) do
         local found = false
         for _, result in ipairs(settings:Search(query, 10000)) do
             if result.page == expected then found = true end

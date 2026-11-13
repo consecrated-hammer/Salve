@@ -48,7 +48,7 @@ HC.Settings:NewPage({
     headerAction = O.LivePreviewAction,
     profileScope = function(tab) return tab == "Bar" end,
     tabs = {
-        { name = "Cells", build = O.Tab("Cells", function(panel, add, db)
+        { name = "On cells", build = O.Tab("On cells", function(panel, add, db)
             local style = addSection(panel, add, "Cell sweep", function(frame, y)
                 local row
                 row, y = dropdown(frame, "Sweep style", "Whole cell sweeps across the cell. Icon shows a spell icon while it is on cooldown. Auto uses Icon when names are on.", y, "cooldownStyle", { "BOX", "ICON", "AUTO" }, { "Whole cell", "Icon", "Auto" })

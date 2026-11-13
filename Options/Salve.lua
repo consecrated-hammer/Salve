@@ -73,9 +73,9 @@ HC.Settings:NewPage({
             local presetY = -8
             _, presetY = O.Header(presets, "Layout presets", presetY)
             local presetSpecs = {
-                { label = "Compact", note = "20px cells, no names", width = 20, height = 20, columns = 5, spacing = 1, names = false, previewUnits = 5 },
-                { label = "Named", note = "95px cells, names on", width = 95, height = 20, columns = 5, spacing = 1, names = true, previewUnits = 5 },
-                { label = "Raid wall", note = "Tight 10-cell wall, no names", width = 20, height = 20, columns = 10, spacing = 0, names = false, previewUnits = 40 },
+                { label = "Compact", note = "Icons only", width = 20, height = 20, columns = 5, spacing = 1, names = false, previewUnits = 5 },
+                { label = "Named", note = "Icons and names", width = 95, height = 20, columns = 5, spacing = 1, names = true, previewUnits = 5 },
+                { label = "Raid wall", note = "Tight wall for raids", width = 20, height = 20, columns = 10, spacing = 0, names = false, previewUnits = 40 },
             }
             for index, spec in ipairs(presetSpecs) do
                 local button = O.Button(presets, 168, 46)
@@ -245,7 +245,7 @@ HC.Settings:NewPage({
         { name = "Names and icons", build = tab("Names and icons", function(panel, add, db)
             local names = section(panel, 2)
             local ny = -8
-            _, ny = O.Header(names, "Unit names", ny)
+            _, ny = O.Header(names, "Player names", ny)
             ny = O.ProfileScope(names, ny)
             local namesToggle
             namesToggle, ny = O.Check(names, "Show unit names",

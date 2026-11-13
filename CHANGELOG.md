@@ -7,6 +7,8 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Use clearer alert tooltips, player names and movement-spell headings; find cell cooldown settings on On cells.
+
 - Group settings into Panel, Key Bindings, Cooldowns, Alerts, Tooltips, Position, Visibility and Profiles. Related settings have tabs and independent resets.
 - Find every settings row through search, including controls hidden by a parent switch. Results name the tab and highlight the switch that reveals hidden controls.
 - Hide settings that have no effect until their parent option is enabled. Keep existing saved values and profiles.

@@ -74,7 +74,7 @@ end
 for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     local ns = loadAddon(toc)
     local settings = ns.HammerCore.Settings
-    settings:Show("Cooldowns", "Cells")
+    settings:Show("Cooldowns", "On cells")
     for name, err in pairs(settings.errors) do error(name .. ": " .. err) end
     local function button(label)
         for _, frame in ipairs(wow.frames) do
@@ -121,8 +121,8 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     ns.Set("cooldownFontSize", 31)
     ns.Set("cooldownBarGap", 37)
     ns.Set("lockoutIconSize", 29)
-    settings:Show("Cooldowns", "Cells")
-    wow.Click(button("Reset Cells"))
+    settings:Show("Cooldowns", "On cells")
+    wow.Click(button("Reset On cells"))
     equal(ns.db.cooldownFontSize, ns.defaults.cooldownFontSize, toc .. ": Cells reset restores number size")
     equal(ns.db.cooldownBarGap, 37, toc .. ": Cells reset preserves bar")
     equal(ns.db.lockoutIconSize, 29, toc .. ": Cells reset preserves lockouts")
@@ -166,7 +166,7 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
 
     local bound = {}
     ns.Options.BoundSpells = function() return bound end
-    settings:Show("Cooldowns", "Cells")
+    settings:Show("Cooldowns", "On cells")
     bound = { { kind = "ESCAPE", spell = { id = 1044, name = "Freedom" } } }
     ns.Options.RefreshMovementSweeps()
     local matches = settings:Search("Movement sweep: Freedom")

@@ -201,9 +201,9 @@ HC.Settings:NewPage({
                 local list = spell.scope == ns.ESCAPE_ALLY and ally or spell.scope == ns.ESCAPE_AREA and area or self
                 list[#list + 1] = item(spell, "ESCAPE")
             end
-            sections[#sections + 1] = { title = "Frees movement", items = ally, empty = "No spells detected." }
-            sections[#sections + 1] = { title = "Area movement", items = area, empty = "No spells detected." }
-            sections[#sections + 1] = { title = "Self only", items = self, empty = "No spells detected." }
+            sections[#sections + 1] = { title = "Free an ally", items = ally, empty = "No spells detected." }
+            sections[#sections + 1] = { title = "Free the group", items = area, empty = "No spells detected." }
+            sections[#sections + 1] = { title = "Free yourself", items = self, empty = "No spells detected." }
             sections[#sections + 1] = { title = "Mouseover keys", items = mouseoverItems(),
                 empty = "No dispels for this character." }
             return sections
