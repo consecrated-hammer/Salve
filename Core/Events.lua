@@ -136,9 +136,11 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
         -- HammerCore adopts the old startup, minimap and settings-position
         -- keys, prints the login line and creates the minimap button.
         ns.HammerCore:Start()
+        if ns.Bindings and ns.Bindings.RetireCombined then ns.Bindings:RetireCombined() end
         frame:UnregisterEvent("ADDON_LOADED")
 
     elseif event == "PLAYER_LOGIN" then
+        if ns.Bindings and ns.Bindings.RetireCombined then ns.Bindings:RetireCombined() end
         ns.UpdateDispelSpell()
         if ns.PersonalDispel then ns.PersonalDispel:Update() end
         ns.Escape:Update()
@@ -270,11 +272,15 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
             if ns.Attach then ns.Attach:HostChanged() end
         end)
 
+    elseif event == "UPDATE_BINDINGS" then
+        if ns.Bindings and ns.Bindings.RetireCombined then ns.Bindings:RetireCombined() end
+
     elseif event == "PLAYER_REGEN_ENABLED" then
         -- ☠ Release a drag that crossed into combat FIRST. Until this runs the
         --   panel is still following the cursor, and a rebuild would anchor
         --   boxes against a frame that is still moving.
         if ns.pendingDragStop then ns.Handle:Release() end
+        if ns.Bindings and ns.Bindings.RetireCombined then ns.Bindings:RetireCombined() end
         ns.Sound:FlushPendingLearning()
         ns.Sound:FlushPending()
         ns.FlushPending()
@@ -297,6 +303,7 @@ end)
 for _, e in ipairs({
     "ADDON_LOADED",
     "PLAYER_LOGIN",
+    "UPDATE_BINDINGS",
     "PLAYER_LEAVING_WORLD",
     "PLAYER_ENTERING_WORLD",
     "ZONE_CHANGED_NEW_AREA",

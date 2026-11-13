@@ -303,4 +303,50 @@ equal(ns.db.outOfRangeAlpha, 1, "out of range opacity is clamped")
 equal(ns.db.probeHover, nil, "probe hover removed")
 equal(ns.db.probeOpen, nil, "probe never reopens itself")
 
+-- Retire combined entries before dedup so a custom action on that chord survives.
+local target = { key = "BUTTON1", action = "TARGET" }
+local individual = { key = "SHIFT-BUTTON2", role = "SECONDARY" }
+SalveDB = { schemaVersion = 12, bindingsCustom = false, bothDispelsOrder = "SECONDARY", bindings = {
+    { key = "BUTTON1", role = "BOTH" }, target, individual,
+} }
+ns.InitConfig()
+equal(#ns.db.bindings, 2, "only combined entry removed on load")
+equal(ns.db.bindings[1].action, "TARGET", "unrelated action on same chord survives")
+equal(ns.db.bindings[2].role, "SECONDARY", "individual cure survives")
+equal(ns.db.bindingsCustom, true, "retired combined choices remain custom")
+equal(ns.retiredCombinedGrid, true, "notice queued for runtime cleanup")
+equal(ns.db.bothDispelsOrder, "SECONDARY", "harmless deprecated preference retained")
+SalveDB = { schemaVersion = 12, bindings = { { key = "BUTTON1", role = "BOTH" } } }
+ns.InitConfig()
+equal(#ns.db.bindings, 0, "combined-only list emptied")
+equal(ns.db.bindingsCustom, true, "empty list will not restore defaults")
+-- Pending notice survives another reload before out-of-combat delivery.
+equal(ns.db.combinedDispelNoticePending, true, "notice handoff is durable")
+ns.retiredCombinedGrid = nil -- a fresh Lua session has no ephemeral flag
+ns.InitConfig()
+equal(ns.db.combinedDispelNoticePending, true, "second load retains undelivered notice")
+local notices, saves, locked = 0, 0, true
+ns.Print = function() notices = notices + 1 end
+GetBindingKey = function() return nil end
+GetCurrentBindingSet = function() return 1 end
+SaveBindings = function() saves = saves + 1 end
+InCombatLockdown = function() return locked end
+assert(loadfile("Features/Bindings.lua"))("Salve", ns)
+equal(ns.Bindings:RetireCombined(), false, "in-combat reload defers delivery")
+ns.retiredCombinedGrid = nil
+ns.InitConfig()
+equal(ns.db.combinedDispelNoticePending, true, "repeated in-combat reload preserves pending notice")
+locked = false
+equal(ns.Bindings:RetireCombined(), true, "safe retry delivers durable notice")
+equal(notices, 1, "one notice after repeated reloads")
+equal(ns.db.combinedDispelNoticePending, nil, "delivered flag removed")
+ns.Bindings:RetireCombined()
+equal(notices, 1, "no-op does not notify")
+equal(saves, 0, "grid-only notice does not save game bindings")
+SalveDB = { schemaVersion = 12 }
+ns.InitConfig()
+assert(loadfile("Features/Bindings.lua"))("Salve", ns)
+ns.Bindings:RetireCombined()
+equal(ns.db.combinedDispelNoticePending, nil, "clean users acquire no pending notice")
+equal(notices, 1, "clean session has no spurious notification")
 print("config tests passed")

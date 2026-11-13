@@ -111,32 +111,8 @@ local function mouseoverItems()
     if ns.CanDispel and ns.CanDispel() then
         add("PRIMARY", primary, ns.spellID)
         add("SECONDARY", secondary, ns.secondaryID)
-        local first, second = ns.Bindings:BothSpells()
-        if first then add("BOTH", first[1] .. " or " .. second[1], first[2]) end
     end
     return items
-end
-
--- Both dispels on one click: the game tries one, then the other.
--- See Features/Bindings.lua.
-local function bothItem()
-    local first, second = ns.Bindings:BothSpells()
-    if not first then return nil end
-    return { id = ns.Bindings.BOTH_ID, kind = "BOTH", name = first[1] .. " or " .. second[1],
-        icon = spellIcon(first[2]), detail = "Whichever the player needs" }
-end
-
-local function bothTooltip(owner, entry)
-    local first, second = ns.Bindings:BothSpells()
-    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-    GameTooltip:SetText(entry.name)
-    if first then
-        GameTooltip:AddLine("Tries " .. first[1] .. ", then " .. second[1]
-            .. " when there's nothing for it to remove. Works in combat.", 1, 1, 1, true)
-        GameTooltip:AddLine("One click casts one spell. Someone with both needs a second click.",
-            0.7, 0.7, 0.7, true)
-    end
-    GameTooltip:Show()
 end
 
 local function mouseoverTooltip(owner, entry)
@@ -163,19 +139,17 @@ HC.Settings:NewPage({
     local bottom = HC.Bindings.Page(editor, -4, {
         inputs = { mouse = true },
         poolTitle = "Your spells",
-        poolHint = "Click a spell, then the mouse button that casts it. Mouseover dispel keys and both dispels are included below.",
+        poolHint = "Click a spell, then the mouse button that casts it. Mouseover dispel keys are included below.",
         empty = "Nothing bound yet. Pick a spell on the right, then click a mouse button.",
         label = function(key) return ns.Bindings:Label(key) end,
         tooltip = function(owner, entry)
             if entry.kind == "MOUSEOVER" then return mouseoverTooltip(owner, entry) end
-            if entry.kind == "BOTH" then return bothTooltip(owner, entry) end
             spellTooltip(owner, entry.spell)
         end,
         pool = function()
             local sections = {}
             local dispels = {}
             for _, spell in ipairs(ns.knownDispels or {}) do dispels[#dispels + 1] = item(spell, "DISPEL") end
-            dispels[#dispels + 1] = bothItem()
             sections[#sections + 1] = { title = "Dispels", items = dispels, empty = "No dispels for this character." }
             local personal = ns.PersonalDispel and ns.PersonalDispel.spells or {}
             if #personal > 0 then
@@ -205,13 +179,6 @@ HC.Settings:NewPage({
                 local entry = item(bound.spell, bound.kind)
                 entry.key = bound.entry.key
                 list[#list + 1] = entry
-            end
-            for _, bound in ipairs(ns.Bindings:List()) do
-                local entry = bound.role == ns.ROLE_BOTH and bothItem()
-                if entry then
-                    entry.key = bound.key
-                    list[#list + 1] = entry
-                end
             end
             for _, entry in ipairs(mouseoverItems()) do
                 entry.key = HC.Bindings.CommandKey(entry.command)
@@ -279,20 +246,12 @@ HC.Settings:NewPage({
     flow:Add(editor, function() return -bottom + 4 end)
     local preferences = O.Section(panel, 1)
     y = -4
-    -- Follow the pool so the available mouseover and Both tiles explain these choices.
+    -- Follow the pool so the available mouseover tiles explain this choice.
     _, y = O.Dropdown(preferences, "Mouseover fallback",
-        "Mouseover dispel keys cast on a friendly player under the pointer, or this when there isn't one. Bind individual or both dispels in the mouseover tiles above.", y,
+        "Mouseover dispel keys cast on a friendly player under the pointer, or this when there isn't one. Bind individual dispels in the mouseover tiles above.", y,
         { "NONE", "TARGET", "PLAYER" }, { "Do nothing", "Use target", "Use yourself" },
         function() return ns.db.mouseoverFallback end,
         function(value) ns.Set("mouseoverFallback", value) end, 560, 150, 200)
-    -- Forever only: see Bindings:BothSpells.
-    if ns.isCamelot then
-    _, y = O.Dropdown(preferences, "Both dispels: try first",
-        "With two dispels on one click, the spell tried first. Abolish spells always go last.", y,
-        { "PRIMARY", "SECONDARY" }, { "Main dispel", "Second dispel" },
-        function() return ns.db.bothDispelsOrder end,
-        function(value) ns.Set("bothDispelsOrder", value) end, 560, 150, 200)
-    end
     flow:Add(preferences, -O.Flush(preferences, y) + 4)
     editor.hcSetBottom = function(value)
         bottom = value

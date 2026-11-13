@@ -78,6 +78,8 @@ an in-game check; see the [personal-dispel checks](https://github.com/consecrate
 
 ## Settings worth knowing
 
+A small profile icon marks settings saved in the current layout profile. Each affected tab has one legend; unmarked settings are shared across profiles.
+
 The settings pages are **Panel** (Layout, Cells, Names and icons, Members), **Key Bindings**, **Cooldowns** (On cells, Bar, Lockouts), **Alerts**, **Tooltips**, **Position**, **Visibility** and **Profiles**, then **Learned Spells**, **What's new**, **Commands**, **Troubleshooting** and **About**. Search includes settings hidden by a parent switch; selecting one highlights the switch that reveals it.
 
 - **Preview.** The Panel page can show a full-size test panel at the panel's saved position, with controls for group size, clear or dispellable boxes and cooldowns, so you can set it up without waiting for someone to get cursed. It closes with the settings window or when combat starts.
@@ -126,13 +128,14 @@ GPL v3, see [LICENSE.txt](https://github.com/consecrated-hammer/Salve/blob/main/
 
 ## Mouseover keys and extra cells
 
-On Key Bindings, assign a mouseover key to each dispel. Forever also offers
-one key or cell click that tries both dispels in order. Set the order with
-Both dispels: try first; Abolish spells always go last. A target with both
-kinds of debuff needs another click for the second dispel.
+On Key Bindings, bind each dispel separately, either to a cell click or to a
+mouseover key. Combined dispel actions are no longer offered: the two-spell
+macro did not reliably choose the needed cure. Old combined cell bindings and
+keys are removed; their chords stay unassigned until you choose a spell.
+Individual dispels keep their existing bindings.
 
-Panel > Layout controls the extra Target or Focus cell for friendly players
-outside your group. New profiles enable Target. Panel > Role icons controls
+Panel > Members controls the extra Target or Focus cell for friendly players
+outside your group. New profiles enable Target. Panel > Names and icons controls
 role and raid-marker badges; new profiles show the marker, or the role when
 there is no marker. Existing saved choices are preserved.
 

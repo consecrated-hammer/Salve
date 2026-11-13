@@ -359,4 +359,9 @@ locked = true
 handler(nil, "GROUP_ROSTER_UPDATE")
 equal(restyles, 1, "a deferred roster rebuild refreshes names in combat")
 
+local retirements = 0
+ns.Bindings = { RetireCombined = function() retirements = retirements + 1 end }
+equal(registered.UPDATE_BINDINGS, true, "binding-set changes trigger retired-command cleanup")
+handler(nil, "UPDATE_BINDINGS")
+equal(retirements, 1, "loaded binding set is checked")
 print("event routing tests passed")

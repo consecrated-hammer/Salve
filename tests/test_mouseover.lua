@@ -43,15 +43,20 @@ ns.CanDispel = function() return false end
 M:Update()
 equal(primary:GetAttribute("macrotext"), nil, "nothing to cast without a dispel")
 
--- Combined mouseover follows the same eligibility and ordering as cell Both.
-combat = false
-InCombatLockdown = function() return false end
-ns.CanDispel = function() return true end
-ns.db.mouseoverFallback = "TARGET"
-ns.Bindings = { BothSpells = function() return { "Remove Curse", 2782 }, { "Cure Poison", 8946 } end }
-M:Update()
-equal(_G.SalveMouseoverBoth:GetAttribute("macrotext"),
-    "/cast [@mouseover,help,nodead][@target,help,nodead] Remove Curse\n/cast [@mouseover,help,nodead][@target,help,nodead] Cure Poison", "combined mouseover with fallback")
-ns.Bindings.BothSpells = function() return nil end
-M:Update()
-equal(_G.SalveMouseoverBoth:GetAttribute("macrotext"), nil, "ineligible combined macro cleared")
+-- Only the individual commands are offered, on both clients.
+for _, forever in ipairs({ false, true }) do
+    ns.isCamelot = forever
+    ns.CanDispel = function() return true end
+    ns.spellName, ns.secondaryName = "Cure Poison", "Remove Curse"
+    ns.db.mouseoverFallback = "TARGET"
+    InCombatLockdown = function() return false end
+    M:Update()
+    equal(primary:GetAttribute("macrotext"), "/cast [@mouseover,help,nodead][@target,help,nodead] Cure Poison", "individual poison key")
+    equal(secondary:GetAttribute("macrotext"), "/cast [@mouseover,help,nodead][@target,help,nodead] Remove Curse", "individual curse key")
+    equal(M.BINDINGS.BOTH, nil, "combined command not offered")
+    equal(M.BUTTONS.BOTH, nil, "combined secure button not offered")
+    equal(_G.SalveMouseoverBoth, nil, "no new combined secure button created")
+    equal(M:BoundKey("BOTH"), nil, "retired command lookup harmless")
+    equal(#M:DiagnosticLines(), 2, "diagnostics only describe individual dispels")
+end
+print("mouseover tests passed")

@@ -129,6 +129,7 @@ local function knownSpell(spellID)
 end
 
 local function spellFor(entry)
+    if entry.role == "BOTH" or entry.spell == "BOTH" then return nil end
     if entry.role == ns.ROLE_PRIMARY then
         return ns.spellName, ns.spellID, "DISPEL"
     elseif entry.role == ns.ROLE_SECONDARY then
@@ -150,72 +151,19 @@ local function spellFor(entry)
     end
 end
 
--- ── Both dispels on one click ──────────────────────────────────────────────
--- For a spec with two dispels that cure different things (a Forever druid's
--- Remove Curse and Cure Poison). Lua can't pick at click time: debuff types
--- are hidden in combat and a secure click runs nothing of ours. So the cell
--- gets a two-line macro, written when the grid is built:
---
---   /cast [@raid5] Remove Curse
---   /cast [@raid5] Cure Poison
---
--- and the game chooses. A dispel with nothing to remove is refused before it
--- costs a global cooldown, so the next line casts in the same click (checked
--- with /salve trace on Forever, 1.12.0-dev6: the refusal reads "Spell is not
--- ready yet"). One click casts one spell; a player with both debuffs needs a
--- second click.
---
--- The macro names the cell's group slot, like the spell clicks' unit, so a
--- mid-fight reshuffle leaves every cell aiming at its own slot.
---
--- ☠ FOREVER ONLY. Retail dispels go on cooldown when they work, and a dispel
---   on cooldown falls through too. The only Retail pair is an Evoker's
---   Naturalize and Cauterizing Flame, so a poison landing while Naturalize
---   cools down would spend Cauterizing Flame's long cooldown.
-
--- ☠ ABOLISH GOES LAST. Abolish Poison and Abolish Disease are a buff that
---   cures over time, so they cast even with nothing to remove (warcraft.wiki.gg:
---   2.1.2 "no longer plays sounds when there is nothing to dispel"; priests
---   put it up before diseases land). First in the macro, they'd take every
---   click and the other line would never run.
-local CASTS_ANYWAY = { [2893] = true, [552] = true }  -- Abolish Poison, Abolish Disease
-
-ns.ROLE_BOTH = "BOTH"
-Bindings.BOTH_ID = "BOTH"
-
--- The two spells in casting order as {name, id} pairs, or nil without a
--- distinct second dispel or off Forever.
-function Bindings:BothSpells()
-    if not ns.isCamelot then return nil end
-    local primary, secondary = ns.spellName, ns.secondaryName
-    if not (primary and secondary) or primary == secondary then return nil end
-    local a, b = { primary, ns.spellID }, { secondary, ns.secondaryID }
-    if CASTS_ANYWAY[a[2]] and CASTS_ANYWAY[b[2]] then return nil end
-    if ns.db and ns.db.bothDispelsOrder == "SECONDARY" then a, b = b, a end
-    if CASTS_ANYWAY[a[2]] then a, b = b, a end
-    return a, b
-end
-
-function Bindings.BothMacro(unit, first, second)
-    if type(unit) ~= "string" or not (first and second) then return nil end
-    return "/cast [@" .. unit .. "] " .. first .. "\n/cast [@" .. unit .. "] " .. second
-end
-
 -- Whether an entry does anything right now. One that does nothing doesn't
 -- hold on to its chord.
 local function armed(entry)
-    if entry.role == ns.ROLE_BOTH then return Bindings:BothSpells() ~= nil end
     return spellFor(entry) ~= nil
 end
 
--- One id per action, so the Both row shares the spells' conflict logic.
+-- One id per individual spell action.
 function Bindings:ActionID(entry)
-    if entry.role == ns.ROLE_BOTH then return self.BOTH_ID end
     return self:SpellID(entry)
 end
 
 function Bindings:SpellID(entry)
-    if entry.role == ns.ROLE_BOTH then return nil end
+    if entry.role == "BOTH" or entry.spell == "BOTH" then return nil end
     if entry.role == ns.ROLE_PRIMARY then return ns.spellID end
     if entry.role == ns.ROLE_SECONDARY then return ns.secondaryID or ns.spellID end
     local spell = knownSpell(entry.spell)
@@ -243,8 +191,7 @@ end
 -- armed spell owns is refused (third return "conflict"), so nothing moves
 -- without the player saying so.
 function Bindings:SetSpellBinding(spellID, key, replace)
-    local both = spellID == self.BOTH_ID
-    if (type(spellID) ~= "number" and not both) or not attributeParts(key or "") then
+    if type(spellID) ~= "number" or not attributeParts(key or "") then
         return false, "invalid mouse binding"
     end
 
@@ -270,10 +217,7 @@ function Bindings:SetSpellBinding(spellID, key, replace)
     end
 
     local replacement = { key = key, spell = spellID }
-    if both then
-        replacement.spell = nil
-        replacement.role = ns.ROLE_BOTH
-    elseif spellID == ns.spellID then
+    if spellID == ns.spellID then
         replacement.spell = nil
         replacement.role = ns.ROLE_PRIMARY
     elseif spellID == ns.secondaryID then
@@ -309,9 +253,129 @@ end
 
 function Bindings:List()
     local list = ns.db and ns.db.bindings
-    if ns.db and ns.db.bindingsCustom then return list or {} end
-    if not list or #list == 0 then return self:Defaults() end
-    return list
+    if not (ns.db and ns.db.bindingsCustom) and (not list or #list == 0) then return self:Defaults() end
+    local visible = {}
+    for _, entry in ipairs(list or {}) do
+        if entry.role ~= "BOTH" and entry.spell ~= "BOTH" then visible[#visible + 1] = entry end
+    end
+    return visible
+end
+
+-- Only this retired command is touched. Binding sets are cleaned when loaded;
+-- no account/character-set switch is forced, and no replacement cure is chosen.
+local RETIRED_MOUSEOVER = "CLICK SalveMouseoverBoth:LeftButton"
+local BINDING_EDITORS = { "KeyBindingFrame", "KeyBindingsFrame", "SettingsPanel" }
+local function editingBlizzardBindings(self)
+    for _, name in ipairs(BINDING_EDITORS) do
+        local panel = _G[name]
+        if panel and panel.IsShown and panel:IsShown() then
+            self.retirementEditorHooks = self.retirementEditorHooks or {}
+            if panel.HookScript and not self.retirementEditorHooks[panel] then
+                panel:HookScript("OnHide", function()
+                    if not self.retireCombinedPending or self.retirementCloseQueued then return end
+                    -- Cancel/Discard can restore bindings after Hide returns. Do
+                    -- not let its UPDATE_BINDINGS event save the in-flight edit.
+                    if C_Timer and C_Timer.After then
+                        self.retirementCloseQueued = true
+                        C_Timer.After(0, function()
+                            self.retirementCloseQueued = nil
+                            self:RetireCombined()
+                        end)
+                    end
+                end)
+                self.retirementEditorHooks[panel] = true
+            end
+            return true
+        end
+    end
+    return false
+end
+
+function Bindings:RetireCombined()
+    if not ns.db or self.retiringCombined then return false end
+    if self.retirementCloseQueued then self.retireCombinedPending = true; return false end
+    self.retiringCombined = true
+    local ok, complete = pcall(function()
+        if (InCombatLockdown and InCombatLockdown()) or editingBlizzardBindings(self) then
+            self.retireCombinedPending = true
+            return false
+        end
+        local removedGrid = ns.retiredCombinedGrid == true
+        local kept = {}
+        for _, entry in ipairs(ns.db.bindings or {}) do
+            if type(entry) == "table" and (entry.role == "BOTH" or entry.spell == "BOTH") then removedGrid = true
+            else kept[#kept + 1] = entry end
+        end
+        if removedGrid then
+            ns.db.bindings, ns.db.bindingsCustom = kept, true
+            ns.db.combinedDispelNoticePending = true
+            self.retirementRebuildPending = true
+        end
+        ns.retiredCombinedGrid = nil
+        local bindingSet = GetCurrentBindingSet and GetCurrentBindingSet() or 1
+        self.retirementPendingSaves = self.retirementPendingSaves or {}
+        local attempted = {}
+        if GetBindingKey and SetBinding then
+            while true do
+                local progressed = false
+                for _, key in ipairs({ GetBindingKey(RETIRED_MOUSEOVER) }) do
+                    if not attempted[key] then
+                        attempted[key] = true
+                        -- Re-check ownership, and remember intent before calling
+                        -- the engine: it may change the key and then raise an error.
+                        if not GetBindingAction or GetBindingAction(key) == RETIRED_MOUSEOVER then
+                            local alreadyPending = self.retirementPendingSaves[bindingSet]
+                            self.retirementPendingSaves[bindingSet] = true
+                            ns.db.combinedDispelNoticePending = true
+                            if SetBinding(key) then progressed = true
+                            elseif GetBindingAction and GetBindingAction(key) ~= RETIRED_MOUSEOVER then progressed = true
+                            elseif not alreadyPending then self.retirementPendingSaves[bindingSet] = nil end
+                        end
+                    end
+                end
+                if not progressed then break end
+            end
+        end
+        if self.retirementPendingSaves[bindingSet] and SaveBindings then
+            local saved = SaveBindings(bindingSet)
+            if saved == false then error("The game refused to save retired dispel bindings.", 0) end
+            self.retirementPendingSaves[bindingSet] = nil
+        end
+        local remaining = GetBindingKey and GetBindingKey(RETIRED_MOUSEOVER) ~= nil or false
+        self.retireCombinedPending = remaining or next(self.retirementPendingSaves) ~= nil
+        -- Normally /reload removes this old frame. If it exists, leave it inert.
+        local oldButton = _G.SalveMouseoverBoth
+        if oldButton and self.retiredCombinedButton ~= oldButton then
+            oldButton:SetAttribute("macrotext", nil)
+            oldButton:SetAttribute("type", nil)
+            self.retiredCombinedButton = oldButton
+        end
+        if not remaining and not self.retirementPendingSaves[bindingSet] and ns.db.combinedDispelNoticePending == true then
+            if not self.combinedRemovalNotified and ns.Print then
+                ns.Print("Combined dispel bindings were removed. Bind each dispel separately on Key Bindings.")
+                self.combinedRemovalNotified = true
+            end
+            if self.combinedRemovalNotified then ns.db.combinedDispelNoticePending = nil end
+        end
+        if self.retirementRebuildPending and ns.RequestRebuild then
+            ns.RequestRebuild()
+            self.retirementRebuildPending = nil
+        end
+        return not self.retireCombinedPending
+    end)
+    self.retiringCombined = false -- release on every API or callback outcome
+    if not ok then
+        self.retireCombinedPending = true
+        local message = "Salve combined dispel cleanup: " .. tostring(complete)
+        if self.retirementLastError ~= message then
+            self.retirementLastError = message
+            local report = geterrorhandler and geterrorhandler()
+            if report then pcall(report, message) end
+        end
+        return false, message
+    end
+    self.retirementLastError = nil
+    return complete
 end
 
 -- Turns the shared defaults into the player's own editable copy. Call before
@@ -381,16 +445,7 @@ function Bindings:Apply(box)
             local typeAttr  = prefix .. "type" .. button
             local spellAttr = prefix .. "spell" .. button
 
-            if entry.role == ns.ROLE_BOTH then
-                local first, second = self:BothSpells()
-                local text = first and self.BothMacro(box.unit, first[1], second[1])
-                if text then
-                    set(typeAttr, "macro")
-                    set(prefix .. "macrotext" .. button, text)
-                    box.clickAuditActions[entry.key] = { kind = "DISPEL",
-                        spellName = first[1] .. " or " .. second[1] }
-                end
-            elseif entry.action == "TARGET" then
+            if entry.action == "TARGET" then
                 set(typeAttr, "target")
                 set(spellAttr, nil)
             elseif entry.action == "NONE" then
@@ -417,12 +472,6 @@ end
 function Bindings:Describe(entry, unit)
     if entry.action == "TARGET" then return "Target the unit", nil end
     if entry.action == "NONE"   then return "Do nothing", nil end
-    if entry.role == ns.ROLE_BOTH then
-        local first, second = self:BothSpells()
-        if not first then return "no second dispel", nil end
-        local icon = C_Spell and C_Spell.GetSpellTexture and C_Spell.GetSpellTexture(first[2])
-        return first[1] .. " or " .. second[1] .. " (automatic)", icon
-    end
 
     local name, spellID, kind = spellFor(entry)
     if kind == "PERSONAL" and unit and not ns.PersonalDispel:IsPlayer(unit) then return nil end

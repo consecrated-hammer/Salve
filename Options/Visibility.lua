@@ -42,6 +42,7 @@ HC.spec.visibility = function(panel, y)
         }
     end
 
+    _, y = O.ScopeLegend(panel, y)
     _, y = O.Header(panel, "Panel", y)
     y = O.ProfileScope(panel, y)
     _, y = O.MultiSelect(panel, "Show panel",
@@ -58,5 +59,6 @@ HC.spec.visibility = function(panel, y)
         ns.Set("hideOnFlights", ns.defaults.hideOnFlights)
         ns.RequestRebuildSoon(0.05)
     end, "Reset panel visibility")
+    O.SetScope(panel, "shared") -- HammerCore's minimap, update and window rows follow.
     return y
 end

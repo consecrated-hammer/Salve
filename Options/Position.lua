@@ -28,7 +28,7 @@ HC.Settings:NewPage({
 }, O.Tab("Position", function(panel, add, db)
     local attachToggle
     local profileHeading = O.Section(panel, 1)
-    local headingY = O.ProfileScope(profileHeading, -4)
+    local _, headingY = O.ScopeLegend(profileHeading, -4)
     add(profileHeading, -headingY + 4)
     local handle = O.Section(panel, 2)
     local y = -8
@@ -42,6 +42,7 @@ HC.Settings:NewPage({
     local handleHeight = -y + 4
 
     local position = O.Section(panel, 2, handleToggle)
+    O.SetScope(position, "profile")
     y = -4
     _, y = O.Dropdown(position, "Handle position",
         "Saved per profile. Which edge of the grid holds the handle. Start corner follows the grid's fixed corner (Panel > Layout).", y,
@@ -55,6 +56,7 @@ HC.Settings:NewPage({
     end)
 
     local handleActions = O.Section(panel, 2)
+    O.SetScope(handleActions, "shared")
     y = -4
     _, y = O.Dropdown(handleActions, "Handle right-click",
         "Menu matches the minimap button's: settings, the drag handle and your profiles. Open settings goes straight there.", y,
@@ -65,6 +67,7 @@ HC.Settings:NewPage({
     y = O.Flush(handleActions, y)
     local handleActionsHeight = -y + 4
     local panelPosition = O.Section(panel, 1)
+    O.SetScope(panelPosition, "shared") -- navigation/action, not a setting cell
     y = -4
     _, y = O.Header(panelPosition, "Panel position", y)
     local resetPosition
@@ -75,6 +78,7 @@ HC.Settings:NewPage({
     add(panelPosition, -y + 4)
 
     local attach = O.Section(panel, 2)
+    O.SetScope(attach, "profile")
     y = -8
     _, y = O.Header(attach, "Attach to group frames", y)
     attachToggle, y = O.Dropdown(attach, "Attach to",
@@ -87,6 +91,7 @@ HC.Settings:NewPage({
     add(attach, -y + 4)
 
     local attachDetails = O.Section(panel, 2, attachToggle)
+    O.SetScope(attachDetails, "profile")
     y = -4
     local sideToggle
     sideToggle, y = O.Dropdown(attachDetails, "Attach side",
@@ -102,6 +107,7 @@ HC.Settings:NewPage({
     add(attachDetails, -y + 4, function() return db.attachTo ~= "NONE" end)
 
     local alignment = O.Section(panel, 2, sideToggle)
+    O.SetScope(alignment, "profile")
     y = -4
     _, y = O.Dropdown(alignment, "Align",
         "Which edge of each member's frame its cell lines up with.", y,

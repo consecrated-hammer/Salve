@@ -19,18 +19,16 @@ local addonName, ns = ...
 ns.Mouseover = {}
 local Mouseover = ns.Mouseover
 
-Mouseover.BUTTONS = { PRIMARY = "SalveMouseoverPrimary", SECONDARY = "SalveMouseoverSecondary", BOTH = "SalveMouseoverBoth" }
+Mouseover.BUTTONS = { PRIMARY = "SalveMouseoverPrimary", SECONDARY = "SalveMouseoverSecondary" }
 Mouseover.BINDINGS = {
     PRIMARY = "CLICK SalveMouseoverPrimary:LeftButton",
     SECONDARY = "CLICK SalveMouseoverSecondary:LeftButton",
-    BOTH = "CLICK SalveMouseoverBoth:LeftButton",
 }
 
 BINDING_HEADER_SALVE = "Salve"
 _G["BINDING_NAME_" .. Mouseover.BINDINGS.PRIMARY] = "Mouseover dispel"
 _G["BINDING_NAME_" .. Mouseover.BINDINGS.SECONDARY] = "Mouseover second dispel"
 
-_G["BINDING_NAME_" .. Mouseover.BINDINGS.BOTH] = "Mouseover both dispels"
 
 local FALLBACK = {
     NONE = "",
@@ -74,11 +72,6 @@ function Mouseover:Update()
         PRIMARY = self.MacroText(primary, fallback),
         SECONDARY = self.MacroText(secondary, fallback),
     }
-    local first, second
-    if ns.Bindings then first, second = ns.Bindings:BothSpells() end
-    if first then
-        texts.BOTH = self.MacroText(first[1], fallback) .. "\n" .. self.MacroText(second[1], fallback)
-    end
     for role, name in pairs(self.BUTTONS) do
         button(name):SetAttribute("macrotext", texts[role])
     end
@@ -87,13 +80,14 @@ function Mouseover:Update()
 end
 
 function Mouseover:BoundKey(role)
-    if not GetBindingKey then return nil end
-    return GetBindingKey(self.BINDINGS[role])
+    local command = self.BINDINGS[role]
+    if not command or not GetBindingKey then return nil end
+    return GetBindingKey(command)
 end
 
 function Mouseover:DiagnosticLines()
     local lines = {}
-    for _, role in ipairs({ "PRIMARY", "SECONDARY", "BOTH" }) do
+    for _, role in ipairs({ "PRIMARY", "SECONDARY" }) do
         lines[#lines + 1] = "Mouseover " .. role:lower() .. ": "
             .. tostring(self:BoundKey(role) or "no key") .. ", "
             .. tostring(self.texts and self.texts[role] or "nothing to cast")

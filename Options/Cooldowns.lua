@@ -161,8 +161,9 @@ HC.Settings:NewPage({
             end, nil, nil, 1)
         end, reset("Cells")) },
         { name = "Bar", build = O.Tab("Bar", function(panel, add, db)
+            O.SetScope(panel, "profile")
             addSection(panel, add, nil, function(frame, y)
-                return O.ProfileScope(frame, y)
+                return select(2, O.ScopeLegend(frame, y))
             end)
             local bar = addSection(panel, add, "Cooldown bar", function(frame, y)
                 local row
@@ -192,7 +193,14 @@ HC.Settings:NewPage({
             end, function() return barVisible() and not db.cooldownBarMatchPanel end, match)
 
             local spells = O.Section(panel, 1, bar)
+            O.SetScope(panel, "shared")
             O.RegisterRow(spells, spells, "Bar spells")
+            O.SetScope(panel, "profile")
+            -- Search targets the unmarked section; actual spell rows keep their
+            -- own profile-scoped parent instead of inheriting the section metadata.
+            local spellRows = O.Section(spells, 1)
+            spellRows:SetPoint("TOPLEFT", spells, "TOPLEFT", 0, 0)
+            O.SetScope(spellRows, "profile")
             local _, top = O.Header(spells, "Bar spells", -4)
             local empty = O.FontString(spells, "GameFontHighlightSmall", "muted")
             empty:SetPoint("TOPLEFT", O.PAD, top)
@@ -204,7 +212,7 @@ HC.Settings:NewPage({
                 for index, id in ipairs(bound) do
                     local row = rows[index]
                     if not row then
-                        row = O.Check(spells, "", "Show this spell on the bar.", top - (index - 1) * (O.CELL_H + 4),
+                        row = O.Check(spellRows, "", "Show this spell on the bar.", top - (index - 1) * (O.CELL_H + 4),
                             function() local spell = ns.Cooldowns:BoundSpells()[index]; return spell and not db.cooldownBarHidden[spell] end,
                             function(value)
                                 local spell = ns.Cooldowns:BoundSpells()[index]
@@ -222,7 +230,7 @@ HC.Settings:NewPage({
                     row.hcCheckbox.Text:SetText(name)
                     row.hcHintTitle = name
                     row.hcSearchLabel = "Bar spell: " .. name
-                    O.RegisterRow(spells, row, row.hcSearchLabel)
+                    O.RegisterRow(spellRows, row, row.hcSearchLabel)
                     row:Show()
                 end
                 for index = #bound + 1, #rows do
@@ -230,7 +238,9 @@ HC.Settings:NewPage({
                     if row.hcSearchLabel then (panel.hcHeaderOwner or panel).hcRows[row.hcSearchLabel] = nil; row.hcSearchLabel = nil end
                     row:Hide()
                 end
-                return -top + math.max(1, #bound) * (O.CELL_H + 4) + 4
+                local height = -top + math.max(1, #bound) * (O.CELL_H + 4) + 4
+                spellRows:SetHeight(height)
+                return height
             end
             layoutSpells()
             panel.hcRefresh[#panel.hcRefresh + 1] = function()

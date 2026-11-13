@@ -99,6 +99,58 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
         end
         assert(found, "custom control/keyword missing from search: " .. query)
     end
+    -- Mark storage scope without renaming searchable rows or changing saved keys.
+    local profileRows = {
+        Salve = {
+            Layout = { "Compact layout preset", "Named layout preset", "Raid wall layout preset", "Fill", "Start corner", "Cells per row", "Cells per column", "Spacing", "Width", "Height", "Panel scale" },
+            ["Names and icons"] = { "Show unit names", "Name position", "Name text size" },
+            Members = { "Sort by", "Role order", "Reverse order", "Your cell" },
+        },
+        Position = { Position = { "Handle position", "Attach to", "Attach side", "Attach gap", "Align", "Up / down" } },
+        Visibility = { Visibility = { "Show panel" } },
+    }
+    local affected = { Salve = { Layout = true, ["Names and icons"] = true, Members = true },
+        Position = { Position = true }, Visibility = { Visibility = true }, Cooldowns = { Bar = true } }
+    for _, scale in ipairs({ 0.7, 1.3 }) do
+        ns.HammerCore.State().settingsScale = scale
+        settings:ApplyScale()
+        for pageName, page in pairs(settings.pages) do
+            if pageName == "Salve" or pageName == "Position" or pageName == "Visibility" or pageName == "Cooldowns" then
+                for tabName, body in pairs(page.bodies) do
+                    settings:Show(pageName, tabName)
+                    local expected = {}
+                    for _, label in ipairs(profileRows[pageName] and profileRows[pageName][tabName] or {}) do expected[label] = true end
+                    for label, row in pairs(body.hcRows or {}) do
+                        local profile = expected[label] or (pageName == "Cooldowns" and tabName == "Bar" and label ~= "Reset bar" and label ~= "Bar spells")
+                        assert(row.hcSettingScope == (profile and "profile" or "shared"), pageName .. "/" .. tabName .. ": storage scope for " .. label)
+                        local icon = rawget(row, "hcScopeIcon")
+                        assert((icon and icon:IsShown() or false) == (profile or false), "profile glyph matches scope for " .. label)
+                        if profile then
+                            assert(row.hcScopeMarker.mouseEnabled == false, "scope glyph must not intercept clicks")
+                            assert(row.hcScopeMarker:GetFrameLevel() > row:GetFrameLevel(), "glyph stays above switch fill")
+                            if label:find(" layout preset", 1, true) then
+                                local textX = select(2, row.Text:GetPoint())
+                                local markerX = select(4, row.hcScopeMarker:GetPoint())
+                                assert(type(textX) == "number" and textX >= markerX + row.hcScopeMarker:GetWidth() + 4,
+                                    "preset text reserves the profile glyph gutter")
+                            end
+                        end
+                    end
+                    local count = 0
+                    for _, region in ipairs(wow.regions) do
+                        if type(region.text) == "string" and region.text:find("Profile icon:", 1, true) then
+                            local parent = region.parent
+                            while parent and parent ~= body do parent = parent.parent end
+                            if parent == body then count = count + 1 end
+                        end
+                    end
+                    local hasProfileRows = affected[pageName] and affected[pageName][tabName]
+                    assert(count == (hasProfileRows and 1 or 0), pageName .. "/" .. tabName .. ": one legend only where needed")
+                    if hasProfileRows then assert(wow.Visible(body.hcScopeLegend), "legend remains visible with dependent controls hidden") end
+                end
+            end
+        end
+    end
     -- Empty movement categories disappear; the options stay below the changing pool.
     local function visibleText(text)
         for _, region in ipairs(wow.regions) do
@@ -122,6 +174,26 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     assert(not visibleText("No movement spells for this character."), "empty explanation hides when spells available")
     assert(select(5, fallback.parent:GetPoint()) < emptyY, "mouseover options follow pool growth")
     assert(settings:Focus("Key Bindings", "Mouseover fallback"), "moved options remain searchable")
+    -- A two-dispel character is offered each grid and mouseover action separately.
+    ns.spellName, ns.spellID, ns.secondaryName, ns.secondaryID = "Cure Poison", 8946, "Remove Curse", 2782
+    ns.knownDispels = { { id = 8946, name = "Cure Poison", cures = { Poison = true } },
+        { id = 2782, name = "Remove Curse", cures = { Curse = true } } }
+    ns.Options.RefreshDispel()
+    ns.Mouseover:Update()
+    settings:Show("Cooldowns", "Bar")
+    local barBody = settings.pages.Cooldowns.bodies.Bar
+    settings.pages.Cooldowns.hcRefreshAll()
+    local perSpell = assert(barBody.hcRows["Bar spell: " .. ns.Cooldowns.SpellName(8946)], "individual bar spell row built")
+    assert(perSpell.hcSettingScope == "profile" and perSpell.hcScopeIcon:IsShown(), "per-spell controls retain profile markers")
+    assert(barBody.hcRows["Bar spells"].hcSettingScope == "shared" and not rawget(barBody.hcRows["Bar spells"], "hcScopeIcon"), "searchable bar section has no stray glyph")
+
+    local bindings = settings.pages["Key Bindings"].bodies["Key Bindings"].hcRows
+    for _, label in ipairs({ "Bind: Cure Poison", "Bind: Remove Curse", "Bind: Mouseover Cure Poison", "Bind: Mouseover Remove Curse" }) do
+        assert(bindings[label], "individual dispel action offered: " .. label)
+    end
+    for label in pairs(bindings) do assert(not label:find(" or ", 1, true), "combined tile must not be offered") end
+    assert(not bindings["Both dispels: try first"], "combined order setting removed")
+    assert(not ns.Mouseover.BINDINGS.BOTH, "combined command not offered")
     ns.Set("roleIcon", "OFF")
     local role = assert(settings:Focus("Salve", "Role icon size", "Names and icons"))
     local body = settings.pages.Salve.bodies["Names and icons"]

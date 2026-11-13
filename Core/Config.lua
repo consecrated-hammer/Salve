@@ -127,8 +127,7 @@ ns.defaults = {
     -- Mouseover dispel keys (Blizzard Key Bindings > AddOns > Salve): what
     -- they cast on when nothing friendly is under the pointer.
     mouseoverFallback = "NONE",   -- NONE | TARGET | PLAYER
-    -- The "Both dispels" click: which spell its macro tries first.
-    bothDispelsOrder = "PRIMARY", -- PRIMARY | SECONDARY
+    -- Deprecated bothDispelsOrder values may remain in old saved data; unused.
 
     -- Attach the panel to another addon's group frames. LEFT and RIGHT line
     -- each cell up with its member's frame; TOP and BOTTOM keep Salve's grid
@@ -308,7 +307,6 @@ local function normalizePreferences(db)
     enumOrDefault(db, "sortSelf", { SORTED = true, FIRST = true, LAST = true })
     enumOrDefault(db, "extraCell", { OFF = true, TARGET = true, FOCUS = true })
     enumOrDefault(db, "mouseoverFallback", { NONE = true, TARGET = true, PLAYER = true })
-    enumOrDefault(db, "bothDispelsOrder", { PRIMARY = true, SECONDARY = true })
     local roleOrders = {}
     for _, order in ipairs(ns.SORT_ROLE_ORDERS) do roleOrders[order] = true end
     enumOrDefault(db, "sortRoleOrder", roleOrders)
@@ -473,7 +471,13 @@ function ns.InitConfig()
     local deduped, seen = {}, {}
     for _, entry in ipairs(SalveDB.bindings) do
         local key = type(entry) == "table" and entry.key
-        if type(entry) == "table" and type(key) == "string" and not seen[key] then
+        if type(entry) == "table" and (entry.role == "BOTH" or entry.spell == "BOTH") then
+            -- Retire before deduplicating chords, so another custom action on
+            -- that chord is preserved. An empty result must not restore defaults.
+            ns.retiredCombinedGrid = true
+            SalveDB.combinedDispelNoticePending = true
+            SalveDB.bindingsCustom = true
+        elseif type(entry) == "table" and type(key) == "string" and not seen[key] then
             deduped[#deduped + 1] = entry
             seen[key] = true
         end
@@ -548,7 +552,7 @@ local GEOMETRY = {
     scale = true, showNames = true, showStacks = true, orientation = true,
     horizontalGrowth = true, verticalGrowth = true,
     sortMode = true, sortRoleOrder = true, sortReverse = true, sortSelf = true,
-    extraCell = true, mouseoverFallback = true, bothDispelsOrder = true,
+    extraCell = true, mouseoverFallback = true,
     attachTo = true, attachSide = true, attachGap = true,
     attachAlign = true, attachOffsetY = true,
     bindings = true, escapes = true,

@@ -54,6 +54,7 @@ function ns.Options.Tab(name, fill, resetFn, resetLabel, resetScope)
         fill(panel, function(...) flow:Add(...) end, ns.db)
         if resetFn then
             local reset = ns.Options.Section(panel)
+            HC.UI.SetScope(reset, "shared") -- a tab reset can mix both storage classes
             local _, y = ns.Options.PageReset(reset, -4, resetFn, resetLabel or "Reset " .. name:lower(), resetScope)
             flow:Add(reset, -y)
         end
@@ -61,10 +62,9 @@ function ns.Options.Tab(name, fill, resetFn, resetLabel, resetScope)
     end
 end
 
+-- Scope markers describe the existing storage groups; they do not change them.
 function ns.Options.ProfileScope(panel, y, shared)
-    local label
-    label, y = HC.UI.Text(panel, shared and "Shared across profiles" or "Saved per profile", y)
-    label:SetTextColor(unpack(HC.Theme.Colour("muted")))
+    HC.UI.SetScope(panel, shared and "shared" or "profile")
     return y
 end
 

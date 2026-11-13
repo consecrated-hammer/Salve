@@ -64,12 +64,14 @@ HC.Settings:NewPage({
         { name = "Layout", build = tab("Layout", function(panel, add, db)
             -- Which layout profile this page is editing, with Save as new beside it.
             local profile = section(panel)
-            local _, profileY = O.Header(profile, "Profile", -8)
+            local _, profileY = O.ScopeLegend(profile, -8)
+            _, profileY = O.Header(profile, "Profile", profileY)
             _, profileY = HC.Profiles:Selector(profile, profileY,
                 "The layout profile these settings belong to. Changes save to it straight away; manage profiles on the Profiles page.")
             add(profile, -profileY + 4)
 
             local presets = section(panel)
+            O.SetScope(presets, "profile")
             local presetY = -8
             _, presetY = O.Header(presets, "Layout presets", presetY)
             local presetSpecs = {
@@ -82,7 +84,7 @@ HC.Settings:NewPage({
                 button:SetPoint("TOPLEFT", O.PAD + (index - 1) * 176, presetY - 4)
                 button:SetText(spec.label)
                 button.Text:ClearAllPoints()
-                button.Text:SetPoint("TOPLEFT", 10, -7)
+                button.Text:SetPoint("TOPLEFT", 20, -7)
                 button.Text:SetPoint("RIGHT", -10, 0)
                 button.Text:SetJustifyH("LEFT")
                 local note = button:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
@@ -91,6 +93,8 @@ HC.Settings:NewPage({
                 note:SetTextColor(unpack(T.Colour("muted")))
                 O.AttachHint(button, spec.label, "Layout preset: sets cell width, height, wrapping, spacing and names. Keeps grid direction and panel scale.")
                 O.RegisterRow(presets, button, spec.label .. " layout preset")
+                button.hcScopeMarker:ClearAllPoints()
+                button.hcScopeMarker:SetPoint("LEFT", button, "LEFT", 4, 0)
                 button:SetScript("OnClick", function()
                     ns.Set("boxWidth", spec.width)
                     ns.Set("boxHeight", spec.height)
@@ -244,7 +248,7 @@ HC.Settings:NewPage({
         end) },
         { name = "Names and icons", build = tab("Names and icons", function(panel, add, db)
             local names = section(panel, 2)
-            local ny = -8
+            local _, ny = O.ScopeLegend(names, -8)
             _, ny = O.Header(names, "Player names", ny)
             ny = O.ProfileScope(names, ny)
             local namesToggle
@@ -255,6 +259,7 @@ HC.Settings:NewPage({
             ny = O.Flush(names, ny)
             add(names, -ny + 4)
             local nameDetails = section(panel, 2, namesToggle)
+            O.SetScope(nameDetails, "profile")
             ny = -4
             _, ny = textPosition(nameDetails, "Name position", "Place names within each cell.", ny, "name")
             _, ny = O.Slider(nameDetails, "Name text size", "Size before UI scale is applied.", ny,
@@ -319,7 +324,7 @@ HC.Settings:NewPage({
                 roleLabels[index] = table.concat(names, ", ")
             end
             local order = section(panel, 2)
-            local y = -8
+            local _, y = O.ScopeLegend(order, -8)
             _, y = O.Header(order, "Order", y)
             y = O.ProfileScope(order, y)
             local sortToggle
@@ -331,6 +336,7 @@ HC.Settings:NewPage({
             y = O.Flush(order, y)
             add(order, -y + 4)
             local roleOrder = section(panel, 2, sortToggle)
+            O.SetScope(roleOrder, "profile")
             y = -4
             _, y = O.Dropdown(roleOrder, "Role order",
                 "Used when sorting by role. Members with no role go last.", y,
@@ -340,6 +346,7 @@ HC.Settings:NewPage({
             y = O.Flush(roleOrder, y)
             add(roleOrder, -y + 4, function() return db.sortMode == "ROLE" end)
             local memberOrder = section(panel, 2)
+            O.SetScope(memberOrder, "profile")
             y = -4
             _, y = O.Check(memberOrder, "Reverse order",
                 "Flip the sorted order. A pinned cell stays where it is.", y,
