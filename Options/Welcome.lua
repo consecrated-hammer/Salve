@@ -30,6 +30,7 @@ if #attachChoices > 1 then
         get = function() return ns.db.attachTo end,
         set = function(value) ns.Set("attachTo", value) end }
 end
-HC.Welcome:Register({ intro = "Choose a layout and alert sound, then bind your dispel on Key Bindings.",
+HC.Welcome:Register({ icon = HC.spec.icon,
+    intro = "Choose a layout and alert sound, then bind your dispel on Key Bindings.",
     rows = welcomeRows, footer = "You can change these in settings." })
 

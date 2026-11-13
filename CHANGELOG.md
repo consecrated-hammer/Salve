@@ -7,6 +7,7 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Show the Salve icon beside a clearer welcome heading.
 ### Changed
 
 - Drag the live preview near settings to snap it alongside; drag away to detach. The free preview position and real panel position stay separate.
