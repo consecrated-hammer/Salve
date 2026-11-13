@@ -9,6 +9,8 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Drag the live preview near settings to snap it alongside; drag away to detach. The free preview position and real panel position stay separate.
+
 - Remove combined dispel actions from cell clicks and mouseover keys. Bind each cure separately. Existing individual bindings stay; old combined bindings are cleared without assigning their keys to another spell.
 - Mark profile-owned settings with the shared profile icon and one legend per tab. Unmarked settings stay shared; existing storage and reset scopes are unchanged.
 - Group position and visibility controls by profile scope. Hide empty movement-spell groups and put mouseover choices below the binding pool.

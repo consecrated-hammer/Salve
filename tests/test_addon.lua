@@ -154,6 +154,50 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
     wow.Click(wow.FindButton("Show live preview"))
     equal(ns.Preview:IsWindowShown(), true, toc .. ": the header button opens the live preview")
     assert(wow.FindButton("Hide live preview"), toc .. ": and then offers to hide it")
+    local dock = ns.Preview.windowDock
+    assert(dock and not dock:IsAttached(), toc .. ": preview starts free until dragged near settings")
+    local freePoint = ns.db.previewWindowPoint
+    local livePoint = ns.db.point
+    local begins, finishes = 0, 0
+    local beginDrag, endDrag = dock.BeginDrag, dock.EndDrag
+    dock.BeginDrag = function() begins = begins + 1 end
+    dock.EndDrag = function() finishes = finishes + 1 end
+    local titleBar
+    for _, frame in ipairs(wow.frames) do
+        if frame.parent == ns.Preview.window and frame.scripts.OnDragStart then titleBar = frame; break end
+    end
+    assert(titleBar, toc .. ": preview title bar supports dragging")
+    titleBar.scripts.OnDragStart(titleBar)
+    titleBar.scripts.OnDragStop(titleBar)
+    equal(begins, 1, toc .. ": title bar starts shared preview dragging")
+    equal(finishes, 1, toc .. ": title bar finishes shared preview dragging")
+    dock.BeginDrag, dock.EndDrag = beginDrag, endDrag
+    ns.Preview:RefreshSettingsPreview()
+    equal(ns.db.previewWindowPoint, freePoint, toc .. ": redraw preserves the free preview point")
+    equal(ns.db.point, livePoint, toc .. ": settings preview leaves the live panel position alone")
+    -- Feed known client bounds through the real docking controller.
+    local previewFrame, host = ns.Preview.window, HC.Settings.window
+    local oldLeft, oldTop, hostLeft, hostTop = previewFrame.GetLeft, previewFrame.GetTop, host.GetLeft, host.GetTop
+    local screenWidth, screenHeight = UIParent:GetWidth(), UIParent:GetHeight()
+    UIParent:SetSize(2400, 1600)
+    host.GetLeft, host.GetTop = function() return 600 end, function() return 1400 end
+    local dragLeft = 600 + host:GetWidth() + 8
+    previewFrame.GetLeft, previewFrame.GetTop = function() return dragLeft end, function() return 1300 end
+    ns.Preview.windowDock:BeginDrag()
+    ns.Preview.windowDock:EndDrag()
+    equal(ns.Preview.windowDock:IsAttached(), true, toc .. ": dragging near settings attaches the preview")
+    equal(select(2, previewFrame:GetPoint()), host, toc .. ": attached preview anchors to settings")
+    ns.Preview.windowDock:BeginDrag()
+    dragLeft = -2000
+    ns.Preview.windowDock:EndDrag()
+    equal(ns.Preview.windowDock:IsAttached(), false, toc .. ": dragging away detaches the preview")
+    equal(select(2, previewFrame:GetPoint()), UIParent, toc .. ": detached preview returns to screen anchoring")
+    previewFrame.GetLeft, previewFrame.GetTop, host.GetLeft, host.GetTop = oldLeft, oldTop, hostLeft, hostTop
+    UIParent:SetSize(screenWidth, screenHeight)
+    local combatGuard = InCombatLockdown
+    InCombatLockdown = function() return true end
+    equal(ns.Preview.windowDock:BeginDrag(), false, toc .. ": combat blocks settings-preview dragging")
+    InCombatLockdown = combatGuard
     local drawnScale
     ns.Preview.settingsPreview.frame.SetScale = function(_, value) drawnScale = value end
     ns.Set("scale", 1.5)

@@ -130,9 +130,11 @@ for _, toc in ipairs({ "Salve.toc", "Salve_Camelot.toc" }) do
                             assert(row.hcScopeMarker:GetFrameLevel() > row:GetFrameLevel(), "glyph stays above switch fill")
                             if label:find(" layout preset", 1, true) then
                                 local textX = select(2, row.Text:GetPoint())
-                                local markerX = select(4, row.hcScopeMarker:GetPoint())
-                                assert(type(textX) == "number" and textX >= markerX + row.hcScopeMarker:GetWidth() + 4,
-                                    "preset text reserves the profile glyph gutter")
+                                local anchor, relative, relativePoint, gap, y = row.hcScopeMarker:GetPoint()
+                                assert(textX == 32 and row.Text:GetHeight() == 16 and row.hcScopeMarker:GetWidth() == 24,
+                                    "preset text reserves the 24px profile glyph gutter")
+                                assert(anchor == "TOPLEFT" and relative == row and relativePoint == "TOPLEFT" and gap == 4 and y == -3,
+                                    "preset glyph aligns with its title")
                             end
                         end
                     end

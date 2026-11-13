@@ -282,12 +282,13 @@ function Preview:CreateSettingsPreview()
     win:SetScale(1)
     T.Surface(win, "outer", "edge")
     win:Hide()
-    local point = ns.db.previewWindowPoint
-    if type(point) == "table" and point[1] then
-        win:SetPoint(point[1], UIParent, point[2], point[3], point[4])
-    else
-        win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 40, -120)
-    end
+    self.windowDock = HC.Settings:PreviewDock(win, {
+        getPoint = function() return ns.db.previewWindowPoint or { "TOPLEFT", "TOPLEFT", 40, -120 } end,
+        setPoint = function(point) ns.db.previewWindowPoint = point end,
+        canDrag = function() return not InCombatLockdown() end,
+    })
+    self.windowDock:Restore()
+    win:SetScript("OnShow", function() Preview.windowDock:Restore() end)
 
     local bar = CreateFrame("Frame", nil, win)
     bar:SetPoint("TOPLEFT", 1, -1)
@@ -296,12 +297,8 @@ function Preview:CreateSettingsPreview()
     T.Fill(bar:CreateTexture(nil, "BACKGROUND"), "header"):SetAllPoints()
     bar:EnableMouse(true)
     bar:RegisterForDrag("LeftButton")
-    bar:SetScript("OnDragStart", function() win:StartMoving() end)
-    bar:SetScript("OnDragStop", function()
-        win:StopMovingOrSizing()
-        local from, _, to, x, y = win:GetPoint()
-        ns.db.previewWindowPoint = { from, to, x, y }
-    end)
+    bar:SetScript("OnDragStart", function() Preview.windowDock:BeginDrag() end)
+    bar:SetScript("OnDragStop", function() Preview.windowDock:EndDrag() end)
     local title = T.Font(UI.FontString(bar, "GameFontNormalLarge", "text"), 16)
     title:SetPoint("LEFT", WINDOW_PAD, 0)
     title:SetText("Live preview")
@@ -597,6 +594,8 @@ function Preview:RefreshSettingsPreview()
     preview.frame:Show()
     preview.window:SetSize(innerWidth + WINDOW_PAD * 2,
         WINDOW_HEADER + WINDOW_CONTROLS + 22 + innerHeight + WINDOW_PAD)
+
+    self.windowDock:Refresh()
 
     -- Attached Left or Right, each cell lines up with its member's frame in
     -- game, which a window can't show; Top and Bottom keep this grid.

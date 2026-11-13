@@ -148,6 +148,7 @@ end
 
 HC:Init({
     name = "Salve",
+    previewDock = true,
     command = "salve",
     savedVariable = "SalveDB",
     db = function() return ns.db end,
