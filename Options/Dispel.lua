@@ -281,7 +281,7 @@ HC.Settings:NewPage({
     y = -4
     -- Follow the pool so the available mouseover and Both tiles explain these choices.
     _, y = O.Dropdown(preferences, "Mouseover fallback",
-        "Mouseover dispel keys cast on a friendly player under the pointer, or this when there isn't one. Bind individual or both dispels in the mouseover tiles below.", y,
+        "Mouseover dispel keys cast on a friendly player under the pointer, or this when there isn't one. Bind individual or both dispels in the mouseover tiles above.", y,
         { "NONE", "TARGET", "PLAYER" }, { "Do nothing", "Use target", "Use yourself" },
         function() return ns.db.mouseoverFallback end,
         function(value) ns.Set("mouseoverFallback", value) end, 560, 150, 200)
