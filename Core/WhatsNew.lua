@@ -6,6 +6,9 @@ local addonName, ns = ...
 -- the lines short and player-facing; details stay in CHANGELOG.md. A `page`
 -- adds a button that opens that settings page.
 ns.WHATS_NEW = {
+    { version = "1.14.1", date = "2026-11-13", items = {
+        { text = "Raid markers now appear correctly on party cells.", kind = "fix", page = "Salve", tab = "Names and icons" },
+    } },
     { version = "1.14.0", date = "2026-11-13", items = {
         { title = "Clearer settings", text = "Related controls share tabs, search finds hidden options, and a larger profile icon shows which settings belong to this profile.", page = "Salve" },
         { title = "One cure per binding", text = "The unreliable combined dispel is removed. Bind Cure Poison and Remove Curse separately; existing individual bindings stay.", page = "Key Bindings" },
