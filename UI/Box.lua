@@ -620,8 +620,12 @@ end
 -- It's a plain texture on Salve's own frame: safe in combat, never secure,
 -- and mouse-dead so clicks land on whichever box is underneath.
 
+local function secret(value)
+    return issecretvalue and issecretvalue(value)
+end
+
 local function readable(value)
-    return value ~= nil and not (issecretvalue and issecretvalue(value))
+    return not secret(value) and value ~= nil
 end
 
 -- Blizzard's tiny role art, made for icons this size.
@@ -637,6 +641,7 @@ local ROLE_COORDS = {
     DAMAGER = { 20 / 64, 39 / 64, 22 / 64, 41 / 64 },
 }
 local MARKER_TEXTURE = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_"
+local MARKER_SHEET = "Interface\\TargetingFrame\\UI-RaidTargetingIcons"
 
 -- TANK, HEALER, DAMAGER or nil. Your own role comes from your spec when the
 -- group hasn't assigned one, which is also how it works solo.
@@ -653,11 +658,14 @@ function Box.UnitRole(unit)
     return nil
 end
 
--- 1-8 or nil. An unreadable marker in restricted content just shows nothing.
+-- 1-8, an opaque secret value for native drawing, or nil. Secret markers
+-- must never be compared, formatted in Lua or used to choose a texture path.
 function Box.UnitMarker(unit)
     if not (unit and GetRaidTargetIndex) then return nil end
     local ok, index = pcall(GetRaidTargetIndex, unit)
-    if not ok or not readable(index) or type(index) ~= "number" then return nil end
+    if not ok then return nil end
+    if secret(index) then return index end
+    if type(index) ~= "number" then return nil end
     if index < 1 or index > 8 then return nil end
     return index
 end
@@ -676,7 +684,9 @@ end
 function Box.RoleBadgeContent(role, marker)
     local db = ns.db or {}
     local mode = db.roleIcon or "OFF"
-    if (mode == "MARKER" or mode == "BOTH") and marker then return "MARKER", marker end
+    if (mode == "MARKER" or mode == "BOTH") and (secret(marker) or marker) then
+        return "MARKER", marker
+    end
     if (mode == "ROLE" or mode == "BOTH") and role
         and (role ~= "DAMAGER" or db.roleIconRoles == "ALL") then
         return "ROLE", role
@@ -723,10 +733,39 @@ function Box.ShowRoleBadge(box, role, marker)
     badge:SetFrameLevel((box.movementFrameLevel or (box:GetFrameLevel() + 13)) + 7)
 
     local texture = badge.texture
+    if badge.markerText then badge.markerText:Hide() end
+    texture:Show()
     badge.kind, badge.value = kind, value
     if kind == "MARKER" then
-        texture:SetTexture(MARKER_TEXTURE .. value)
-        if texture.SetTexCoord then texture:SetTexCoord(0, 1, 0, 1) end
+        if secret(value) then
+            if texture.SetSpriteSheetCell then
+                -- Blizzard's own SetRaidTargetIconTexture uses this native
+                -- secret-aware setter. Only the renderer sees the cell index.
+                texture:SetTexture(MARKER_SHEET)
+                texture:SetSpriteSheetCell(value, 4, 4)
+            else
+                -- Older clients can still hand the opaque argument directly
+                -- to native text formatting, without Lua constructing markup.
+                if not badge.markerText then
+                    badge.markerText = badge:CreateFontString(nil, "ARTWORK")
+                    badge.markerText:SetPoint("CENTER")
+                end
+                local text = badge.markerText
+                text:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF", size, "")
+                local ok = pcall(text.SetFormattedText, text,
+                    "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_%d:%d:%d|t", value, size, size)
+                texture:Hide()
+                if not ok then
+                    box.roleBadgeShown = false
+                    badge:Hide()
+                    return
+                end
+                text:Show()
+            end
+        else
+            texture:SetTexture(MARKER_TEXTURE .. value)
+            if texture.SetTexCoord then texture:SetTexCoord(0, 1, 0, 1) end
+        end
     else
         local atlas = ROLE_ATLAS[value]
         local available = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(atlas)

@@ -7,6 +7,10 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Show assigned raid markers on cells when the client hides their values from addons.
+
 ## [1.14.0] - 2026-11-13
 
 ### Changed
