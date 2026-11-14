@@ -230,7 +230,7 @@ HC.Settings:NewPage({
                 0, 1, 0.05,
                 function() return db.cleanAlpha end,
                 function(value) ns.Set("cleanAlpha", value) end,
-                function(value) return string.format("%d%%", math.floor(value * 100 + 0.5)) end)
+                function(value) return string.format("%d%%", math.floor(value * 100 + 0.5)) end, nil, 100)
             iy = O.Flush(idleDetails, iy)
             add(idleDetails, -iy + 4, function() return db.showWhenClean end)
 
@@ -242,7 +242,7 @@ HC.Settings:NewPage({
                 0, 1, 0.05,
                 function() return db.outOfRangeAlpha end,
                 function(value) ns.Set("outOfRangeAlpha", value) end,
-                function(value) return string.format("%d%%", math.floor(value * 100 + 0.5)) end)
+                function(value) return string.format("%d%%", math.floor(value * 100 + 0.5)) end, nil, 100)
             ry = O.Flush(range, ry)
             add(range, -ry + 4)
 
