@@ -7,7 +7,7 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-- Type values directly beside settings sliders; half-width controls leave more room for their labels.
+- “Why is this settings input box not inputtable?” Excellent question. You can now type values beside settings sliders.
 
 ## [1.14.1] - 2026-11-13
 
