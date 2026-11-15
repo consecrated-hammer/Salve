@@ -6,6 +6,9 @@ local addonName, ns = ...
 -- the lines short and player-facing; details stay in CHANGELOG.md. A `page`
 -- adds a button that opens that settings page.
 ns.WHATS_NEW = {
+    { version = "1.14.2", date = "2026-11-15", items = {
+        { text = "“Why is this settings input box not inputtable?” Excellent question. You can now type values beside settings sliders.", kind = "improved" },
+    } },
     { version = "1.14.1", date = "2026-11-13", items = {
         { text = "Raid markers now appear correctly on party cells.", kind = "fix", page = "Salve", tab = "Names and icons" },
     } },

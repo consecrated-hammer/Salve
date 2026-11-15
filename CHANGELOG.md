@@ -7,6 +7,8 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.14.2] - 2026-11-15
+
 - “Why is this settings input box not inputtable?” Excellent question. You can now type values beside settings sliders.
 
 ## [1.14.1] - 2026-11-13
