@@ -144,3 +144,12 @@ there is no marker. Existing saved choices are preserved.
 Use `ns.Options.Section` and `ns.Options.Flow` or `ns.Options.Tab` so controls share their page's search index and hidden sections close up. Give every control a unique label within its page or tab. Standard HammerCore controls register themselves; custom buttons and lists must call `O.RegisterRow(parent, control, label)`. Add useful search terms to the control hint. A hidden section must set `hcParentRow` to the registered control that reveals it.
 
 Run `lua5.1 tests/test_settings_search.lua` and the full addon suite after adding settings. The search test checks both clients for missing registrations, duplicate labels, search matches and hidden-control routing. Extend its custom-control expectations when adding controls outside the standard row widgets.
+
+### Update reminders
+
+Visibility > Updates > **Update reminders** tells you when another party, raid
+or guild member has a newer stable release. One chat reminder per login names
+the newer version and yours, with a pointer to CurseForge. Recent newer versions
+are remembered for up to 72 hours. This uses hidden addon messages, not a direct
+CurseForge check. Turning it off stops version sharing and reminders. Development,
+alpha, beta and test builds neither announce themselves nor show reminders.

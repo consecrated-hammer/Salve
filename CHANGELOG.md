@@ -7,6 +7,8 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Keeping up with the guild: a chat reminder flags newer stable releases seen in your group or guild. Configure Update reminders on Visibility; development and test builds stay quiet.
+
 ## [1.14.2] - 2026-11-15
 
 - “Why is this settings input box not inputtable?” Excellent question. You can now type values beside settings sliders.
