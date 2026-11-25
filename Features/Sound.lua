@@ -350,6 +350,7 @@ function Sound:Refresh()
     -- scope/cure-matched built-in catalogue; never auto-promote learned records.
     local records = self:ActiveSoundRecords()
     local units = self:CurrentUnitTokens()
+    ns.AppendMonitoredPets(units)
     self.expected = #records * #units
     if self.expected == 0 then return end
 

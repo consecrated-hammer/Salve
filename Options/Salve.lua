@@ -43,7 +43,8 @@ local TAB_KEYS = {
         "dispelTypeIconPosition", "showWhenClean", "useClassColours", "cleanAlpha", "outOfRangeAlpha" },
     ["Names and icons"] = { "showNames", "nameJustifyH", "nameJustifyV", "nameFontSize",
         "roleIcon", "roleIconRoles", "roleIconPosition", "roleIconPlacement", "roleIconSize" },
-    Members = { "sortMode", "sortRoleOrder", "sortReverse", "sortSelf", "extraCell", "extraCellSkipGroup" },
+    Members = { "sortMode", "sortRoleOrder", "sortReverse", "sortSelf", "showOwnPet", "showPartyPets",
+        "extraCell", "extraCellSkipGroup" },
 }
 
 local function tab(name, fill)
@@ -360,6 +361,21 @@ HC.Settings:NewPage({
                 function(value) ns.Set("sortSelf", value) end, 560, 150, 180)
             y = O.Flush(memberOrder, y)
             add(memberOrder, -y + 4)
+
+            local pets = section(panel, 2)
+            local py = -8
+            _, py = O.Header(pets, "Pets", py)
+            py = O.ProfileScope(pets, py, true)
+            _, py = O.Check(pets, "Show own pet",
+                "Show your pet outside raids when you know a group dispel. Plays dispel sounds when enabled.", py,
+                function() return db.showOwnPet end,
+                function(value) ns.Set("showOwnPet", value) end)
+            _, py = O.Check(pets, "Show party pets",
+                "Show party pets when you know a group dispel. Plays dispel sounds when enabled.", py,
+                function() return db.showPartyPets end,
+                function(value) ns.Set("showPartyPets", value) end)
+            py = O.Flush(pets, py)
+            add(pets, -py + 4)
 
             local extra = section(panel, 2)
             local ey = -8

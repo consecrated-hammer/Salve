@@ -120,6 +120,9 @@ ns.defaults = {
     sortRoleOrder = "TANK,HEALER,DAMAGER",
     sortReverse   = false,
     sortSelf      = "SORTED",  -- SORTED | FIRST | LAST
+    showOwnPet    = true,
+    showPartyPets = true,
+
     -- One more cell after the group for your target or focus, shown only
     -- when it's a living friendly player. See Features/ExtraCell.lua.
     extraCell     = "TARGET",     -- OFF | TARGET | FOCUS
@@ -253,6 +256,7 @@ local function normalizePreferences(db)
     for _, key in ipairs({ "showNames", "showBorders", "showTooltip", "tooltipUnitInfo", "tooltipActions",
         "tooltipSpellDescriptions", "tooltipDebuff", "showDispelTypeIcon", "showStacks", "useClassColours",
         "showWhenClean", "showHandle", "bindingsCustom", "clickAuditEnabled", "unitSecrecyLog", "extraCellSkipGroup",
+        "showOwnPet", "showPartyPets",
         "soundEnabled", "dispelSoundEnabled", "movementSoundEnabled", "movementTextNotification",
         "movementAlertsEnabled", "inferredSlowAlertsEnabled",
         "selfDispelNotification", "sortReverse", "cooldownBar", "cooldownBarShowReady",
@@ -589,6 +593,11 @@ function ns.Set(key, value)
     end
     if key == "learningScopeMessages" or key == "learningDiscoveryMessages"
         or key == "unitSecrecyLog" then return end
+    if key == "showOwnPet" or key == "showPartyPets" then
+        if ns.Sound then ns.Sound:RequestRefresh() end
+        ns.RequestRebuildSoon()
+        return
+    end
     if key == "extraCellSkipGroup" then
         if ns.ExtraCell then ns.ExtraCell:ApplyFade() end
         return

@@ -211,4 +211,17 @@ ns.db.sortMode = "GROUP"
 local untouched = { "player", "party1" }
 equal(ns.Panel:SortUnits(untouched), untouched, "default settings skip sorting entirely")
 
+local existingPets = { pet = true, partypet4 = true }
+UnitExists = function(unit) return existingPets[unit] == true end
+local updated
+ns.Box.Restyle = function(box) updated = box.unit end
+ns.Panel.boxes = { { unit = "player" }, { unit = "pet" } }
+equal(ns.Panel:PetRosterChanged("partypet4"), true, "new party pet requires a cell")
+equal(ns.Panel:PetRosterChanged("pet"), false, "pet replacement can reuse existing cell")
+equal(updated, "pet", "pet replacement refreshes the existing cell")
+ns.db.sortMode = "NAME"
+equal(ns.Panel:PetRosterChanged("pet"), true, "replacement can change name sort order")
+existingPets.pet = nil
+equal(ns.Panel:PetRosterChanged("pet"), true, "dismissed pet must leave the grid")
+
 print("panel layout tests passed")

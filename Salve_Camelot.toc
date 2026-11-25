@@ -34,6 +34,7 @@ Features\MovementDetection.lua
 # When cooldown icons and the bar show a spell. Off by default.
 Features\Cooldowns.lua
 Features\Lockouts.lua
+Features\Pets.lua
 Features\Sound.lua
 Features\Range.lua
 Features\Probe.lua

@@ -7,6 +7,10 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Salve can show your pet and party pets in solo play and parties, with separate switches in Panel > Members. Dispel sounds can cover them too. Thanks to SKUD for the suggestion and prototype.
+
 ## [1.14.2] - 2026-11-15
 
 - “Why is this settings input box not inputtable?” Excellent question. You can now type values beside settings sliders.

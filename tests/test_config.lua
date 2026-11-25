@@ -44,6 +44,22 @@ equal(type(ns.db.movementSweepColours), "table", "movement sweep colours default
 equal(ns.db.showStartupMessage, nil, "startup message is not a Salve default")
 equal(ns.db.useClassColours, false, "class-coloured clear cells default off")
 equal(ns.db.showBorders, true, "box borders default on for existing profiles")
+equal(ns.db.showOwnPet, true, "own pet defaults on for existing settings")
+equal(ns.db.showPartyPets, true, "party pets default on for existing settings")
+local petSoundRefreshes, petRebuilds = 0, 0
+local originalRebuildSoon = ns.RequestRebuildSoon
+ns.Sound.RequestRefresh = function() petSoundRefreshes = petSoundRefreshes + 1 end
+ns.RequestRebuildSoon = function() petRebuilds = petRebuilds + 1 end
+ns.Set("showOwnPet", false)
+ns.Set("showPartyPets", false)
+ns.Set("showPartyPets", false)
+equal(petSoundRefreshes, 2, "toggle changes refresh the sound roster")
+equal(petRebuilds, 2, "toggle changes request a panel rebuild")
+ns.InitConfig()
+equal(ns.db.showOwnPet, false, "saved own pet opt-out survives reload")
+equal(ns.db.showPartyPets, false, "saved party pet opt-out survives reload")
+ns.Sound.RequestRefresh, ns.RequestRebuildSoon = nil, originalRebuildSoon
+
 ns.Set("showBorders", false)
 ns.InitConfig()
 equal(ns.db.showBorders, false, "hidden borders survive config reload")

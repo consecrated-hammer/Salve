@@ -14,6 +14,7 @@ local previewStops = 0
 local optionsRefreshes = 0
 local rebuilds = 0
 local dispelRefreshes = 0
+local petRosterRefreshes = 0
 local pendingFlushes = 0
 local movementWarnings = 0
 local movementTextAlerts = 0
@@ -45,7 +46,13 @@ C_Timer = {
     end,
 }
 
+local inRaid, canDispel = false, true
+IsInRaid = function() return inRaid end
+IsInGroup = function() return true end
+
 local ns = {
+    db = { showOwnPet = true, showPartyPets = false },
+    CanDispel = function() return canDispel end,
     UpdateDispelSpell = function() return false end,
     Escape = {
         Update = function() return true end,
@@ -67,6 +74,7 @@ local ns = {
         RefreshTroubleshooting = function() end,
     },
     Sound = {
+        RequestRefresh = function() petRosterRefreshes = petRosterRefreshes + 1 end,
         OnDispelChanged = function() dispelRefreshes = dispelRefreshes + 1 end,
         FlushPending = function() pendingFlushes = pendingFlushes + 1 end,
         PlayMovementWarning = function() movementWarnings = movementWarnings + 1 end,
@@ -78,6 +86,7 @@ local ns = {
         end,
     },
     Panel = {
+        PetRosterChanged = function() return true end,
         SetMovementPrompt = function(_, spell, active)
             if not active then
                 equal(spell, nil, "clearing a movement prompt has no spell")
@@ -117,12 +126,11 @@ local ns = {
     },
 }
 
+assert(loadfile("Features/Pets.lua"))("Salve", ns)
 assert(loadfile("Core/Events.lua"))("Salve", ns)
 
 equal(unitRegistrations.UNIT_SPELLCAST_SUCCEEDED, "player",
     "cast-success event registered as a unit event")
-equal(unitRegistrations.UNIT_PET, "player",
-    "pet-change registration is player-only")
 equal(registered.SPELL_UPDATE_COOLDOWN, nil,
     "global cooldown update event remains unregistered")
 equal(registered.PLAYER_REGEN_DISABLED, true,
@@ -133,8 +141,8 @@ equal(registered.PLAYER_STARTED_MOVING, nil,
     "ground-speed detector does not depend on movement start events")
 equal(registered.PLAYER_STOPPED_MOVING, nil,
     "ground-speed detector continues sampling while stationary")
-equal(registered.UNIT_PET, nil,
-    "pet changes use the player-only unit subscription")
+equal(registered.UNIT_PET, true,
+    "pet changes cover all owner tokens")
 equal(registered.COMBAT_LOG_EVENT_UNFILTERED, nil,
     "shared event router never subscribes to high-volume combat-log traffic")
 
@@ -163,6 +171,26 @@ handler(nil, "UNIT_PET", "party1")
 equal(rebuilds, 1, "another unit's pet does not change the player's dispels")
 handler(nil, "UNIT_PET", "player")
 equal(rebuilds, 2, "the player's pet change refreshes Imp-only dispels")
+equal(petRosterRefreshes, 1, "own pet refreshes the sound roster")
+
+ns.db.showPartyPets = true
+handler(nil, "UNIT_PET", "target")
+handler(nil, "UNIT_PET", "party4")
+equal(rebuilds, 3, "fourth party pet refreshes the panel, unrelated pet ignored")
+equal(petRosterRefreshes, 2, "fourth party pet refreshes the sound roster")
+equal(selfAlertUpdates, 2, "party pet changes leave player spell discovery alone")
+canDispel = false
+handler(nil, "UNIT_PET", "party4")
+equal(rebuilds, 3, "a character without a group dispel ignores party pet changes")
+equal(petRosterRefreshes, 2, "no pet sound refresh without a group dispel")
+canDispel = true
+
+inRaid = true
+handler(nil, "UNIT_PET", "party4")
+handler(nil, "UNIT_PET", "player")
+equal(rebuilds, 4, "raid pet events only rebuild for the player's spell change")
+equal(petRosterRefreshes, 2, "raid ignores monitored pet roster changes")
+inRaid = false
 
 handler(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast-guid", 4987)
 equal(refreshes, 0, "dispel cooldown is not read inside the early cast event")

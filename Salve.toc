@@ -60,6 +60,7 @@ Features\Cooldowns.lua
 Features\Lockouts.lua
 
 # Alert sounds and the selector for the built-in, instance-scoped catalogue.
+Features\Pets.lua
 Features\Sound.lua
 Features\Range.lua
 Features\Probe.lua

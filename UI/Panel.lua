@@ -143,6 +143,7 @@ local function unitList()
         units[1] = "player"
     end
 
+    ns.AppendMonitoredPets(units)
     return units
 end
 
@@ -395,6 +396,21 @@ function Panel:Rebuild()
                 .. "They will click but never light up. Run |cffffd100/salve debug|r.")
         end
     end
+end
+
+-- An existing secure cell already follows its unit token across a pet swap.
+-- Refresh its name and appearance, and rebuild only if the token needs to
+-- enter or leave the grid, or the pet name can change its sort order.
+function Panel:PetRosterChanged(unit)
+    local exists = UnitExists(unit)
+    for _, box in ipairs(self.boxes) do
+        if box.unit == unit then
+            ns.Box.Restyle(box)
+            if ns.Range then ns.Range:UpdateUnit(unit) end
+            return not exists or (ns.db.sortMode == "NAME" and not self.attached)
+        end
+    end
+    return exists
 end
 
 -- ── Restyle ────────────────────────────────────────────────────────────────

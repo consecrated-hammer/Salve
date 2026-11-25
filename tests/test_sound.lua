@@ -21,6 +21,8 @@ local ns = {
     },
 }
 local messages = {}
+local canDispel = true
+function ns.CanDispel() return canDispel end
 function ns.Print(text) messages[#messages + 1] = text end
 function ns.CuresText() return "test" end
 
@@ -86,6 +88,7 @@ C_UnitAuras = {
     end,
 }
 
+assert(loadfile("Features/Pets.lua"))("Salve", ns)
 local chunk = assert(loadfile("Features/Sound.lua"))
 chunk("Salve", ns)
 
@@ -372,5 +375,45 @@ ns.Sound.activeScopeKey = "instance:2521"
 ns.knownDispels = { { cures = { Magic = true } } }
 ns.Sound:RequestRefresh()
 equal(ns.Sound.registered > 0, true, "movement master switch leaves ordinary dispel registration active")
+
+local pets = { pet = true, partypet4 = true }
+local grouped, raid = false, false
+UnitExists = function(unit) return pets[unit] end
+IsInGroup = function() return grouped end
+IsInRaid = function() return raid end
+GetNumSubgroupMembers = function() return 4 end
+ns.db.showOwnPet, ns.db.showPartyPets = true, true
+local function roster()
+    local first = #added + 1
+    ns.Sound:RequestRefresh()
+    local units, seen = {}, {}
+    for index = first, #added do
+        local unit = added[index].unit
+        if not seen[unit] then
+            units[#units + 1] = unit
+            seen[unit] = true
+        end
+    end
+    return table.concat(units, ",")
+end
+equal(roster(), "player,pet", "solo includes only own pet")
+grouped = true
+equal(roster(), "player,party1,party2,party3,party4,pet,partypet4", "party includes existing pets")
+ns.Sound:UpdateLearnRegistration()
+equal(ns.Sound.learnUnits.pet, nil, "own pet aura sounds do not enroll pet in learning")
+equal(ns.Sound.learnUnits.partypet4, nil, "party pet aura sounds do not enroll pet in learning")
+canDispel = false
+equal(roster(), "player,party1,party2,party3,party4", "no pet sounds without a group dispel")
+canDispel = true
+ns.db.showOwnPet = false
+equal(roster(), "player,party1,party2,party3,party4,partypet4", "own pet toggle is independent")
+ns.db.showPartyPets, ns.db.showOwnPet = false, true
+equal(roster(), "player,party1,party2,party3,party4,pet", "party pet toggle is independent")
+ns.db.showPartyPets = true
+pets.pet = nil
+equal(roster(), "player,party1,party2,party3,party4,partypet4", "dismissed pet drops out")
+raid = true
+pets.pet = true
+equal(roster(), "raid1,raid2,raid3,raid4,raid5", "raid ignores all pet settings")
 
 print("sound tests passed")

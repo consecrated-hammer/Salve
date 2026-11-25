@@ -93,6 +93,18 @@ equal(cells[2].top, 490, "row cells share the row's centre")
 equal(cells[3].left, 530 + 2 + 21, "row members keep their columns")
 equal(cells[1].left, 530 + 2 + 4 * 21, "the missing member takes the next column")
 
+-- Hosts without pet frames keep the owner cells in place and extend the panel.
+local partyWithPets = { "player", "party1", "party2", "party3", "party4", "pet", "partypet4" }
+cells = Attach.PlanBeside(partyWithPets, partyColumn(party), "RIGHT", 2, 20, 20, 1)
+equal(cells[5].top, 290, "party member stays aligned when pets are present")
+equal(cells[6].top, 240, "own pet follows the host column")
+equal(cells[7].top, 190, "party pet follows own pet without overlap")
+local fullRow = {}
+for i, unit in ipairs(party) do fullRow[i] = rect(100 + (i - 1) * 110, 500, 100, 40, unit) end
+cells = Attach.PlanBeside(partyWithPets, fullRow, "RIGHT", 2, 20, 20, 1)
+equal(cells[6].left - cells[5].left, 21, "own pet extends the host row")
+equal(cells[7].left - cells[6].left, 21, "party pet follows own pet on the host row")
+
 -- Test panel: a count takes host frames in reading order.
 cells = Attach.PlanBeside(3, partyColumn(hostOrder), "RIGHT", 2, 20, 20, 1)
 equal(cells[1].top, 490, "test cell one takes the top frame")

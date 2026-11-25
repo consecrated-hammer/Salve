@@ -189,17 +189,30 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
     elseif event == "RAID_TARGET_UPDATE" then
         if ns.Panel and ns.Panel.RefreshRoleBadges then ns.Panel:RefreshRoleBadges() end
 
-    elseif event == "PLAYER_SPECIALIZATION_CHANGED"
-        or event == "SPELLS_CHANGED"
-        or (event == "UNIT_PET" and arg1 == "player") then
+    elseif event == "PLAYER_SPECIALIZATION_CHANGED" or event == "SPELLS_CHANGED" or event == "UNIT_PET" then
+        if event == "UNIT_PET" and arg1 ~= "player" then
+            local pet = ns.MonitoredPetUnit(arg1)
+            if pet then
+                ns.Sound:RequestRefresh()
+                if ns.Panel:PetRosterChanged(pet) then ns.RequestRebuild() end
+            end
+            return
+        end
+        -- An Imp can grant Singe Magic even when its cell is disabled.
+        -- Discover the current spells before deciding which pet to monitor.
         local dispelChanged = ns.UpdateDispelSpell()
         local personalChanged = ns.PersonalDispel and ns.PersonalDispel:Update()
         local escapeChanged = ns.Escape:Update()
         if dispelChanged or escapeChanged or personalChanged then
             if ns.Options.RefreshDispel then ns.Options.RefreshDispel() end
-            if dispelChanged then
-                ns.Sound:OnDispelChanged()
-            end
+        end
+        local pet = event == "UNIT_PET" and ns.MonitoredPetUnit(arg1)
+        if pet then
+            ns.Sound:RequestRefresh()
+        elseif dispelChanged then
+            ns.Sound:OnDispelChanged()
+        end
+        if (pet and ns.Panel:PetRosterChanged(pet)) or dispelChanged or escapeChanged or personalChanged then
             if ns.Options.RefreshTroubleshooting then ns.Options.RefreshTroubleshooting() end
             ns.RequestRebuild()
         end
@@ -331,12 +344,10 @@ if frame.RegisterUnitEvent then
     frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
     -- Lockouts only: the target name of a cast made outside Salve's cells.
     frame:RegisterUnitEvent("UNIT_SPELLCAST_SENT", "player")
-    -- Warlock's Command Demon can become Singe Magic only while an Imp is
-    -- active. Filter at registration: other players' pets cannot affect this
-    -- character's armed dispel or justify a secure rebuild.
-    frame:RegisterUnitEvent("UNIT_PET", "player")
 else
     frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
     frame:RegisterEvent("UNIT_SPELLCAST_SENT")
-    frame:RegisterEvent("UNIT_PET")
 end
+-- UNIT_PET provides the owner token. Filter in the handler so every party
+-- slot is covered without relying on the unit-event argument limit.
+frame:RegisterEvent("UNIT_PET")
