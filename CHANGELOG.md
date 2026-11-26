@@ -7,6 +7,12 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-11-27
+
+### Added
+
+- Even the tank with paws gets a dispel cell. Salve now watches your pet and party pets outside raids, including dispel sounds when enabled. Find both switches under Panel > Members. Thanks to SKUD for the suggestion and prototype.
+
 ## [1.15.0-beta] - 2026-11-26
 
 ### Added
