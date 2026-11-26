@@ -7,9 +7,11 @@ and Salve uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.15.0-beta] - 2026-11-26
+
 ### Added
 
-- Salve can show your pet and party pets in solo play and parties, with separate switches in Panel > Members. Dispel sounds can cover them too. Thanks to SKUD for the suggestion and prototype.
+- Even the tank with paws gets a dispel cell. Salve now watches your pet and party pets outside raids, including dispel sounds when enabled. Find both switches under Panel > Members. Thanks to SKUD for the suggestion and prototype.
 
 ## [1.14.2] - 2026-11-15
 

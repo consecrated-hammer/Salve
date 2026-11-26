@@ -6,6 +6,10 @@ local addonName, ns = ...
 -- the lines short and player-facing; details stay in CHANGELOG.md. A `page`
 -- adds a button that opens that settings page.
 ns.WHATS_NEW = {
+    { version = "1.15.0-beta", date = "2026-11-26", items = {
+        { title = "Even the tank with paws", text = "Your pet and party pets can get a dispel cell and alerts outside raids. Find both switches under Panel > Members. Thanks, SKUD!",
+            page = "Salve", tab = "Members" },
+    } },
     { version = "1.14.2", date = "2026-11-15", items = {
         { text = "“Why is this settings input box not inputtable?” Excellent question. You can now type values beside settings sliders.", kind = "improved" },
     } },
